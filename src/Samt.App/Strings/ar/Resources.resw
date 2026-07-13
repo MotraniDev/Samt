@@ -9,6 +9,7 @@
   <data name="NavToday" xml:space="preserve"><value>اليوم</value></data>
   <data name="NavLocations" xml:space="preserve"><value>المواقع</value></data>
   <data name="NavAlerts" xml:space="preserve"><value>التنبيهات</value></data>
+  <data name="NavAdhkar" xml:space="preserve"><value>الأذكار</value></data>
   <data name="NavDiagnostics" xml:space="preserve"><value>التشخيص</value></data>
   <data name="NavDesignLab" xml:space="preserve"><value>مختبر التصميم</value></data>
   <data name="Language" xml:space="preserve"><value>اللغة</value></data>
@@ -75,4 +76,7 @@
   <data name="SuppressDhuhrOnFriday" xml:space="preserve"><value>تعطيل تنبيه الظهر يوم الجمعة (الجمعة بدلًا منه)</value></data>
   <data name="SaveAlerts" xml:space="preserve"><value>حفظ التنبيهات</value></data>
   <data name="AlertsSaved" xml:space="preserve"><value>تم حفظ قواعد التنبيه.</value></data>
+  <data name="Qibla" xml:space="preserve"><value>القبلة</value></data>
+  <data name="RamadanBadge" xml:space="preserve"><value>رمضان</value></data>
+  <data name="HijriDayOffset" xml:space="preserve"><value>إزاحة اليوم الهجري</value></data>
 </root>

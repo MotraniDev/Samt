@@ -84,10 +84,33 @@
             </Grid>
         </Border>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12">
-            <TextBlock x:Name="AsrLabel" VerticalAlignment="Center" />
-            <RadioButton x:Name="AsrStandardRadio" GroupName="Asr" IsChecked="True" Checked="AsrStandardRadio_OnChecked" />
-            <RadioButton x:Name="AsrHanafiRadio" GroupName="Asr" Checked="AsrHanafiRadio_OnChecked" />
+        <StackPanel Grid.Row="2" Spacing="12">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock x:Name="AsrLabel" VerticalAlignment="Center" />
+                <RadioButton x:Name="AsrStandardRadio" GroupName="Asr" IsChecked="True" Checked="AsrStandardRadio_OnChecked" />
+                <RadioButton x:Name="AsrHanafiRadio" GroupName="Asr" Checked="AsrHanafiRadio_OnChecked" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock x:Name="HijriOffsetLabel" VerticalAlignment="Center" />
+                <NumberBox
+                    x:Name="HijriOffsetBox"
+                    Language="en-US"
+                    FontFamily="{StaticResource SamtNumericFont}"
+                    Minimum="-3"
+                    Maximum="3"
+                    SmallChange="1"
+                    LargeChange="1"
+                    SpinButtonPlacementMode="Inline"
+                    Width="140"
+                    Value="{x:Bind ViewModel.HijriDayOffset, Mode=TwoWay}"
+                    ValueChanged="HijriOffsetBox_OnValueChanged" />
+                <TextBlock
+                    x:Name="HijriOffsetHint"
+                    VerticalAlignment="Center"
+                    Opacity="0.65"
+                    FontSize="12"
+                    TextWrapping="Wrap" />
+            </StackPanel>
         </StackPanel>
 
         <Border Grid.Row="3" Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"

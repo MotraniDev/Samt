@@ -42,6 +42,8 @@ public sealed partial class TodayPage : Page
         TitleText.Text = App.Localization.Get("NavToday");
         NextLabel.Text = App.Localization.Get("NextPrayer");
         TimesHeader.Text = App.Localization.Get("Results");
+        QiblaHeader.Text = App.Localization.Get("Qibla");
+        RamadanBadgeText.Text = App.Localization.Get("RamadanBadge");
         ViewModel.RefreshLabels();
         Bindings.Update();
     }

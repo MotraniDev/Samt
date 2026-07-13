@@ -64,6 +64,7 @@ public sealed partial class MainWindow : Window
         {
             "locations" => typeof(LocationsPage),
             "alerts" => typeof(AlertsPage),
+            "adhkar" => typeof(AdhkarPage),
             "diagnostics" => typeof(DiagnosticsPage),
             "designlab" => typeof(DesignLabPage),
             _ => typeof(TodayPage)
@@ -96,6 +97,7 @@ public sealed partial class MainWindow : Window
         NavToday.Content = loc.Get("NavToday");
         NavLocations.Content = loc.Get("NavLocations");
         NavAlerts.Content = loc.Get("NavAlerts");
+        NavAdhkar.Content = loc.Get("NavAdhkar");
         NavDiagnostics.Content = loc.Get("NavDiagnostics");
         NavDesignLab.Content = loc.Get("NavDesignLab");
         ThemeSystemItem.Content = loc.Get("ThemeSystem");

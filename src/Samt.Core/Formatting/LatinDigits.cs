@@ -76,6 +76,10 @@ public static class LatinDigits
     public static string Date(DateTimeOffset value, string format = "yyyy-MM-dd")
         => EnsureLatin(value.ToString(format, FormatCulture));
 
+    /// <summary>Hijri components as <c>d monthName yyyy</c> with Latin digits (month name already localized).</summary>
+    public static string Hijri(int day, string monthName, int year)
+        => EnsureLatin(string.Format(FormatCulture, "{0} {1} {2}", day, monthName, year));
+
     /// <summary>
     /// Replace Arabic-Indic (٠–٩) and Eastern Arabic-Indic (۰–۹) digits with Latin 0–9.
     /// Safe to call on any UI string that may contain numbers.

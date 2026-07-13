@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Samt.Core.Calculation;
 using Samt.Core.Domain;
 using Samt.Core.Formatting;
+using Samt.Core.Time;
 using Samt_App.Services;
 
 namespace Samt_App.ViewModels;
@@ -16,6 +17,7 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
     private LocationProfile _location;
     private CalculationProfile _method;
     private AsrMadhab _asrMadhab;
+    private int _hijriDayOffset;
     private DateTimeOffset _selectedDate = DateTimeOffset.Now;
     private bool _suppressPersist;
 
@@ -27,6 +29,7 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         _location = appState.RequireActiveLocation();
         _method = CalculationMethods.GetById(appState.Settings.ActiveCalculationProfileId);
         _asrMadhab = appState.Settings.AsrMadhab;
+        _hijriDayOffset = HijriConverter.ClampDayOffset(appState.Settings.HijriDayOffset);
         Locations = appState.Settings.Locations.ToList();
         Methods = CalculationMethods.AllPresets.ToList();
         Recalculate();
@@ -116,6 +119,23 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         }
     }
 
+    public int HijriDayOffset
+    {
+        get => _hijriDayOffset;
+        set
+        {
+            var clamped = HijriConverter.ClampDayOffset(value);
+            if (_hijriDayOffset == clamped)
+            {
+                return;
+            }
+
+            _hijriDayOffset = clamped;
+            OnPropertyChanged();
+            PersistQuietly(s => s.With(hijriDayOffset: clamped));
+        }
+    }
+
     public string LatitudeText => LatinDigits.Number(_location.Latitude, "0.0000");
     public string LongitudeText => LatinDigits.Number(_location.Longitude, "0.0000");
     public string TimeZoneText => _location.TimeZoneId;
@@ -171,9 +191,11 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         _location = active;
         _method = CalculationMethods.GetById(_appState.Settings.ActiveCalculationProfileId);
         _asrMadhab = _appState.Settings.AsrMadhab;
+        _hijriDayOffset = HijriConverter.ClampDayOffset(_appState.Settings.HijriDayOffset);
         OnPropertyChanged(nameof(SelectedLocation));
         OnPropertyChanged(nameof(SelectedMethod));
         OnPropertyChanged(nameof(SelectedAsrMadhab));
+        OnPropertyChanged(nameof(HijriDayOffset));
         OnPropertyChanged(nameof(LatitudeText));
         OnPropertyChanged(nameof(LongitudeText));
         OnPropertyChanged(nameof(TimeZoneText));

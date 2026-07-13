@@ -20,6 +20,7 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
     private PrayerSchedule? _schedule;
     private NextPrayerInfo? _next;
     private PrayerEvent? _markedNext;
+    private bool _isRamadan;
     private bool _disposed;
     private bool _timerStarted;
 
@@ -53,6 +54,31 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    public string HijriDateText { get; private set; } = "—";
+
+    public bool IsRamadan
+    {
+        get => _isRamadan;
+        private set
+        {
+            if (_isRamadan == value)
+            {
+                return;
+            }
+
+            _isRamadan = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(RamadanBadgeVisibility));
+        }
+    }
+
+    public Visibility RamadanBadgeVisibility =>
+        IsRamadan ? Visibility.Visible : Visibility.Collapsed;
+
+    public string QiblaBearingText { get; private set; } = "—";
+
+    public string QiblaDistanceText { get; private set; } = "—";
+
     public string CoordinatesText
     {
         get
@@ -65,7 +91,7 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
     public string TimeZoneText => _appState.RequireActiveLocation().TimeZoneId;
 
     public string NextPrayerName =>
-        _next is null ? _localization.Get("DayComplete") : _localization.GetPrayerName(_next.Event);
+        _next is null ? _localization.Get("DayComplete") : FormatPrayerName(_next.Event);
 
     public string NextPrayerTime =>
         _next is null ? "—" : LatinDigits.Time(_next.Time);
@@ -103,6 +129,7 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(NextPrayerName));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Disclaimer));
+        RefreshHijriAndQibla();
         RebuildRows(force: true);
     }
 
@@ -115,6 +142,7 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
         var date = DateOnly.FromDateTime(localNow.DateTime);
 
         _schedule = _engine.Calculate(date, location, profile);
+        RefreshHijriAndQibla(date, location);
         UpdateNext(localNow, location, profile, forceRows: true);
 
         OnPropertyChanged(nameof(LocationName));
@@ -136,6 +164,46 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
         _timer.Stop();
         _timer.Tick -= OnTick;
         _appState.SettingsChanged -= OnSettingsChanged;
+    }
+
+    private void RefreshHijriAndQibla()
+    {
+        var location = _appState.RequireActiveLocation();
+        var tz = KnownLocations.ResolveTimeZone(location.TimeZoneId);
+        var local = TimeZoneInfo.ConvertTime(_appState.Now, tz);
+        var date = DateOnly.FromDateTime(local.DateTime);
+        RefreshHijriAndQibla(date, location);
+    }
+
+    private void RefreshHijriAndQibla(DateOnly date, LocationProfile location)
+    {
+        var offset = HijriConverter.ClampDayOffset(_appState.Settings.HijriDayOffset);
+        var hijri = HijriConverter.FromGregorian(date, offset);
+        var monthName = _localization.Get($"Hijri.Month.{hijri.Month}");
+        HijriDateText = LatinDigits.Hijri(hijri.Day, monthName, hijri.Year);
+        IsRamadan = hijri.IsRamadan;
+        OnPropertyChanged(nameof(HijriDateText));
+
+        var qibla = QiblaCalculator.Calculate(location.Latitude, location.Longitude);
+        if (qibla.IsAtKaaba)
+        {
+            QiblaBearingText = _localization.Get("QiblaAtKaaba");
+            QiblaDistanceText = LatinDigits.Number(0, "0") + " " + _localization.Get("QiblaKm");
+        }
+        else
+        {
+            var compass = _localization.Get("Compass." + QiblaCalculator.CompassOctantKey(qibla.BearingDegrees));
+            var degrees = LatinDigits.Number(qibla.BearingDegrees, "0");
+            QiblaBearingText = string.Format(
+                System.Globalization.CultureInfo.InvariantCulture,
+                _localization.Get("QiblaBearingFormat"),
+                degrees,
+                compass);
+            QiblaDistanceText = LatinDigits.Number(qibla.DistanceKm, "0") + " " + _localization.Get("QiblaKm");
+        }
+
+        OnPropertyChanged(nameof(QiblaBearingText));
+        OnPropertyChanged(nameof(QiblaDistanceText));
     }
 
     private void UpdateNext(
@@ -193,15 +261,29 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
         _markedNext = nextKey;
         Rows.Clear();
 
-        foreach (var key in new[]
-                 {
-                     PrayerEvent.Fajr,
-                     PrayerEvent.Sunrise,
-                     PrayerEvent.Dhuhr,
-                     PrayerEvent.Asr,
-                     PrayerEvent.Maghrib,
-                     PrayerEvent.Isha
-                 })
+        IReadOnlyList<PrayerEvent> order = IsRamadan
+            ?
+            [
+                PrayerEvent.Imsak,
+                PrayerEvent.Fajr,
+                PrayerEvent.Sunrise,
+                PrayerEvent.Dhuhr,
+                PrayerEvent.Asr,
+                PrayerEvent.Maghrib,
+                PrayerEvent.Isha,
+                PrayerEvent.Midnight
+            ]
+            :
+            [
+                PrayerEvent.Fajr,
+                PrayerEvent.Sunrise,
+                PrayerEvent.Dhuhr,
+                PrayerEvent.Asr,
+                PrayerEvent.Maghrib,
+                PrayerEvent.Isha
+            ];
+
+        foreach (var key in order)
         {
             if (!_schedule.Times.TryGetValue(key, out var time))
             {
@@ -209,11 +291,21 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
             }
 
             Rows.Add(new PrayerTimeRow(
-                _localization.GetPrayerName(key),
+                FormatPrayerName(key),
                 LatinDigits.Time(time),
                 LatinDigits.Time(time, "HH:mm:ss"),
                 IsNext: nextKey == key));
         }
+    }
+
+    private string FormatPrayerName(PrayerEvent prayer)
+    {
+        if (IsRamadan && prayer == PrayerEvent.Maghrib)
+        {
+            return _localization.Get("Prayer.MaghribIftar");
+        }
+
+        return _localization.GetPrayerName(prayer);
     }
 
     private void OnTick(object? sender, object e)

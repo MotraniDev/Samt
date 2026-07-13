@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Samt.Core.Domain;
 using Samt.Core.Locations;
 using Samt.Core.Notifications;
+using Samt.Core.Time;
 
 namespace Samt.Core.Storage;
 
@@ -108,7 +109,7 @@ public static class SettingsJson
             AsrMadhab = settings.AsrMadhab,
             AutoStartEnabled = settings.AutoStartEnabled,
             ShowMissedAlertOnResume = settings.ShowMissedAlertOnResume,
-            HijriDayOffset = settings.HijriDayOffset,
+            HijriDayOffset = HijriConverter.ClampDayOffset(settings.HijriDayOffset),
             Locations = locations,
             NotificationRules = settings.NotificationRules is { Count: > 0 }
                 ? UpgradeLegacyDefaultRules(settings.NotificationRules)

@@ -9,7 +9,7 @@ Local Windows prayer-times app (personal v1). Offline calculation, Arabic-first 
 | Project | Role |
 |---------|------|
 | `src/Samt.Core` | Domain model + offline prayer engine |
-| `src/Samt.App` | WinUI 3 shell (Today, Locations, Alerts, Diagnostics, Design lab) |
+| `src/Samt.App` | WinUI 3 shell (Today, Locations, Alerts, Adhkar, Diagnostics, Design lab) |
 | `tests/Samt.Core.Tests` | Unit tests (engine, rounding, fixtures) |
 | `tools/GenerateBaseline` | Regenerates Kennadsa regression CSV |
 | `testdata/kennadsa` | Comparison fixtures + source notes |
@@ -70,6 +70,7 @@ dotnet run --project src\Samt.App\Samt.App.csproj -p:Platform=x64
 - [x] **Phase 3** — tray icon, single-instance, notification host, prayer toasts (close hides to tray)
 - [x] **Phase 4** — adhan audio + overlay window (bottom dock @ start, top ribbon pre-alert; Design lab previews)
 - [x] **Phase 5** — advanced rules (general pre-alert + per-prayer exceptions), Friday/Jumu‘ah, Alerts settings page
+- [x] **Phase 6** — Hijri date + day offset, qibla bearing, Ramadan Imsak/Iftar on Today, light offline Adhkar page
 
 ## Agent skills (shortlist)
 

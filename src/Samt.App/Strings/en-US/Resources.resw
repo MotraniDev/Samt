@@ -9,6 +9,7 @@
   <data name="NavToday" xml:space="preserve"><value>Today</value></data>
   <data name="NavLocations" xml:space="preserve"><value>Locations</value></data>
   <data name="NavAlerts" xml:space="preserve"><value>Alerts</value></data>
+  <data name="NavAdhkar" xml:space="preserve"><value>Adhkar</value></data>
   <data name="NavDiagnostics" xml:space="preserve"><value>Diagnostics</value></data>
   <data name="NavDesignLab" xml:space="preserve"><value>Design lab</value></data>
   <data name="Language" xml:space="preserve"><value>Language</value></data>
@@ -75,4 +76,7 @@
   <data name="SuppressDhuhrOnFriday" xml:space="preserve"><value>Suppress Dhuhr alert on Friday (use Jumu'ah instead)</value></data>
   <data name="SaveAlerts" xml:space="preserve"><value>Save alerts</value></data>
   <data name="AlertsSaved" xml:space="preserve"><value>Notification rules saved.</value></data>
+  <data name="Qibla" xml:space="preserve"><value>Qibla</value></data>
+  <data name="RamadanBadge" xml:space="preserve"><value>Ramadan</value></data>
+  <data name="HijriDayOffset" xml:space="preserve"><value>Hijri day offset</value></data>
 </root>

@@ -33,6 +33,11 @@
                         <FontIcon Glyph="&#xEA8F;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem x:Name="NavAdhkar" Tag="adhkar">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8D7;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem x:Name="NavDiagnostics" Tag="diagnostics">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE9D9;" />
