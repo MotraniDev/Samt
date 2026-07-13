@@ -98,11 +98,6 @@
                             <FontIcon Glyph="&#xE787;" />
                         </NavigationViewItem.Icon>
                     </NavigationViewItem>
-                    <NavigationViewItem x:Name="NavSettings" Tag="settings">
-                        <NavigationViewItem.Icon>
-                            <FontIcon Glyph="&#xE713;" />
-                        </NavigationViewItem.Icon>
-                    </NavigationViewItem>
                     <NavigationViewItem x:Name="NavDiagnostics" Tag="diagnostics">
                         <NavigationViewItem.Icon>
                             <FontIcon Glyph="&#xE9D9;" />
@@ -111,6 +106,12 @@
                     <NavigationViewItem x:Name="NavDesignLab" Tag="designlab">
                         <NavigationViewItem.Icon>
                             <FontIcon Glyph="&#xE790;" />
+                        </NavigationViewItem.Icon>
+                    </NavigationViewItem>
+                    <!-- Settings last so primary destinations stay above preferences -->
+                    <NavigationViewItem x:Name="NavSettings" Tag="settings">
+                        <NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE713;" />
                         </NavigationViewItem.Icon>
                     </NavigationViewItem>
                 </NavigationView.MenuItems>

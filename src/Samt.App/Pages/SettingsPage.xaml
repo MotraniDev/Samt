@@ -184,6 +184,11 @@
                             LostFocus="SpecialDayTimeBox_OnLostFocus"
                             KeyDown="SpecialDayTimeBox_OnKeyDown" />
                     </StackPanel>
+                    <TextBlock x:Name="CalendarDeliveryLabel" Opacity="0.75" TextWrapping="Wrap" />
+                    <CheckBox x:Name="DeliveryToastCheck" Checked="CalendarDelivery_OnChanged" Unchecked="CalendarDelivery_OnChanged" />
+                    <CheckBox x:Name="DeliverySoundCheck" Checked="CalendarDelivery_OnChanged" Unchecked="CalendarDelivery_OnChanged" />
+                    <CheckBox x:Name="DeliverySilentWindowCheck" Checked="CalendarDelivery_OnChanged" Unchecked="CalendarDelivery_OnChanged" />
+                    <TextBlock x:Name="CalendarDeliveryHint" FontSize="12" Opacity="0.6" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
 

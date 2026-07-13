@@ -155,6 +155,19 @@ public sealed class AppSettings
     /// </summary>
     public IReadOnlyList<string> SpecialDayMutedIds { get; init; } = [];
 
+    /// <summary>Primary grid on the Calendar page (Hijri month or Gregorian month).</summary>
+    public CalendarPrimaryMode CalendarPrimaryMode { get; init; } = CalendarPrimaryMode.Hijri;
+
+    /// <summary>
+    /// Delivery for special-day and user calendar reminders (toast / sound / silent window).
+    /// Default: Windows notification only.
+    /// </summary>
+    public CalendarReminderDelivery CalendarReminderDelivery { get; init; }
+        = CalendarReminderDelivery.WindowsNotification;
+
+    /// <summary>User-authored calendar-day reminders (title, note, time, optional repeats).</summary>
+    public IReadOnlyList<UserCalendarReminder> UserCalendarReminders { get; init; } = [];
+
     public IReadOnlyList<LocationProfile> Locations { get; init; } = [];
     public IReadOnlyList<NotificationRule> NotificationRules { get; init; } = [];
     public AudioProfile DefaultAudio { get; init; } = new();
@@ -267,6 +280,9 @@ public sealed class AppSettings
         bool? specialDayCountrySetEnabled = null,
         string? specialDayReminderTime = null,
         IReadOnlyList<string>? specialDayMutedIds = null,
+        CalendarPrimaryMode? calendarPrimaryMode = null,
+        CalendarReminderDelivery? calendarReminderDelivery = null,
+        IReadOnlyList<UserCalendarReminder>? userCalendarReminders = null,
         IReadOnlyList<NotificationRule>? notificationRules = null,
         AudioProfile? defaultAudio = null,
         OverlayProfile? defaultOverlay = null,
@@ -306,6 +322,9 @@ public sealed class AppSettings
             SpecialDayCountrySetEnabled = specialDayCountrySetEnabled ?? SpecialDayCountrySetEnabled,
             SpecialDayReminderTime = specialDayReminderTime ?? SpecialDayReminderTime,
             SpecialDayMutedIds = specialDayMutedIds ?? SpecialDayMutedIds,
+            CalendarPrimaryMode = calendarPrimaryMode ?? CalendarPrimaryMode,
+            CalendarReminderDelivery = calendarReminderDelivery ?? CalendarReminderDelivery,
+            UserCalendarReminders = userCalendarReminders ?? UserCalendarReminders,
             Locations = locations ?? Locations,
             NotificationRules = notificationRules ?? NotificationRules,
             DefaultAudio = defaultAudio ?? DefaultAudio,

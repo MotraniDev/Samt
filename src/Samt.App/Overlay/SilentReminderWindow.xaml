@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Window
+    x:Class="Samt_App.Overlay.SilentReminderWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="SAMT">
+
+    <Border
+        x:Name="RootBorder"
+        Background="#0B1F33"
+        BorderBrush="#C4A35A"
+        BorderThickness="1"
+        Padding="20,16"
+        CornerRadius="12">
+        <StackPanel Spacing="8" MaxWidth="360">
+            <TextBlock
+                x:Name="TitleText"
+                FontSize="18"
+                FontWeight="SemiBold"
+                Foreground="#C4A35A"
+                TextWrapping="Wrap" />
+            <TextBlock
+                x:Name="NoteText"
+                FontSize="14"
+                Foreground="#F4EFE4"
+                Opacity="0.9"
+                TextWrapping="Wrap" />
+            <TextBlock
+                x:Name="TimeText"
+                FontSize="12"
+                Opacity="0.6"
+                Foreground="#E8E0D0" />
+            <Button
+                x:Name="DismissButton"
+                HorizontalAlignment="Stretch"
+                Margin="0,8,0,0"
+                Click="DismissButton_OnClick" />
+        </StackPanel>
+    </Border>
+</Window>

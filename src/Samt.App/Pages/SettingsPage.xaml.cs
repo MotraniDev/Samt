@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
+using Samt.Core.Domain;
 using Samt.Core.Formatting;
 using Samt.Core.Storage;
 using Samt.Core.Time;
@@ -18,7 +19,11 @@ namespace Samt_App.Pages;
 
 public sealed partial class SettingsPage : Page
 {
-    private bool _suppress;
+    /// <summary>
+    /// True until the first <see cref="SyncControlsFromSettings"/> finishes.
+    /// Prevents Slider/Toggle default values from writing opacity/settings on page construct.
+    /// </summary>
+    private bool _suppress = true;
     private const string GitHubUrl = "https://github.com/MotraniDev/Samt";
 
     public SettingsPage()
@@ -69,6 +74,11 @@ public sealed partial class SettingsPage : Page
         SpecialDayCountryToggle.OffContent = loc.Get("ToggleOff");
         SpecialDayCountryToggle.OnContent = loc.Get("ToggleOn");
         SpecialDayTimeLabel.Text = loc.Get("SpecialDayReminderTime");
+        CalendarDeliveryLabel.Text = loc.Get("CalendarReminderDelivery");
+        DeliveryToastCheck.Content = loc.Get("CalendarDeliveryToast");
+        DeliverySoundCheck.Content = loc.Get("CalendarDeliverySound");
+        DeliverySilentWindowCheck.Content = loc.Get("CalendarDeliverySilentWindow");
+        CalendarDeliveryHint.Text = loc.Get("CalendarDeliveryHint");
         AdhkarSectionHeader.Text = loc.Get("SettingsAdhkarSection");
         AdhkarSectionHint.Text = loc.Get("AdhkarSettingsHint");
         AboutSectionHeader.Text = loc.Get("SettingsAboutSection");
@@ -156,6 +166,10 @@ public sealed partial class SettingsPage : Page
             SpecialDayIslamicToggle.IsOn = settings.SpecialDayIslamicSetEnabled;
             SpecialDayCountryToggle.IsOn = settings.SpecialDayCountrySetEnabled;
             SpecialDayTimeBox.Text = LatinDigits.EnsureLatin(settings.SpecialDayReminderTime);
+            var delivery = settings.CalendarReminderDelivery;
+            DeliveryToastCheck.IsChecked = delivery.HasFlag(CalendarReminderDelivery.WindowsNotification);
+            DeliverySoundCheck.IsChecked = delivery.HasFlag(CalendarReminderDelivery.Sound);
+            DeliverySilentWindowCheck.IsChecked = delivery.HasFlag(CalendarReminderDelivery.SilentWindow);
             UpdateStatusText.Text = string.Empty;
         }
         finally
@@ -382,6 +396,47 @@ public sealed partial class SettingsPage : Page
         await App.State.UpdateAsync(s => s.With(specialDayReminderTime: time));
     }
 
+    private async void CalendarDelivery_OnChanged(object sender, RoutedEventArgs e)
+    {
+        if (_suppress || !IsLoaded)
+        {
+            return;
+        }
+
+        var delivery = CalendarReminderDelivery.None;
+        if (DeliveryToastCheck.IsChecked == true)
+        {
+            delivery |= CalendarReminderDelivery.WindowsNotification;
+        }
+
+        if (DeliverySoundCheck.IsChecked == true)
+        {
+            delivery |= CalendarReminderDelivery.Sound;
+        }
+
+        if (DeliverySilentWindowCheck.IsChecked == true)
+        {
+            delivery |= CalendarReminderDelivery.SilentWindow;
+        }
+
+        if (delivery == CalendarReminderDelivery.None)
+        {
+            // Keep at least one channel so reminders are not silently dropped.
+            delivery = CalendarReminderDelivery.WindowsNotification;
+            _suppress = true;
+            try
+            {
+                DeliveryToastCheck.IsChecked = true;
+            }
+            finally
+            {
+                _suppress = false;
+            }
+        }
+
+        await App.State.UpdateAsync(s => s.With(calendarReminderDelivery: delivery));
+    }
+
     private async void AdhkarMasterToggle_OnToggled(object sender, RoutedEventArgs e)
     {
         if (_suppress || !IsLoaded)
@@ -404,7 +459,9 @@ public sealed partial class SettingsPage : Page
 
     private async void WindowOpacitySlider_OnValueChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
-        if (_suppress)
+        // Never touch shell opacity until the page is live and controls are synced.
+        // (Slider default/min fires ValueChanged during InitializeComponent otherwise.)
+        if (_suppress || !IsLoaded)
         {
             return;
         }
@@ -424,11 +481,6 @@ public sealed partial class SettingsPage : Page
         }
 
         App.AdhkarReminders?.ApplyReaderOpacity(opacity);
-
-        if (!IsLoaded)
-        {
-            return;
-        }
 
         await App.State.UpdateAsync(s => s.With(windowOpacity: opacity));
     }

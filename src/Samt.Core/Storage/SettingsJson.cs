@@ -44,6 +44,9 @@ public static class SettingsJson
             SpecialDayCountrySetEnabled = false,
             SpecialDayReminderTime = "09:00",
             SpecialDayMutedIds = [],
+            CalendarPrimaryMode = CalendarPrimaryMode.Hijri,
+            CalendarReminderDelivery = CalendarReminderDelivery.WindowsNotification,
+            UserCalendarReminders = [],
             Locations =
             [
                 kennadsa,
@@ -154,6 +157,11 @@ public static class SettingsJson
             SpecialDayCountrySetEnabled = settings.SpecialDayCountrySetEnabled,
             SpecialDayReminderTime = NormalizeClockTime(settings.SpecialDayReminderTime, "09:00"),
             SpecialDayMutedIds = NormalizeSpecialDayMutedIds(settings.SpecialDayMutedIds),
+            CalendarPrimaryMode = Enum.IsDefined(settings.CalendarPrimaryMode)
+                ? settings.CalendarPrimaryMode
+                : CalendarPrimaryMode.Hijri,
+            CalendarReminderDelivery = NormalizeCalendarReminderDelivery(settings.CalendarReminderDelivery),
+            UserCalendarReminders = NormalizeUserCalendarReminders(settings.UserCalendarReminders),
             Locations = locations,
             NotificationRules = settings.NotificationRules is { Count: > 0 }
                 ? UpgradeLegacyDefaultRules(settings.NotificationRules)
@@ -219,6 +227,57 @@ public static class SettingsJson
             {
                 result.Add(id);
             }
+        }
+
+        return result;
+    }
+
+    private static CalendarReminderDelivery NormalizeCalendarReminderDelivery(CalendarReminderDelivery delivery)
+    {
+        // Strip unknown bits; if empty after strip, default to Windows notification.
+        var known = CalendarReminderDelivery.WindowsNotification
+                    | CalendarReminderDelivery.Sound
+                    | CalendarReminderDelivery.SilentWindow;
+        var cleaned = delivery & known;
+        return cleaned == CalendarReminderDelivery.None
+            ? CalendarReminderDelivery.WindowsNotification
+            : cleaned;
+    }
+
+    private static IReadOnlyList<UserCalendarReminder> NormalizeUserCalendarReminders(
+        IReadOnlyList<UserCalendarReminder>? items)
+    {
+        if (items is null || items.Count == 0)
+        {
+            return [];
+        }
+
+        var result = new List<UserCalendarReminder>();
+        foreach (var item in items)
+        {
+            if (item is null || string.IsNullOrWhiteSpace(item.Title))
+            {
+                continue;
+            }
+
+            var count = Math.Clamp(item.RepeatCount <= 0 ? 1 : item.RepeatCount, 1, 20);
+            var interval = Math.Clamp(item.IntervalMinutes, 0, 1440);
+            if (count > 1 && interval <= 0)
+            {
+                interval = 5;
+            }
+
+            result.Add(new UserCalendarReminder
+            {
+                Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
+                Title = item.Title.Trim(),
+                Note = item.Note?.Trim() ?? "",
+                CivilDate = item.CivilDate,
+                Time = NormalizeClockTime(item.Time, "09:00"),
+                RepeatCount = count,
+                IntervalMinutes = interval,
+                Enabled = item.Enabled
+            });
         }
 
         return result;

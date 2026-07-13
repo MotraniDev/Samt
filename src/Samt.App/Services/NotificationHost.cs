@@ -32,6 +32,7 @@ public sealed class NotificationHost : IDisposable
     private readonly HashSet<string> _missedReported = new(StringComparer.Ordinal);
     private IReadOnlyList<PlannedNotification> _plan = [];
     private IReadOnlyList<PlannedSpecialDayReminder> _specialPlan = [];
+    private IReadOnlyList<PlannedUserCalendarReminder> _userPlan = [];
     private DateOnly _planDate;
     private bool _disposed;
     private DateTimeOffset _lastTickLocal;
@@ -240,6 +241,7 @@ public sealed class NotificationHost : IDisposable
 
             FireDue(now);
             FireDueSpecialDays(now);
+            FireDueUserReminders(now);
             UpdateTrayTooltip(location, now);
             _lastTickLocal = now;
         }
@@ -408,18 +410,20 @@ public sealed class NotificationHost : IDisposable
                 _state.Settings.CalendarCountryOverride,
                 location.CountryCode);
             _specialPlan = SpecialDayReminderPlanner.Plan(now, _state.Settings, tz, country);
+            _userPlan = UserCalendarReminderPlanner.Plan(now, _state.Settings, tz);
 
             _planDate = today;
             _fired.Clear();
             UpdateTrayTooltip(location, now);
             LaunchLog.Write(
-                $"Plan rebuilt: {_plan.Count} prayer + {_specialPlan.Count} special for {today:yyyy-MM-dd}");
+                $"Plan rebuilt: {_plan.Count} prayer + {_specialPlan.Count} special + {_userPlan.Count} user for {today:yyyy-MM-dd}");
         }
         catch (Exception ex)
         {
             LaunchLog.Write($"RebuildPlan failed: {ex}");
             _plan = [];
             _specialPlan = [];
+            _userPlan = [];
         }
     }
 
@@ -475,7 +479,40 @@ public sealed class NotificationHost : IDisposable
         }
     }
 
-    /// <summary>Toast-only special-day fire — never overlay or adhan audio.</summary>
+    private void FireDueUserReminders(DateTimeOffset now)
+    {
+        foreach (var item in _userPlan)
+        {
+            if (_fired.Contains(item.Id))
+            {
+                continue;
+            }
+
+            if (item.FireAt > now)
+            {
+                continue;
+            }
+
+            if (now - item.FireAt > TimeSpan.FromMinutes(2))
+            {
+                _fired.Add(item.Id);
+                continue;
+            }
+
+            DispatchCalendarReminder(
+                item.Id,
+                item.Title,
+                string.IsNullOrWhiteSpace(item.Note)
+                    ? LatinDigits.Time(item.FireAt)
+                    : item.Note + " · " + LatinDigits.Time(item.FireAt),
+                item.Title,
+                item.Note,
+                LatinDigits.Time(item.FireAt));
+            _fired.Add(item.Id);
+        }
+    }
+
+    /// <summary>Special-day fire using configured calendar delivery (never prayer adhan overlay).</summary>
     private void DispatchSpecialDay(PlannedSpecialDayReminder item)
     {
         var title = _localization.Get("SpecialDayAlertTitle");
@@ -484,8 +521,73 @@ public sealed class NotificationHost : IDisposable
             _localization.Get("SpecialDayAlertBody"),
             label,
             LatinDigits.Time(item.FireAt));
-        _toasts.ShowText(title, body, tag: item.Id);
-        LaunchLog.Write($"Special-day toast: {item.Id}");
+        DispatchCalendarReminder(
+            item.Id,
+            title,
+            body,
+            label,
+            body,
+            LatinDigits.Time(item.FireAt));
+        LaunchLog.Write($"Special-day fire: {item.Id}");
+    }
+
+    private void DispatchCalendarReminder(
+        string tag,
+        string toastTitle,
+        string toastBody,
+        string windowTitle,
+        string windowNote,
+        string timeLabel)
+    {
+        var delivery = _state.Settings.CalendarReminderDelivery;
+        if (delivery == CalendarReminderDelivery.None)
+        {
+            delivery = CalendarReminderDelivery.WindowsNotification;
+        }
+
+        if (delivery.HasFlag(CalendarReminderDelivery.WindowsNotification))
+        {
+            _toasts.ShowText(toastTitle, toastBody, tag: tag);
+        }
+
+        if (delivery.HasFlag(CalendarReminderDelivery.Sound))
+        {
+            try
+            {
+                var cue = SoundLibraryService.ProfileForSoundId(_state.Settings.PreAlertSoundId);
+                if (cue.Source != AudioSource.Silent)
+                {
+                    _audio.Play(cue);
+                }
+            }
+            catch (Exception ex)
+            {
+                LaunchLog.Write($"Calendar reminder sound failed: {ex.Message}");
+            }
+        }
+
+        if (delivery.HasFlag(CalendarReminderDelivery.SilentWindow))
+        {
+            try
+            {
+                void Show()
+                {
+                    var win = new SilentReminderWindow(windowTitle, windowNote, timeLabel);
+                    win.Activate();
+                }
+
+                if (_dispatcher is not null && _dispatcher.TryEnqueue(Show))
+                {
+                    return;
+                }
+
+                Show();
+            }
+            catch (Exception ex)
+            {
+                LaunchLog.Write($"Silent reminder window failed: {ex.Message}");
+            }
+        }
     }
 
     private void Dispatch(

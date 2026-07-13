@@ -1,8 +1,11 @@
+using System.Globalization;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
+using Samt.Core.Domain;
 using Samt.Core.Formatting;
+using Samt.Core.Storage;
 using Samt_App.ViewModels;
 using Windows.UI;
 
@@ -23,6 +26,7 @@ public sealed partial class CalendarPage : Page
             if (e.PropertyName is nameof(CalendarViewModel.MonthTitle)
                 or nameof(CalendarViewModel.Subtitle)
                 or nameof(CalendarViewModel.Days)
+                or nameof(CalendarViewModel.ModeToggleLabel)
                 or null)
             {
                 SyncHeader();
@@ -44,9 +48,11 @@ public sealed partial class CalendarPage : Page
         TitleText.Text = loc.Get("NavCalendar");
         DisclaimerText.Text = loc.Get("CalendarDisclaimer");
         TodayButton.Content = loc.Get("CalendarToday");
+        ModeToggleButton.Content = ViewModel.ModeToggleLabel;
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(PrevButton, loc.Get("CalendarPrevMonth"));
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NextButton, loc.Get("CalendarNextMonth"));
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(TodayButton, loc.Get("CalendarToday"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(ModeToggleButton, loc.Get("CalendarToggleMode"));
         ViewModel.Refresh();
         SyncHeader();
         RebuildGrid();
@@ -56,6 +62,7 @@ public sealed partial class CalendarPage : Page
     {
         MonthTitleText.Text = ViewModel.MonthTitle;
         SubtitleText.Text = ViewModel.Subtitle;
+        ModeToggleButton.Content = ViewModel.ModeToggleLabel;
     }
 
     private void RebuildGrid()
@@ -96,11 +103,9 @@ public sealed partial class CalendarPage : Page
         for (var i = 0; i < days.Count; i++)
         {
             var day = days[i];
-            var col = i % 7;
-            var row = i / 7;
             var cell = BuildDayCell(day);
-            Grid.SetColumn(cell, col);
-            Grid.SetRow(cell, row);
+            Grid.SetColumn(cell, i % 7);
+            Grid.SetRow(cell, i / 7);
             DaysGrid.Children.Add(cell);
         }
     }
@@ -133,7 +138,7 @@ public sealed partial class CalendarPage : Page
         var stack = new StackPanel { Spacing = 2 };
         stack.Children.Add(new TextBlock
         {
-            Text = day.HijriDayText,
+            Text = day.PrimaryDayText,
             FontSize = 20,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = (Brush)Application.Current.Resources["SamtGoldBrush"],
@@ -142,7 +147,7 @@ public sealed partial class CalendarPage : Page
         });
         stack.Children.Add(new TextBlock
         {
-            Text = day.GregorianText,
+            Text = day.SecondaryText,
             FontSize = 11,
             Opacity = 0.7,
             TextWrapping = TextWrapping.Wrap,
@@ -163,9 +168,14 @@ public sealed partial class CalendarPage : Page
             });
         }
 
-        if (day.ShowIslamicDot || day.ShowCountryDot)
+        if (day.ShowIslamicDot || day.ShowCountryDot || day.ShowUserDot)
         {
-            var dots = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Margin = new Thickness(0, 4, 0, 0) };
+            var dots = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 4,
+                Margin = new Thickness(0, 4, 0, 0)
+            };
             if (day.ShowIslamicDot)
             {
                 dots.Children.Add(new Ellipse
@@ -186,6 +196,16 @@ public sealed partial class CalendarPage : Page
                 });
             }
 
+            if (day.ShowUserDot)
+            {
+                dots.Children.Add(new Ellipse
+                {
+                    Width = 6,
+                    Height = 6,
+                    Fill = new SolidColorBrush(Color.FromArgb(0xFF, 0x7E, 0xB6, 0xFF))
+                });
+            }
+
             stack.Children.Add(dots);
         }
 
@@ -201,7 +221,7 @@ public sealed partial class CalendarPage : Page
         var hijriLine = $"{LatinDigits.Number(day.Hijri.Day)} {hijriName} {LatinDigits.Number(day.Hijri.Year)}";
         var gregLine = LatinDigits.Date(day.CivilDate, "dddd, d MMMM yyyy");
 
-        var body = new StackPanel { Spacing = 10, MinWidth = 280 };
+        var body = new StackPanel { Spacing = 10, MinWidth = 300 };
         body.Children.Add(new TextBlock
         {
             Text = hijriLine,
@@ -259,26 +279,96 @@ public sealed partial class CalendarPage : Page
                 TextWrapping = TextWrapping.Wrap
             });
         }
-        else
+
+        // Existing user reminders
+        var existing = ViewModel.RemindersForDay(day.CivilDate);
+        if (existing.Count > 0)
         {
             body.Children.Add(new TextBlock
             {
-                Text = loc.Get("CalendarOrdinaryDay"),
-                Opacity = 0.7,
-                TextWrapping = TextWrapping.Wrap
+                Text = loc.Get("CalendarUserReminders"),
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Margin = new Thickness(0, 8, 0, 0)
             });
+            foreach (var rem in existing)
+            {
+                var row = new Grid { ColumnSpacing = 8 };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                var text = new TextBlock
+                {
+                    Text = $"{LatinDigits.EnsureLatin(rem.Time)} · {rem.Title}"
+                           + (string.IsNullOrWhiteSpace(rem.Note) ? "" : $" — {rem.Note}")
+                           + (rem.RepeatCount > 1
+                               ? $" ({LatinDigits.Number(rem.RepeatCount)}× / {LatinDigits.Number(rem.IntervalMinutes)} min)"
+                               : ""),
+                    TextWrapping = TextWrapping.Wrap,
+                    Style = (Style)Application.Current.Resources["LatinDigitsTextBlock"]
+                };
+                Grid.SetColumn(text, 0);
+                row.Children.Add(text);
+                var del = new Button { Content = "×", Tag = rem.Id, MinWidth = 36 };
+                var id = rem.Id;
+                del.Click += async (_, _) =>
+                {
+                    await ViewModel.DeleteUserReminderAsync(id);
+                };
+                Grid.SetColumn(del, 1);
+                row.Children.Add(del);
+                body.Children.Add(row);
+            }
         }
+
+        // Add form
+        body.Children.Add(new TextBlock
+        {
+            Text = loc.Get("CalendarAddReminder"),
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Margin = new Thickness(0, 10, 0, 0)
+        });
+        var titleBox = new TextBox { PlaceholderText = loc.Get("CalendarReminderTitle") };
+        var noteBox = new TextBox { PlaceholderText = loc.Get("CalendarReminderNote") };
+        var timeBox = new TextBox
+        {
+            Text = "09:00",
+            PlaceholderText = "09:00",
+            Style = (Style)Application.Current.Resources["LatinDigitsTextBox"]
+        };
+        var repeatBox = new TextBox
+        {
+            Text = "1",
+            PlaceholderText = loc.Get("CalendarReminderRepeatCount"),
+            Style = (Style)Application.Current.Resources["LatinDigitsTextBox"]
+        };
+        var intervalBox = new TextBox
+        {
+            Text = "5",
+            PlaceholderText = loc.Get("CalendarReminderInterval"),
+            Style = (Style)Application.Current.Resources["LatinDigitsTextBox"]
+        };
+        body.Children.Add(titleBox);
+        body.Children.Add(noteBox);
+        body.Children.Add(Labeled(loc.Get("SpecialDayReminderTime"), timeBox));
+        body.Children.Add(Labeled(loc.Get("CalendarReminderRepeatCount"), repeatBox));
+        body.Children.Add(Labeled(loc.Get("CalendarReminderInterval"), intervalBox));
 
         var dialog = new ContentDialog
         {
             Title = loc.Get("CalendarDaySheetTitle"),
-            Content = body,
+            Content = new ScrollViewer
+            {
+                Content = body,
+                MaxHeight = 520,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            },
+            PrimaryButtonText = loc.Get("CalendarSaveReminder"),
             CloseButtonText = loc.Get("CalendarClose"),
+            DefaultButton = ContentDialogButton.Primary,
             XamlRoot = XamlRoot,
             FlowDirection = loc.FlowDirection
         };
 
-        await dialog.ShowAsync();
+        var result = await dialog.ShowAsync();
 
         if (day.SpecialDay is { } specialDay && muteToggle is not null)
         {
@@ -287,9 +377,50 @@ public sealed partial class CalendarPage : Page
             if (shouldMute != currentlyMuted)
             {
                 await ViewModel.SetDayMutedAsync(specialDay, shouldMute);
-                RebuildGrid();
             }
         }
+
+        if (result == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(titleBox.Text))
+        {
+            var time = SettingsJson.NormalizeClockTime(timeBox.Text, "09:00");
+            var repeats = ParseInt(repeatBox.Text, 1, 1, 20);
+            var interval = ParseInt(intervalBox.Text, 5, 0, 1440);
+            await ViewModel.AddUserReminderAsync(
+                day.CivilDate,
+                titleBox.Text,
+                noteBox.Text ?? "",
+                time,
+                repeats,
+                interval);
+        }
+
+        RebuildGrid();
+    }
+
+    private static StackPanel Labeled(string label, FrameworkElement control)
+    {
+        var panel = new StackPanel { Spacing = 4 };
+        panel.Children.Add(new TextBlock { Text = label, Opacity = 0.75, FontSize = 12 });
+        panel.Children.Add(control);
+        return panel;
+    }
+
+    private static int ParseInt(string? text, int fallback, int min, int max)
+    {
+        var raw = LatinDigits.EnsureLatin(text ?? "").Trim();
+        if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
+        {
+            n = fallback;
+        }
+
+        return Math.Clamp(n, min, max);
+    }
+
+    private async void ModeToggleButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await ViewModel.ToggleModeAsync();
+        SyncHeader();
+        RebuildGrid();
     }
 
     private void PrevButton_OnClick(object sender, RoutedEventArgs e)

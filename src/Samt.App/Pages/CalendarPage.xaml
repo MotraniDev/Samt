@@ -31,6 +31,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Button x:Name="PrevButton" Grid.Column="0" MinWidth="44" Click="PrevButton_OnClick" Content="‹" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
@@ -50,8 +51,9 @@
                         TextWrapping="Wrap"
                         HorizontalAlignment="Center" />
                 </StackPanel>
-                <Button x:Name="TodayButton" Grid.Column="2" Click="TodayButton_OnClick" MinWidth="72" />
-                <Button x:Name="NextButton" Grid.Column="3" MinWidth="44" Click="NextButton_OnClick" Content="›" />
+                <Button x:Name="ModeToggleButton" Grid.Column="2" Click="ModeToggleButton_OnClick" MinWidth="88" />
+                <Button x:Name="TodayButton" Grid.Column="3" Click="TodayButton_OnClick" MinWidth="72" />
+                <Button x:Name="NextButton" Grid.Column="4" MinWidth="44" Click="NextButton_OnClick" Content="›" />
             </Grid>
 
             <Grid x:Name="WeekdayHeaderGrid" ColumnSpacing="6" />
