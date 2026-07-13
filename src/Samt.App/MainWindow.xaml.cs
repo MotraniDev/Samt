@@ -100,6 +100,14 @@ public sealed partial class MainWindow : Window
         NavAdhkar.Content = loc.Get("NavAdhkar");
         NavDiagnostics.Content = loc.Get("NavDiagnostics");
         NavDesignLab.Content = loc.Get("NavDesignLab");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavToday, loc.Get("NavToday"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavLocations, loc.Get("NavLocations"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavAlerts, loc.Get("NavAlerts"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavAdhkar, loc.Get("NavAdhkar"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavDiagnostics, loc.Get("NavDiagnostics"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavDesignLab, loc.Get("NavDesignLab"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(LanguageBox, loc.Get("Language"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(ThemeBox, loc.Get("Theme"));
         ThemeSystemItem.Content = loc.Get("ThemeSystem");
         ThemeLightItem.Content = loc.Get("ThemeLight");
         ThemeDarkItem.Content = loc.Get("ThemeDark");

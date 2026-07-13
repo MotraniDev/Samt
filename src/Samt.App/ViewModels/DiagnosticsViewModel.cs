@@ -18,6 +18,9 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
     private CalculationProfile _method;
     private AsrMadhab _asrMadhab;
     private int _hijriDayOffset;
+    private bool _autoStartEnabled;
+    private bool _showMissedAlertOnResume;
+    private string _processStatusText = string.Empty;
     private DateTimeOffset _selectedDate = DateTimeOffset.Now;
     private bool _suppressPersist;
 
@@ -30,9 +33,12 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         _method = CalculationMethods.GetById(appState.Settings.ActiveCalculationProfileId);
         _asrMadhab = appState.Settings.AsrMadhab;
         _hijriDayOffset = HijriConverter.ClampDayOffset(appState.Settings.HijriDayOffset);
+        _autoStartEnabled = appState.Settings.AutoStartEnabled;
+        _showMissedAlertOnResume = appState.Settings.ShowMissedAlertOnResume;
         Locations = appState.Settings.Locations.ToList();
         Methods = CalculationMethods.AllPresets.ToList();
         Recalculate();
+        RefreshProcessStatus();
         _appState.SettingsChanged += (_, _) =>
         {
             if (!_suppressPersist)
@@ -136,6 +142,61 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool AutoStartEnabled
+    {
+        get => _autoStartEnabled;
+        set
+        {
+            if (_autoStartEnabled == value)
+            {
+                return;
+            }
+
+            _autoStartEnabled = value;
+            OnPropertyChanged();
+            PersistQuietly(s => s.With(autoStartEnabled: value));
+            try
+            {
+                AutoStartService.Apply(value);
+            }
+            catch (Exception ex)
+            {
+                Helpers.LaunchLog.Write($"Diagnostics AutoStart apply failed: {ex.Message}");
+            }
+        }
+    }
+
+    public bool ShowMissedAlertOnResume
+    {
+        get => _showMissedAlertOnResume;
+        set
+        {
+            if (_showMissedAlertOnResume == value)
+            {
+                return;
+            }
+
+            _showMissedAlertOnResume = value;
+            OnPropertyChanged();
+            PersistQuietly(s => s.With(showMissedAlertOnResume: value));
+        }
+    }
+
+    public string ProcessStatusText
+    {
+        get => _processStatusText;
+        private set
+        {
+            if (_processStatusText == value)
+            {
+                return;
+            }
+
+            _processStatusText = value;
+            OnPropertyChanged();
+        }
+    }
+
     public string LatitudeText => LatinDigits.Number(_location.Latitude, "0.0000");
     public string LongitudeText => LatinDigits.Number(_location.Longitude, "0.0000");
     public string TimeZoneText => _location.TimeZoneId;
@@ -147,6 +208,30 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(PhaseBanner));
         OnPropertyChanged(nameof(Disclaimer));
         Recalculate();
+        RefreshProcessStatus();
+    }
+
+    public void RefreshProcessStatus()
+    {
+        try
+        {
+            using var proc = System.Diagnostics.Process.GetCurrentProcess();
+            proc.Refresh();
+            var mb = proc.WorkingSet64 / (1024.0 * 1024.0);
+            var planned = App.Notifications?.PlannedCount ?? 0;
+            var run = AutoStartService.IsRegistered()
+                ? _localization.Get("AutoStartRegisteredYes")
+                : _localization.Get("AutoStartRegisteredNo");
+            ProcessStatusText = string.Format(
+                _localization.Get("ProcessStatusFormat"),
+                LatinDigits.Number(mb, "0.0"),
+                LatinDigits.Number(planned),
+                run);
+        }
+        catch (Exception ex)
+        {
+            ProcessStatusText = ex.Message;
+        }
     }
 
     public void Recalculate()
@@ -192,14 +277,19 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         _method = CalculationMethods.GetById(_appState.Settings.ActiveCalculationProfileId);
         _asrMadhab = _appState.Settings.AsrMadhab;
         _hijriDayOffset = HijriConverter.ClampDayOffset(_appState.Settings.HijriDayOffset);
+        _autoStartEnabled = _appState.Settings.AutoStartEnabled;
+        _showMissedAlertOnResume = _appState.Settings.ShowMissedAlertOnResume;
         OnPropertyChanged(nameof(SelectedLocation));
         OnPropertyChanged(nameof(SelectedMethod));
         OnPropertyChanged(nameof(SelectedAsrMadhab));
         OnPropertyChanged(nameof(HijriDayOffset));
+        OnPropertyChanged(nameof(AutoStartEnabled));
+        OnPropertyChanged(nameof(ShowMissedAlertOnResume));
         OnPropertyChanged(nameof(LatitudeText));
         OnPropertyChanged(nameof(LongitudeText));
         OnPropertyChanged(nameof(TimeZoneText));
         Recalculate();
+        RefreshProcessStatus();
     }
 
     private void PersistQuietly(Func<AppSettings, AppSettings> mutate)

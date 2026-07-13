@@ -71,6 +71,7 @@ dotnet run --project src\Samt.App\Samt.App.csproj -p:Platform=x64
 - [x] **Phase 4** — adhan audio + overlay window (bottom dock @ start, top ribbon pre-alert; Design lab previews)
 - [x] **Phase 5** — advanced rules (general pre-alert + per-prayer exceptions), Friday/Jumu‘ah, Alerts settings page
 - [x] **Phase 6** — Hijri date + day offset, qibla bearing, Ramadan Imsak/Iftar on Today, light offline Adhkar page
+- [x] **Phase 7** — auto-start, missed-on-resume, diagnostics status, a11y names, personal SETUP + release notes
 
 ## Agent skills (shortlist)
 
@@ -79,6 +80,10 @@ Configured in `AGENTS.md` + `docs/agents/`. Prefer: **frontend-design**, **rtl**
 ## Settings path
 
 `%LocalAppData%\SAMT\settings.json` (with `settings.bak` backup)
+
+## Personal setup
+
+See [docs/SETUP.md](docs/SETUP.md) for install, auto-start, tray behavior, and a short soak checklist.
 
 ## Display digits
 

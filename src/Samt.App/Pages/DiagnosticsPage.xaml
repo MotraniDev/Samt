@@ -111,6 +111,28 @@
                     FontSize="12"
                     TextWrapping="Wrap" />
             </StackPanel>
+
+            <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="12">
+                <StackPanel Spacing="10">
+                    <TextBlock x:Name="AppOptionsHeader" FontWeight="SemiBold" />
+                    <ToggleSwitch
+                        x:Name="AutoStartToggle"
+                        Toggled="AutoStartToggle_OnToggled" />
+                    <ToggleSwitch
+                        x:Name="MissedResumeToggle"
+                        Toggled="MissedResumeToggle_OnToggled" />
+                    <TextBlock
+                        x:Name="ProcessStatusText"
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        Opacity="0.75"
+                        FontSize="12"
+                        TextWrapping="Wrap"
+                        Text="{x:Bind ViewModel.ProcessStatusText, Mode=OneWay}" />
+                    <Button x:Name="RefreshStatusButton" HorizontalAlignment="Stretch"
+                            Click="RefreshStatusButton_OnClick" />
+                </StackPanel>
+            </Border>
         </StackPanel>
 
         <Border Grid.Row="3" Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"

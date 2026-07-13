@@ -254,4 +254,57 @@ public class NotificationPlannerTests
         Assert.Equal(10, asr.OffsetMinutes);
         Assert.Equal(NotificationChannel.WindowsToast, asr.Channels);
     }
+
+    [Fact]
+    public void PlanMissed_ReturnsPastStartsOutsideGrace()
+    {
+        var date = new DateOnly(2025, 1, 15);
+        var schedule = _engine.Calculate(date, KnownLocations.Kennadsa, CalculationMethods.Algeria);
+        // After Asr; Fajr/Dhuhr are long past, Maghrib still future
+        var now = schedule.Asr.AddMinutes(5);
+        var since = new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), schedule.Asr.Offset);
+
+        var rules = new[]
+        {
+            new NotificationRule
+            {
+                Id = Guid.NewGuid(),
+                Kind = NotificationEventKind.PrayerStart,
+                TargetPrayers = [PrayerEvent.Fajr, PrayerEvent.Dhuhr, PrayerEvent.Asr, PrayerEvent.Maghrib, PrayerEvent.Isha],
+                Channels = NotificationChannel.WindowsToast,
+                Enabled = true
+            }
+        };
+
+        var missed = _planner.PlanMissed(schedule, rules, now, since);
+        Assert.Contains(missed, p => p.Prayer == PrayerEvent.Fajr && p.Kind == PlannedNotificationKind.PrayerStart);
+        Assert.Contains(missed, p => p.Prayer == PrayerEvent.Dhuhr);
+        // Asr was 5 min ago — outside default 2 min grace → missed
+        Assert.Contains(missed, p => p.Prayer == PrayerEvent.Asr);
+        Assert.DoesNotContain(missed, p => p.Prayer == PrayerEvent.Maghrib);
+        Assert.All(missed, p => Assert.True(p.FireAt <= now - TimeSpan.FromMinutes(2)));
+    }
+
+    [Fact]
+    public void PlanMissed_EmptyWhenWindowTooNarrow()
+    {
+        var date = new DateOnly(2025, 1, 15);
+        var schedule = _engine.Calculate(date, KnownLocations.Kennadsa, CalculationMethods.Algeria);
+        var now = schedule.Dhuhr;
+        var rules = new[]
+        {
+            new NotificationRule
+            {
+                Id = Guid.NewGuid(),
+                Kind = NotificationEventKind.PrayerStart,
+                TargetPrayers = [PrayerEvent.Dhuhr],
+                Channels = NotificationChannel.WindowsToast,
+                Enabled = true
+            }
+        };
+
+        // since is after upper bound (now - 2m)
+        var missed = _planner.PlanMissed(schedule, rules, now, since: now.AddMinutes(-1));
+        Assert.Empty(missed);
+    }
 }

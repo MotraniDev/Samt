@@ -19,6 +19,7 @@ public partial class App : Application
     private OverlayService? _overlay;
     private SingleInstanceService? _singleInstance;
     private bool _exitRequested;
+    private bool _startMinimized;
 
     public App()
     {
@@ -43,6 +44,7 @@ public partial class App : Application
     public static ThemeService Theme { get; private set; } = null!;
     public static AppState State { get; private set; } = null!;
     public static Window? MainWindow { get; private set; }
+    public static NotificationHost? Notifications { get; private set; }
 
     public static bool IsExitRequested { get; private set; }
 
@@ -51,6 +53,9 @@ public partial class App : Application
         LaunchLog.Write("OnLaunched begin");
         try
         {
+            var cliArgs = Environment.GetCommandLineArgs();
+            _startMinimized = AutoStartService.IsRequestedFromCommandLine(cliArgs);
+
             _singleInstance = new SingleInstanceService();
             if (!_singleInstance.TryClaimAsPrimary())
             {
@@ -90,6 +95,20 @@ public partial class App : Application
 
             LatinDigits.ApplyProcessDefaults(Localization.CurrentLanguage);
 
+            // Keep Run key in sync with settings (unpackaged personal install).
+            AutoStartService.Apply(State.Settings.AutoStartEnabled);
+            State.SettingsChanged += (_, _) =>
+            {
+                try
+                {
+                    AutoStartService.Apply(State.Settings.AutoStartEnabled);
+                }
+                catch (Exception ex)
+                {
+                    LaunchLog.Write($"AutoStart on settings change failed: {ex.Message}");
+                }
+            };
+
             _tray = new TrayIconService();
             _tray.Initialize();
             _tray.OpenRequested += (_, _) => ShowMainWindow();
@@ -107,7 +126,14 @@ public partial class App : Application
             WireCloseToTray(_window);
             WindowActivation.ShowCentered(_window);
 
+            if (_startMinimized)
+            {
+                HideMainWindowToTray();
+                LaunchLog.Write("Started minimized (--autostart)");
+            }
+
             _notificationHost = new NotificationHost(State, Localization, _toasts, _tray, _overlay, _audio);
+            Notifications = _notificationHost;
             _notificationHost.Start();
 
             LaunchLog.Write("Window shown; notification host started (toast + overlay + audio)");
@@ -142,6 +168,26 @@ public partial class App : Application
         }
 
         WindowActivation.ShowCentered(MainWindow);
+    }
+
+    private void HideMainWindowToTray()
+    {
+        try
+        {
+            if (_window is null)
+            {
+                return;
+            }
+
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+            var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
+            appWindow.Hide();
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"HideMainWindowToTray failed: {ex.Message}");
+        }
     }
 
     /// <summary>Design-lab / debug: show a sample prayer notification.</summary>

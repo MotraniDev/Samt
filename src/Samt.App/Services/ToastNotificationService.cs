@@ -36,6 +36,12 @@ public sealed class ToastNotificationService
         var body = planned.Kind == PlannedNotificationKind.BeforePrayer
             ? $"{prayerName} — {time} (−{LatinDigits.Number(planned.OffsetMinutes ?? 0)} min)"
             : $"{prayerName} — {time}";
+        ShowText(title, body, planned.Id);
+    }
+
+    /// <summary>Simple title/body toast (missed-resume summary, diagnostics).</summary>
+    public void ShowText(string title, string body, string? tag = null)
+    {
         title = LatinDigits.EnsureLatin(title);
         body = LatinDigits.EnsureLatin(body);
 
@@ -48,10 +54,10 @@ public sealed class ToastNotificationService
                     .AddText(body)
                     .BuildNotification();
 
-                notification.Tag = planned.Id;
+                notification.Tag = tag ?? ("samt-" + Guid.NewGuid().ToString("N")[..8]);
                 notification.Group = "samt-prayer";
                 AppNotificationManager.Default.Show(notification);
-                LaunchLog.Write($"Toast shown: {planned.Id}");
+                LaunchLog.Write($"Toast shown: {notification.Tag}");
                 return;
             }
             catch (Exception ex)

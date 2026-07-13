@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using Microsoft.Win32;
 using Samt.Core.Calculation;
 using Samt.Core.Domain;
 using Samt.Core.Formatting;
@@ -26,9 +27,12 @@ public sealed class NotificationHost : IDisposable
     private readonly NotificationPlanner _planner = new();
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(15) };
     private readonly HashSet<string> _fired = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _missedReported = new(StringComparer.Ordinal);
     private IReadOnlyList<PlannedNotification> _plan = [];
     private DateOnly _planDate;
     private bool _disposed;
+    private DateTimeOffset _lastTickLocal;
+    private Microsoft.UI.Dispatching.DispatcherQueue? _dispatcher;
 
     public NotificationHost(
         AppState state,
@@ -46,11 +50,26 @@ public sealed class NotificationHost : IDisposable
         _audio = audio;
     }
 
+    /// <summary>Remaining future planned events (for diagnostics).</summary>
+    public int PlannedCount => _plan.Count;
+
     public void Start()
     {
+        _dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
         _state.SettingsChanged += OnSettingsChanged;
         _timer.Tick += OnTick;
+        try
+        {
+            SystemEvents.PowerModeChanged += OnPowerModeChanged;
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"PowerMode subscribe failed: {ex.Message}");
+        }
+
         RebuildPlan();
+        _lastTickLocal = ResolveLocalNow(out _, out _);
+        ReportMissedSinceDayStart();
         _timer.Start();
         LaunchLog.Write($"NotificationHost started with {_plan.Count} planned events");
     }
@@ -93,7 +112,64 @@ public sealed class NotificationHost : IDisposable
         _timer.Stop();
         _timer.Tick -= OnTick;
         _state.SettingsChanged -= OnSettingsChanged;
+        try
+        {
+            SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+        }
+        catch
+        {
+            // ignore
+        }
         // Overlay/audio lifetime is owned by App.
+    }
+
+    private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+    {
+        if (e.Mode != PowerModes.Resume)
+        {
+            return;
+        }
+
+        void Run()
+        {
+            try
+            {
+                HandleResume();
+            }
+            catch (Exception ex)
+            {
+                LaunchLog.Write($"Resume handle failed: {ex.Message}");
+            }
+        }
+
+        try
+        {
+            if (_dispatcher is not null && _dispatcher.TryEnqueue(Run))
+            {
+                return;
+            }
+
+            Run();
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"OnPowerModeChanged failed: {ex.Message}");
+        }
+    }
+
+    private void HandleResume()
+    {
+        var now = ResolveLocalNow(out _, out _);
+        var since = _lastTickLocal == default ? now.Date : _lastTickLocal;
+        if (since > now)
+        {
+            since = now.Date;
+        }
+
+        RebuildPlan();
+        ReportMissed(since, now);
+        _lastTickLocal = now;
+        LaunchLog.Write("NotificationHost handled resume");
     }
 
     private void OnSettingsChanged(object? sender, EventArgs e)
@@ -128,15 +204,104 @@ public sealed class NotificationHost : IDisposable
             var today = DateOnly.FromDateTime(now.DateTime);
             if (today != _planDate)
             {
+                _missedReported.Clear();
                 RebuildPlan();
+            }
+
+            // Large gap between ticks ≈ sleep/hibernate without PowerMode (or suspended process).
+            if (_lastTickLocal != default && now - _lastTickLocal > TimeSpan.FromMinutes(3))
+            {
+                ReportMissed(_lastTickLocal, now);
             }
 
             FireDue(now);
             UpdateTrayTooltip(location, now);
+            _lastTickLocal = now;
         }
         catch (Exception ex)
         {
             LaunchLog.Write($"NotificationHost tick error: {ex.Message}");
+        }
+    }
+
+    private void ReportMissedSinceDayStart()
+    {
+        try
+        {
+            var now = ResolveLocalNow(out _, out _);
+            ReportMissed(now.Date, now);
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"ReportMissedSinceDayStart failed: {ex.Message}");
+        }
+    }
+
+    private void ReportMissed(DateTimeOffset since, DateTimeOffset now)
+    {
+        if (!_state.Settings.ShowMissedAlertOnResume)
+        {
+            return;
+        }
+
+        try
+        {
+            var location = _state.RequireActiveLocation();
+            var profile = _state.RequireCalculationProfile();
+            var today = DateOnly.FromDateTime(now.DateTime);
+            var schedule = _engine.Calculate(today, location, profile);
+            var suppress = location.SuppressDhuhrNotificationsOnFriday;
+            var missed = _planner.PlanMissed(
+                schedule,
+                _state.Settings.NotificationRules,
+                now,
+                since,
+                suppressDhuhrOnFriday: suppress);
+
+            // Personal v1: only prayer-start events count as “missed alert” (not pre-alerts).
+            var starts = missed
+                .Where(m => m.Kind == PlannedNotificationKind.PrayerStart)
+                .Where(m => !_missedReported.Contains(m.Id) && !_fired.Contains(m.Id))
+                .ToList();
+
+            if (starts.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var m in starts)
+            {
+                _missedReported.Add(m.Id);
+                _fired.Add(m.Id);
+            }
+
+            var title = _localization.Get("MissedAlertTitle");
+            string body;
+            if (starts.Count == 1)
+            {
+                var one = starts[0];
+                body = string.Format(
+                    _localization.Get("MissedAlertBodyOne"),
+                    _localization.GetPrayerName(one.Prayer),
+                    LatinDigits.Time(one.FireAt));
+            }
+            else
+            {
+                var names = string.Join(
+                    " · ",
+                    starts.Select(s => _localization.GetPrayerName(s.Prayer)));
+                body = string.Format(
+                    _localization.Get("MissedAlertBodyMany"),
+                    LatinDigits.Number(starts.Count),
+                    names);
+            }
+
+            _toasts.ShowText(title, body, tag: "missed-" + today.ToString("yyyyMMdd"));
+            LaunchLog.Write($"Missed alert reported: {starts.Count} start(s)");
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"ReportMissed failed: {ex.Message}");
         }
     }
 

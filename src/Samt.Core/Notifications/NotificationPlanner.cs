@@ -35,11 +35,48 @@ public sealed class PlannedNotification
 /// </remarks>
 public sealed class NotificationPlanner
 {
+    /// <summary>Future fire opportunities after <paramref name="now"/>.</summary>
     public IReadOnlyList<PlannedNotification> Plan(
         PrayerSchedule schedule,
         IEnumerable<NotificationRule> rules,
         DateTimeOffset now,
         bool suppressDhuhrOnFriday = true)
+        => Build(schedule, rules, suppressDhuhrOnFriday)
+            .Where(n => n.FireAt > now)
+            .OrderBy(n => n.FireAt)
+            .ThenBy(n => n.Prayer)
+            .ToList();
+
+    /// <summary>
+    /// Events that should already have fired in <c>(since, now − grace]</c>.
+    /// Used for “missed while asleep / late start” summaries (no late adhan).
+    /// </summary>
+    public IReadOnlyList<PlannedNotification> PlanMissed(
+        PrayerSchedule schedule,
+        IEnumerable<NotificationRule> rules,
+        DateTimeOffset now,
+        DateTimeOffset since,
+        TimeSpan? lateGrace = null,
+        bool suppressDhuhrOnFriday = true)
+    {
+        var grace = lateGrace ?? TimeSpan.FromMinutes(2);
+        var upper = now - grace;
+        if (upper <= since)
+        {
+            return [];
+        }
+
+        return Build(schedule, rules, suppressDhuhrOnFriday)
+            .Where(n => n.FireAt > since && n.FireAt <= upper)
+            .OrderBy(n => n.FireAt)
+            .ThenBy(n => n.Prayer)
+            .ToList();
+    }
+
+    private static IReadOnlyList<PlannedNotification> Build(
+        PrayerSchedule schedule,
+        IEnumerable<NotificationRule> rules,
+        bool suppressDhuhrOnFriday)
     {
         ArgumentNullException.ThrowIfNull(schedule);
         ArgumentNullException.ThrowIfNull(rules);
@@ -93,11 +130,6 @@ public sealed class NotificationPlanner
                     fireAt = prayerTime;
                 }
 
-                if (fireAt <= now)
-                {
-                    continue;
-                }
-
                 results.Add(new PlannedNotification
                 {
                     Id = $"{schedule.Date:yyyyMMdd}-{effectivePrayer}-{kind}-{offset ?? 0}",
@@ -116,8 +148,6 @@ public sealed class NotificationPlanner
         return results
             .GroupBy(n => (n.Kind, n.Prayer))
             .Select(g => g.OrderBy(n => n.FireAt).First())
-            .OrderBy(n => n.FireAt)
-            .ThenBy(n => n.Prayer)
             .ToList();
     }
 
