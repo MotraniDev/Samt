@@ -134,6 +134,7 @@ public sealed partial class MainWindow : Window
             "locations" => typeof(LocationsPage),
             "alerts" => typeof(AlertsPage),
             "adhkar" => typeof(AdhkarPage),
+            "calendar" => typeof(CalendarPage),
             "settings" => typeof(SettingsPage),
             "diagnostics" => typeof(DiagnosticsPage),
             "designlab" => typeof(DesignLabPage),
@@ -168,6 +169,7 @@ public sealed partial class MainWindow : Window
         NavLocations.Content = loc.Get("NavLocations");
         NavAlerts.Content = loc.Get("NavAlerts");
         NavAdhkar.Content = loc.Get("NavAdhkar");
+        NavCalendar.Content = loc.Get("NavCalendar");
         NavSettings.Content = loc.Get("NavSettings");
         NavDiagnostics.Content = loc.Get("NavDiagnostics");
         NavDesignLab.Content = loc.Get("NavDesignLab");
@@ -175,6 +177,7 @@ public sealed partial class MainWindow : Window
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavLocations, loc.Get("NavLocations"));
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavAlerts, loc.Get("NavAlerts"));
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavAdhkar, loc.Get("NavAdhkar"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavCalendar, loc.Get("NavCalendar"));
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavSettings, loc.Get("NavSettings"));
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavDiagnostics, loc.Get("NavDiagnostics"));
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NavDesignLab, loc.Get("NavDesignLab"));

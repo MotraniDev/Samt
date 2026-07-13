@@ -32,6 +32,7 @@ public sealed partial class LocationsPage : Page
         NameLabel.Text = App.Localization.Get("LocationName");
         LatLabel.Text = App.Localization.Get("Latitude");
         LonLabel.Text = App.Localization.Get("Longitude");
+        CountryLabel.Text = App.Localization.Get("LocationCountryCode");
         TzLabel.Text = App.Localization.Get("TimeZone");
         ActivateButton.Content = App.Localization.Get("UseLocation");
         NewButton.Content = App.Localization.Get("NewLocation");

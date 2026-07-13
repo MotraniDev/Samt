@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="Samt_App.Pages.CalendarPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    FontFamily="{StaticResource SamtUiFont}">
+
+    <ScrollViewer
+        Padding="16,12"
+        HorizontalScrollMode="Disabled"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto"
+        ZoomMode="Disabled">
+        <StackPanel MaxWidth="920" HorizontalAlignment="Stretch" Spacing="14">
+            <StackPanel Spacing="4">
+                <TextBlock x:Name="TitleText" Style="{StaticResource SamtPageTitle}" FontSize="26" TextWrapping="Wrap" />
+                <TextBlock
+                    x:Name="DisclaimerText"
+                    FontSize="12"
+                    Opacity="0.6"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="PrevButton" Grid.Column="0" MinWidth="44" Click="PrevButton_OnClick" Content="‹" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock
+                        x:Name="MonthTitleText"
+                        FontFamily="{StaticResource SamtDisplayFont}"
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource SamtGoldBrush}"
+                        TextWrapping="Wrap"
+                        HorizontalAlignment="Center" />
+                    <TextBlock
+                        x:Name="SubtitleText"
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        FontSize="12"
+                        Opacity="0.65"
+                        TextWrapping="Wrap"
+                        HorizontalAlignment="Center" />
+                </StackPanel>
+                <Button x:Name="TodayButton" Grid.Column="2" Click="TodayButton_OnClick" MinWidth="72" />
+                <Button x:Name="NextButton" Grid.Column="3" MinWidth="44" Click="NextButton_OnClick" Content="›" />
+            </Grid>
+
+            <Grid x:Name="WeekdayHeaderGrid" ColumnSpacing="6" />
+
+            <Grid x:Name="DaysGrid" ColumnSpacing="6" RowSpacing="6" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

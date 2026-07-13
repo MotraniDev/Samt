@@ -65,6 +65,7 @@ Afterwards (or after Skip):
 3. Language and theme: **Settings**. Digits always **0–9** (Latin).
 4. Close the window to hide to the **tray**; use tray **Exit** to stop notifications.
 5. Optional: **Settings → Transparency** for shell window opacity (Adhan overlay stays independent).
+6. **Calendar** (nav): Hijri-month grid with dual Gregorian labels. Special-day highlights are always shown; **toast reminders** default off — enable under **Settings → Calendar & Hijri** (master + Islamic set and/or country set). Hijri day offset lives there too (shared with Today). Diagnostics shows the offset read-only.
 
 ## Auto-start
 
@@ -76,6 +77,8 @@ Afterwards (or after Skip):
 ## Missed alerts
 
 If the PC slept through a prayer **start** (or the app started late), SAMT may show a short **missed** toast/balloon. It does **not** replay adhan. Disable under Diagnostics if unwanted.
+
+If special-day reminders are enabled and the morning fire was missed while asleep, a separate **special-day missed** summary toast may appear (still no audio). Same resume toggle governs both.
 
 ## Release checklist (human)
 

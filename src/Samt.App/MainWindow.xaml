@@ -93,6 +93,11 @@
                             <FontIcon Glyph="&#xE8D7;" />
                         </NavigationViewItem.Icon>
                     </NavigationViewItem>
+                    <NavigationViewItem x:Name="NavCalendar" Tag="calendar">
+                        <NavigationViewItem.Icon>
+                            <FontIcon Glyph="&#xE787;" />
+                        </NavigationViewItem.Icon>
+                    </NavigationViewItem>
                     <NavigationViewItem x:Name="NavSettings" Tag="settings">
                         <NavigationViewItem.Icon>
                             <FontIcon Glyph="&#xE713;" />

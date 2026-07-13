@@ -19,6 +19,7 @@ Local Windows prayer-times app. Offline calculation, Arabic-first RTL UI, langua
 | **Alerts** | Toast, overlay, adhan audio, pre-alerts, Friday / Jumu‘ah rules |
 | **Themes** | Curated packages: System, Light, Dark, Ramadan, Algeria, Morocco |
 | **Adhkar** | Offline Morning / Evening / After-prayer / Sleep collections; mini reader with auto-advance option; optional scheduled reminders |
+| **Hijri calendar** | Browsable Hijri-month grid with dual Gregorian labels (Latin digits), Islamic + Algeria special-day highlights, optional morning toast reminders |
 | **First run** | Optional setup wizard (location, prayer method, Adhkar schedule, quick tour); Skip uses smart defaults |
 | **Transparency** | Global window opacity in Settings; Adhan overlay keeps its own opacity |
 | **Updates** | Optional check against a GitHub Releases **JSON manifest**; download only after approval; SHA-256 verify |
@@ -34,7 +35,7 @@ Add screenshots under `docs/media/` (or link releases). Video walkthrough welcom
 | Project | Role |
 |---------|------|
 | `src/Samt.Core` | Domain model + offline prayer engine + Adhkar catalog |
-| `src/Samt.App` | WinUI 3 shell (Today, Locations, Alerts, Adhkar, **Settings**, Diagnostics, Design lab) |
+| `src/Samt.App` | WinUI 3 shell (Today, Locations, Alerts, Adhkar, **Calendar**, **Settings**, Diagnostics, Design lab) |
 | `tests/Samt.Core.Tests` | Unit tests |
 | `tools/GenerateBaseline` | Kennadsa regression CSV |
 | `testdata/kennadsa` | Comparison fixtures |

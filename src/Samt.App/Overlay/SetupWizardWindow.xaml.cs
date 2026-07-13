@@ -379,7 +379,8 @@ public sealed partial class SetupWizardWindow : Window
             Latitude = place.Latitude,
             Longitude = place.Longitude,
             TimeZoneId = place.TimeZoneId,
-            Source = LocationSource.PlaceSearch
+            Source = LocationSource.PlaceSearch,
+            CountryCode = place.CountryCode
         };
 
         var list = App.State.Settings.Locations.ToList();

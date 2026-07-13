@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.Win32;
 using Samt.Core.Calculation;
+using Samt.Core.Calendar;
 using Samt.Core.Domain;
 using Samt.Core.Formatting;
 using Samt.Core.Locations;
@@ -30,6 +31,7 @@ public sealed class NotificationHost : IDisposable
     private readonly HashSet<string> _fired = new(StringComparer.Ordinal);
     private readonly HashSet<string> _missedReported = new(StringComparer.Ordinal);
     private IReadOnlyList<PlannedNotification> _plan = [];
+    private IReadOnlyList<PlannedSpecialDayReminder> _specialPlan = [];
     private DateOnly _planDate;
     private bool _disposed;
     private DateTimeOffset _lastTickLocal;
@@ -237,6 +239,7 @@ public sealed class NotificationHost : IDisposable
             }
 
             FireDue(now);
+            FireDueSpecialDays(now);
             UpdateTrayTooltip(location, now);
             _lastTickLocal = now;
         }
@@ -286,44 +289,105 @@ public sealed class NotificationHost : IDisposable
                 .Where(m => !_missedReported.Contains(m.Id) && !_fired.Contains(m.Id))
                 .ToList();
 
-            if (starts.Count == 0)
+            if (starts.Count > 0)
+            {
+                foreach (var m in starts)
+                {
+                    _missedReported.Add(m.Id);
+                    _fired.Add(m.Id);
+                }
+
+                var title = _localization.Get("MissedAlertTitle");
+                string body;
+                if (starts.Count == 1)
+                {
+                    var one = starts[0];
+                    body = string.Format(
+                        _localization.Get("MissedAlertBodyOne"),
+                        _localization.GetPrayerName(one.Prayer),
+                        LatinDigits.Time(one.FireAt));
+                }
+                else
+                {
+                    var names = string.Join(
+                        " · ",
+                        starts.Select(s => _localization.GetPrayerName(s.Prayer)));
+                    body = string.Format(
+                        _localization.Get("MissedAlertBodyMany"),
+                        LatinDigits.Number(starts.Count),
+                        names);
+                }
+
+                _toasts.ShowText(title, body, tag: "missed-" + today.ToString("yyyyMMdd"));
+                LaunchLog.Write($"Missed alert reported: {starts.Count} start(s)");
+            }
+
+            // Sibling path: special-day resume summary (toast only; reuses same master flag).
+            ReportMissedSpecialDays(since, now, today);
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"ReportMissed failed: {ex.Message}");
+        }
+    }
+
+    private void ReportMissedSpecialDays(DateTimeOffset since, DateTimeOffset now, DateOnly today)
+    {
+        try
+        {
+            var location = _state.RequireActiveLocation();
+            var tz = KnownLocations.ResolveTimeZone(location.TimeZoneId);
+            var country = CalendarCountryResolver.Resolve(
+                _state.Settings.CalendarCountryOverride,
+                location.CountryCode);
+            var missed = SpecialDayReminderPlanner.PlanMissed(
+                now,
+                since,
+                _state.Settings,
+                tz,
+                countryCode: country);
+
+            var pending = missed
+                .Where(m => !_missedReported.Contains(m.Id) && !_fired.Contains(m.Id))
+                .ToList();
+            if (pending.Count == 0)
             {
                 return;
             }
 
-            foreach (var m in starts)
+            foreach (var m in pending)
             {
                 _missedReported.Add(m.Id);
                 _fired.Add(m.Id);
             }
 
-            var title = _localization.Get("MissedAlertTitle");
+            var title = _localization.Get("SpecialDayMissedTitle");
             string body;
-            if (starts.Count == 1)
+            if (pending.Count == 1)
             {
-                var one = starts[0];
+                var one = pending[0];
                 body = string.Format(
-                    _localization.Get("MissedAlertBodyOne"),
-                    _localization.GetPrayerName(one.Prayer),
+                    _localization.Get("SpecialDayMissedBodyOne"),
+                    _localization.Get(one.PrimaryDisplayKey),
                     LatinDigits.Time(one.FireAt));
             }
             else
             {
                 var names = string.Join(
                     " · ",
-                    starts.Select(s => _localization.GetPrayerName(s.Prayer)));
+                    pending.Select(p => _localization.Get(p.PrimaryDisplayKey)));
                 body = string.Format(
-                    _localization.Get("MissedAlertBodyMany"),
-                    LatinDigits.Number(starts.Count),
+                    _localization.Get("SpecialDayMissedBodyMany"),
+                    LatinDigits.Number(pending.Count),
                     names);
             }
 
-            _toasts.ShowText(title, body, tag: "missed-" + today.ToString("yyyyMMdd"));
-            LaunchLog.Write($"Missed alert reported: {starts.Count} start(s)");
+            _toasts.ShowText(title, body, tag: "special-missed-" + today.ToString("yyyyMMdd"));
+            LaunchLog.Write($"Special-day missed summary: {pending.Count}");
         }
         catch (Exception ex)
         {
-            LaunchLog.Write($"ReportMissed failed: {ex.Message}");
+            LaunchLog.Write($"ReportMissedSpecialDays failed: {ex.Message}");
         }
     }
 
@@ -338,15 +402,24 @@ public sealed class NotificationHost : IDisposable
             var suppress = location.SuppressDhuhrNotificationsOnFriday;
 
             _plan = _planner.Plan(schedule, rules, now, suppress);
+
+            var tz = KnownLocations.ResolveTimeZone(location.TimeZoneId);
+            var country = CalendarCountryResolver.Resolve(
+                _state.Settings.CalendarCountryOverride,
+                location.CountryCode);
+            _specialPlan = SpecialDayReminderPlanner.Plan(now, _state.Settings, tz, country);
+
             _planDate = today;
             _fired.Clear();
             UpdateTrayTooltip(location, now);
-            LaunchLog.Write($"Plan rebuilt: {_plan.Count} remaining for {today:yyyy-MM-dd}");
+            LaunchLog.Write(
+                $"Plan rebuilt: {_plan.Count} prayer + {_specialPlan.Count} special for {today:yyyy-MM-dd}");
         }
         catch (Exception ex)
         {
             LaunchLog.Write($"RebuildPlan failed: {ex}");
             _plan = [];
+            _specialPlan = [];
         }
     }
 
@@ -375,6 +448,44 @@ public sealed class NotificationHost : IDisposable
             Dispatch(item);
             _fired.Add(item.Id);
         }
+    }
+
+    private void FireDueSpecialDays(DateTimeOffset now)
+    {
+        foreach (var item in _specialPlan)
+        {
+            if (_fired.Contains(item.Id))
+            {
+                continue;
+            }
+
+            if (item.FireAt > now)
+            {
+                continue;
+            }
+
+            if (now - item.FireAt > TimeSpan.FromMinutes(2))
+            {
+                _fired.Add(item.Id);
+                continue;
+            }
+
+            DispatchSpecialDay(item);
+            _fired.Add(item.Id);
+        }
+    }
+
+    /// <summary>Toast-only special-day fire — never overlay or adhan audio.</summary>
+    private void DispatchSpecialDay(PlannedSpecialDayReminder item)
+    {
+        var title = _localization.Get("SpecialDayAlertTitle");
+        var label = _localization.Get(item.PrimaryDisplayKey);
+        var body = string.Format(
+            _localization.Get("SpecialDayAlertBody"),
+            label,
+            LatinDigits.Time(item.FireAt));
+        _toasts.ShowText(title, body, tag: item.Id);
+        LaunchLog.Write($"Special-day toast: {item.Id}");
     }
 
     private void Dispatch(

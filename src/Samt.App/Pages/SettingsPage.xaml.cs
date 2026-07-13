@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 using Samt.Core.Formatting;
 using Samt.Core.Storage;
+using Samt.Core.Time;
 using Samt_App.Helpers;
 using Samt_App.Services;
 using Windows.System;
@@ -51,6 +52,23 @@ public sealed partial class SettingsPage : Page
         UpdatesSectionHeader.Text = loc.Get("SettingsUpdatesSection");
         AppearanceSectionHeader.Text = loc.Get("SettingsAppearanceSection");
         AppearanceSectionHint.Text = loc.Get("SettingsAppearanceHint");
+        CalendarSectionHeader.Text = loc.Get("SettingsCalendarSection");
+        CalendarDisclaimerText.Text = loc.Get("CalendarDisclaimer");
+        HijriOffsetLabel.Text = loc.Get("HijriDayOffset");
+        HijriOffsetHint.Text = loc.Get("HijriDayOffsetHint");
+        CalendarCountryLabel.Text = loc.Get("SettingsCalendarCountry");
+        CalendarCountryDefaultItem.Content = loc.Get("SettingsCalendarCountryDefault");
+        CalendarCountryDzItem.Content = loc.Get("SettingsCalendarCountryAlgeria");
+        SpecialDayMasterToggle.Header = loc.Get("SpecialDayRemindersMaster");
+        SpecialDayMasterToggle.OffContent = loc.Get("ToggleOff");
+        SpecialDayMasterToggle.OnContent = loc.Get("ToggleOn");
+        SpecialDayIslamicToggle.Header = loc.Get("SpecialDayIslamicSet");
+        SpecialDayIslamicToggle.OffContent = loc.Get("ToggleOff");
+        SpecialDayIslamicToggle.OnContent = loc.Get("ToggleOn");
+        SpecialDayCountryToggle.Header = loc.Get("SpecialDayCountrySet");
+        SpecialDayCountryToggle.OffContent = loc.Get("ToggleOff");
+        SpecialDayCountryToggle.OnContent = loc.Get("ToggleOn");
+        SpecialDayTimeLabel.Text = loc.Get("SpecialDayReminderTime");
         AdhkarSectionHeader.Text = loc.Get("SettingsAdhkarSection");
         AdhkarSectionHint.Text = loc.Get("AdhkarSettingsHint");
         AboutSectionHeader.Text = loc.Get("SettingsAboutSection");
@@ -132,12 +150,36 @@ public sealed partial class SettingsPage : Page
             var opacityPct = (int)Math.Round(WindowChromeOpacity.Clamp(settings.WindowOpacity) * 100);
             WindowOpacitySlider.Value = opacityPct;
             WindowOpacityValueText.Text = LatinDigits.Number(opacityPct) + "%";
+            HijriOffsetBox.Value = HijriConverter.ClampDayOffset(settings.HijriDayOffset);
+            SyncCalendarCountryBox(settings.CalendarCountryOverride);
+            SpecialDayMasterToggle.IsOn = settings.SpecialDayRemindersEnabled;
+            SpecialDayIslamicToggle.IsOn = settings.SpecialDayIslamicSetEnabled;
+            SpecialDayCountryToggle.IsOn = settings.SpecialDayCountrySetEnabled;
+            SpecialDayTimeBox.Text = LatinDigits.EnsureLatin(settings.SpecialDayReminderTime);
             UpdateStatusText.Text = string.Empty;
         }
         finally
         {
             _suppress = false;
         }
+    }
+
+    private void SyncCalendarCountryBox(string? countryOverride)
+    {
+        var tag = string.IsNullOrWhiteSpace(countryOverride)
+            ? "default"
+            : countryOverride.Trim().ToUpperInvariant();
+
+        foreach (var item in CalendarCountryBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Tag as string, tag, StringComparison.OrdinalIgnoreCase))
+            {
+                CalendarCountryBox.SelectedItem = item;
+                return;
+            }
+        }
+
+        CalendarCountryBox.SelectedItem = CalendarCountryDefaultItem;
     }
 
     private void SyncLanguageBox(string language)
@@ -245,6 +287,99 @@ public sealed partial class SettingsPage : Page
         }
 
         await App.State.UpdateAsync(s => s.With(autoCheckUpdates: AutoUpdateToggle.IsOn));
+    }
+
+    private async void HijriOffsetBox_OnValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
+    {
+        if (_suppress || !IsLoaded || double.IsNaN(args.NewValue))
+        {
+            return;
+        }
+
+        var offset = HijriConverter.ClampDayOffset((int)Math.Round(args.NewValue));
+        if (offset == App.State.Settings.HijriDayOffset)
+        {
+            return;
+        }
+
+        await App.State.UpdateAsync(s => s.With(hijriDayOffset: offset));
+    }
+
+    private async void CalendarCountryBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppress || !IsLoaded || CalendarCountryBox.SelectedItem is not ComboBoxItem { Tag: string tag })
+        {
+            return;
+        }
+
+        if (string.Equals(tag, "default", StringComparison.OrdinalIgnoreCase))
+        {
+            await App.State.UpdateAsync(s => s.With(
+                calendarCountryOverride: null,
+                replaceCalendarCountryOverride: true));
+            return;
+        }
+
+        await App.State.UpdateAsync(s => s.With(calendarCountryOverride: tag));
+    }
+
+    private async void SpecialDayMasterToggle_OnToggled(object sender, RoutedEventArgs e)
+    {
+        if (_suppress || !IsLoaded)
+        {
+            return;
+        }
+
+        await App.State.UpdateAsync(s => s.With(specialDayRemindersEnabled: SpecialDayMasterToggle.IsOn));
+    }
+
+    private async void SpecialDaySetToggle_OnToggled(object sender, RoutedEventArgs e)
+    {
+        if (_suppress || !IsLoaded)
+        {
+            return;
+        }
+
+        await App.State.UpdateAsync(s => s.With(
+            specialDayIslamicSetEnabled: SpecialDayIslamicToggle.IsOn,
+            specialDayCountrySetEnabled: SpecialDayCountryToggle.IsOn));
+    }
+
+    private async void SpecialDayTimeBox_OnLostFocus(object sender, RoutedEventArgs e)
+    {
+        if (_suppress || !IsLoaded)
+        {
+            return;
+        }
+
+        await SaveSpecialDayTimeAsync();
+    }
+
+    private async void SpecialDayTimeBox_OnKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Enter || _suppress || !IsLoaded)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        await SaveSpecialDayTimeAsync();
+    }
+
+    private async Task SaveSpecialDayTimeAsync()
+    {
+        var time = SettingsJson.NormalizeClockTime(SpecialDayTimeBox.Text, "09:00");
+        _suppress = true;
+        try
+        {
+            SpecialDayTimeBox.Text = LatinDigits.EnsureLatin(time);
+        }
+        finally
+        {
+            _suppress = false;
+        }
+
+        await App.State.UpdateAsync(s => s.With(specialDayReminderTime: time));
     }
 
     private async void AdhkarMasterToggle_OnToggled(object sender, RoutedEventArgs e)

@@ -62,4 +62,4 @@ Post-7 also delivered in-tree: Settings hub, fr/es, theme packages, place-name s
 
 **Phase 8** (see `docs/design/phase-8-ux-polish-onboarding.md`): Adhkar auto-advance, global window transparency (overlay independent), contextual Settings icons, app icon redesign, first-run setup wizard (Skip → smart defaults; hidden on `--autostart`).
 
-**Phase 9** (see `docs/design/phase-9-hijri-calendar.md`): dedicated Hijri calendar page, Islamic + Algeria special days, special-day reminder sets (toast, sibling planner). Designed; not implemented.
+**Phase 9** (see `docs/design/phase-9-hijri-calendar.md`): dedicated Hijri calendar page, Islamic + Algeria special days, special-day reminder sets (toast, sibling planner). **Implemented** (Core catalogs/planner/settings + App calendar page, Settings section, host toasts).

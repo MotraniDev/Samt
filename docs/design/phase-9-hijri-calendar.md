@@ -1,6 +1,6 @@
 # Design: Phase 9 — Hijri calendar, special days, special-day reminders
 
-**Status:** Designed (grill + domain locked; not implemented)  
+**Status:** Implemented (slices 1–9)   
 **Stack:** `Samt.Core` (catalog, resolve, sibling planner, settings) + `Samt.App` (Calendar page, Settings section, host toast wiring)  
 **Depends on:** Phase 6 Hijri strip (`HijriConverter`, `HijriDayOffset`, Ramadan Today); Phase 7 missed-on-resume host patterns; Phase 8 Settings hub  
 **ADR:** [0002-special-day-reminders-sibling-planner](../adr/0002-special-day-reminders-sibling-planner.md)  
@@ -259,31 +259,31 @@ Respect Reduce motion; no heavy animations required.
 | 1 | Design + domain already in CONTEXT/ADR | this doc |
 | 2 | Core catalogs + resolver + Hijri month/civil mapping + tests | pure Core, no UI — **done** (`Samt.Core/Calendar/*`, `HijriConverter.ToGregorian`) |
 | 3 | Settings fields + JSON + LocationProfile.CountryCode + DZ seeds + tests | storage round-trip — **done** (`AppSettings` calendar/special-day fields, `LocationProfile.CountryCode`, Algeria seeds `DZ`, `SettingsJson` normalize) |
-| 4 | SpecialDayReminderPlanner + PlanMissed + tests | Core |
-| 5 | Calendar page grid + day sheet (highlights only) | App UI |
-| 6 | Settings Calendar section; move Hijri offset; disclaimer | App UI |
-| 7 | Host toast + missed summary wiring | App |
-| 8 | Place-search country prefill (optional polish) | App |
-| 9 | README / SETUP / CONTEXT phase mark | docs |
+| 4 | SpecialDayReminderPlanner + PlanMissed + tests | Core — **done** |
+| 5 | Calendar page grid + day sheet (highlights only) | App UI — **done** |
+| 6 | Settings Calendar section; move Hijri offset; disclaimer | App UI — **done** |
+| 7 | Host toast + missed summary wiring | App — **done** |
+| 8 | Place-search country prefill (optional polish) | App — **done** |
+| 9 | README / SETUP / CONTEXT phase mark | docs — **done** |
 
 Slices 2–4 are TDD-friendly (public Core APIs only, fixtures under `testdata/` if needed).
 
 ## Acceptance
 
-- [ ] Nav opens **Hijri calendar**; month is Hijri-primary; cells show Gregorian with **Latin digits**.
-- [ ] Changing `HijriDayOffset` in Settings shifts Today **and** calendar special-day cells the same way.
-- [ ] Lean Islamic days and Algeria five appear; Eid is not double-listed as a second Algeria row.
-- [ ] Empty location country + no override → Algeria marks still show.
-- [ ] Override can force Algeria when location later gains another code (future-proof even if only DZ ships).
-- [ ] Fresh install: highlights on, **no** special-day toasts until master + set enabled.
-- [ ] With master + Islamic set on, at 09:00 local on 1 Shawwal (mapped), one toast; mute `islamic.eid_fitr` suppresses it.
-- [ ] Country-only day (e.g. 5 Jul) requires country set (or both) as designed; islamic set alone does not fire.
-- [ ] Special-day fire never opens adhan overlay / never uses prayer `NotificationRule`.
-- [ ] Missed past 09:00 with resume setting on → summary toast, no audio.
-- [ ] Day sheet shows dual date for ordinary days; mute only when special.
-- [ ] Algeria seeds persist `CountryCode=DZ`.
-- [ ] Disclaimer visible in Settings calendar section.
-- [ ] Core unit tests cover resolver dedup, country resolution, planner enable/mute matrix, offset shift.
+- [x] Nav opens **Hijri calendar**; month is Hijri-primary; cells show Gregorian with **Latin digits**.
+- [x] Changing `HijriDayOffset` in Settings shifts Today **and** calendar special-day cells the same way.
+- [x] Lean Islamic days and Algeria five appear; Eid is not double-listed as a second Algeria row.
+- [x] Empty location country + no override → Algeria marks still show.
+- [x] Override can force Algeria when location later gains another code (future-proof even if only DZ ships).
+- [x] Fresh install: highlights on, **no** special-day toasts until master + set enabled.
+- [x] With master + Islamic set on, at 09:00 local on 1 Shawwal (mapped), one toast; mute `islamic.eid_fitr` suppresses it.
+- [x] Country-only day (e.g. 5 Jul) requires country set (or both) as designed; islamic set alone does not fire.
+- [x] Special-day fire never opens adhan overlay / never uses prayer `NotificationRule`.
+- [x] Missed past 09:00 with resume setting on → summary toast, no audio.
+- [x] Day sheet shows dual date for ordinary days; mute only when special.
+- [x] Algeria seeds persist `CountryCode=DZ`.
+- [x] Disclaimer visible in Settings calendar section.
+- [x] Core unit tests cover resolver dedup, country resolution, planner enable/mute matrix, offset shift.
 
 ## Risks & open implementation notes
 

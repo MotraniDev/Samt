@@ -24,6 +24,7 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
     private string _latitude = string.Empty;
     private string _longitude = string.Empty;
     private string _timeZoneId = KnownLocations.AlgeriaTimeZoneId;
+    private string _countryCode = KnownLocations.AlgeriaCountryCode;
     private string _statusMessage = string.Empty;
     private bool _isBusy;
     private bool _suppressReload;
@@ -192,6 +193,23 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>Optional ISO-style country code for calendar country defaulting (e.g. DZ).</summary>
+    public string CountryCode
+    {
+        get => _countryCode;
+        set
+        {
+            var next = (value ?? string.Empty).Trim().ToUpperInvariant();
+            if (_countryCode == next)
+            {
+                return;
+            }
+
+            _countryCode = next;
+            OnPropertyChanged();
+        }
+    }
+
     public string StatusMessage
     {
         get => _statusMessage;
@@ -327,6 +345,7 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
                     Longitude = lon,
                     TimeZoneId = TimeZoneId,
                     Source = LocationSource.Manual,
+                    CountryCode = string.IsNullOrWhiteSpace(CountryCode) ? null : CountryCode,
                     FridayTimeMode = fridayMode,
                     FixedFridayLocalTime = fixedFriday,
                     SuppressDhuhrNotificationsOnFriday = SuppressDhuhrOnFriday,
@@ -345,6 +364,7 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
                     Longitude = lon,
                     TimeZoneId = TimeZoneId,
                     Source = LocationSource.Manual,
+                    CountryCode = string.IsNullOrWhiteSpace(CountryCode) ? null : CountryCode,
                     FridayTimeMode = fridayMode,
                     FixedFridayLocalTime = fixedFriday,
                     SuppressDhuhrNotificationsOnFriday = SuppressDhuhrOnFriday
@@ -408,6 +428,7 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         Latitude = string.Empty;
         Longitude = string.Empty;
         TimeZoneId = KnownLocations.AlgeriaTimeZoneId;
+        CountryCode = KnownLocations.AlgeriaCountryCode;
         FridayModeIndex = 0;
         FixedFridayTime = "13:00";
         SuppressDhuhrOnFriday = true;
@@ -420,6 +441,7 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         Latitude = LatinDigits.Number(value.Latitude, "0.######");
         Longitude = LatinDigits.Number(value.Longitude, "0.######");
         TimeZoneId = value.TimeZoneId;
+        CountryCode = value.CountryCode ?? string.Empty;
         FridayModeIndex = value.FridayTimeMode == FridayTimeMode.FixedTime ? 1 : 0;
         FixedFridayTime = value.FixedFridayLocalTime is { } t
             ? LatinDigits.Time(t)
@@ -545,6 +567,7 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         Latitude = LatinDigits.Number(place.Latitude, "0.######");
         Longitude = LatinDigits.Number(place.Longitude, "0.######");
         TimeZoneId = place.TimeZoneId;
+        CountryCode = place.CountryCode ?? string.Empty;
         FridayModeIndex = 0;
         FixedFridayTime = "13:00";
         SuppressDhuhrOnFriday = true;

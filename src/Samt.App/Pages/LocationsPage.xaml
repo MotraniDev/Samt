@@ -97,6 +97,14 @@
                         Style="{StaticResource LatinDigitsTextBox}"
                         Text="{x:Bind ViewModel.Longitude, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         PlaceholderText="-2.4181" />
+                    <TextBlock x:Name="CountryLabel" Opacity="0.75" />
+                    <TextBox
+                        x:Name="CountryCodeBox"
+                        Style="{StaticResource LatinDigitsTextBox}"
+                        Language="en-US"
+                        PlaceholderText="DZ"
+                        Text="{x:Bind ViewModel.CountryCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        MaxLength="2" />
                     <TextBlock x:Name="TzLabel" Opacity="0.75" />
                     <ComboBox
                         Language="en-US"

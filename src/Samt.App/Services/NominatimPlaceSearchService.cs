@@ -38,7 +38,7 @@ public sealed class NominatimPlaceSearchService
 
             var url =
                 "https://nominatim.openstreetmap.org/search?"
-                + "format=jsonv2&limit=8&addressdetails=0&q="
+                + "format=jsonv2&limit=8&addressdetails=1&q="
                 + Uri.EscapeDataString(query.Trim());
 
             using var response = await Http.GetAsync(url, ct).ConfigureAwait(false);
@@ -79,13 +79,17 @@ public sealed class NominatimPlaceSearchService
                 // Keep display names usable in the list (first two comma segments).
                 var shortName = ShortenDisplayName(name);
 
+                var countryCode = NormalizeCountryCode(
+                    row.Address?.CountryCode ?? row.CountryCode);
+
                 results.Add(new PlaceSearchResult
                 {
                     DisplayName = shortName,
                     FullDisplayName = name,
                     Latitude = lat,
                     Longitude = lon,
-                    TimeZoneId = GuessTimeZone(lat, lon)
+                    TimeZoneId = GuessTimeZone(lat, lon),
+                    CountryCode = countryCode
                 });
             }
 
@@ -105,8 +109,19 @@ public sealed class NominatimPlaceSearchService
             Latitude = place.Latitude,
             Longitude = place.Longitude,
             TimeZoneId = place.TimeZoneId,
-            Source = LocationSource.PlaceSearch
+            Source = LocationSource.PlaceSearch,
+            CountryCode = place.CountryCode
         };
+
+    private static string? NormalizeCountryCode(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return null;
+        }
+
+        return code.Trim().ToUpperInvariant();
+    }
 
     private static string ShortenDisplayName(string name)
     {
@@ -170,6 +185,18 @@ public sealed class NominatimPlaceSearchService
 
         [JsonPropertyName("display_name")]
         public string? DisplayName { get; set; }
+
+        [JsonPropertyName("country_code")]
+        public string? CountryCode { get; set; }
+
+        [JsonPropertyName("address")]
+        public NominatimAddress? Address { get; set; }
+    }
+
+    private sealed class NominatimAddress
+    {
+        [JsonPropertyName("country_code")]
+        public string? CountryCode { get; set; }
     }
 }
 
@@ -180,6 +207,9 @@ public sealed class PlaceSearchResult
     public double Latitude { get; init; }
     public double Longitude { get; init; }
     public string TimeZoneId { get; init; } = TimeZoneInfo.Local.Id;
+
+    /// <summary>ISO-style country code from Nominatim when available (best-effort).</summary>
+    public string? CountryCode { get; init; }
 
     public string CoordinateText =>
         $"{Latitude.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)}, " +

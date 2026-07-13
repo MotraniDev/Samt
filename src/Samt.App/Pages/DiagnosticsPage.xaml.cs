@@ -45,7 +45,7 @@ public sealed partial class DiagnosticsPage : Page
         AsrStandardRadio.Content = App.Localization.Get("AsrStandard");
         AsrHanafiRadio.Content = App.Localization.Get("AsrHanafi");
         HijriOffsetLabel.Text = App.Localization.Get("HijriDayOffset");
-        HijriOffsetHint.Text = App.Localization.Get("HijriDayOffsetHint");
+        HijriOffsetHint.Text = App.Localization.Get("HijriDayOffsetDiagnosticsHint");
         ProcessStatusHeader.Text = App.Localization.Get("RefreshProcessStatus");
         RefreshStatusButton.Content = App.Localization.Get("RefreshProcessStatus");
         ViewModel.RefreshLabels();
@@ -72,15 +72,5 @@ public sealed partial class DiagnosticsPage : Page
         {
             ViewModel.SelectedAsrMadhab = AsrMadhab.Hanafi;
         }
-    }
-
-    private void HijriOffsetBox_OnValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
-    {
-        if (!IsLoaded || double.IsNaN(args.NewValue))
-        {
-            return;
-        }
-
-        ViewModel.HijriDayOffset = (int)Math.Round(args.NewValue);
     }
 }

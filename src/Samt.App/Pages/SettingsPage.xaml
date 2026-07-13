@@ -137,6 +137,56 @@
                 </StackPanel>
             </Border>
 
+            <!-- Calendar / Hijri / special-day reminders -->
+            <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE787;" FontSize="16" Foreground="{StaticResource SamtGoldBrush}"
+                                  VerticalAlignment="Center" />
+                        <TextBlock x:Name="CalendarSectionHeader" FontWeight="SemiBold" FontSize="16"
+                                   Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock x:Name="CalendarDisclaimerText" FontSize="12" Opacity="0.65" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock x:Name="HijriOffsetLabel" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <NumberBox
+                            x:Name="HijriOffsetBox"
+                            Language="en-US"
+                            FontFamily="{StaticResource SamtNumericFont}"
+                            Minimum="-3"
+                            Maximum="3"
+                            SmallChange="1"
+                            LargeChange="1"
+                            SpinButtonPlacementMode="Inline"
+                            Width="140"
+                            ValueChanged="HijriOffsetBox_OnValueChanged" />
+                    </StackPanel>
+                    <TextBlock x:Name="HijriOffsetHint" FontSize="12" Opacity="0.65" TextWrapping="Wrap" />
+                    <TextBlock x:Name="CalendarCountryLabel" Opacity="0.75" TextWrapping="Wrap" />
+                    <ComboBox x:Name="CalendarCountryBox" HorizontalAlignment="Stretch" MinWidth="120"
+                              FontFamily="{StaticResource SamtUiFont}"
+                              SelectionChanged="CalendarCountryBox_OnSelectionChanged">
+                        <ComboBoxItem x:Name="CalendarCountryDefaultItem" Tag="default" />
+                        <ComboBoxItem x:Name="CalendarCountryDzItem" Tag="DZ" />
+                    </ComboBox>
+                    <ToggleSwitch x:Name="SpecialDayMasterToggle" Toggled="SpecialDayMasterToggle_OnToggled" />
+                    <ToggleSwitch x:Name="SpecialDayIslamicToggle" Toggled="SpecialDaySetToggle_OnToggled" />
+                    <ToggleSwitch x:Name="SpecialDayCountryToggle" Toggled="SpecialDaySetToggle_OnToggled" />
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="SpecialDayTimeLabel" Opacity="0.75" />
+                        <TextBox
+                            x:Name="SpecialDayTimeBox"
+                            Style="{StaticResource LatinDigitsTextBox}"
+                            Language="en-US"
+                            PlaceholderText="09:00"
+                            LostFocus="SpecialDayTimeBox_OnLostFocus"
+                            KeyDown="SpecialDayTimeBox_OnKeyDown" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Adhkar reminders: type + default time / post-prayer delay -->
             <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">

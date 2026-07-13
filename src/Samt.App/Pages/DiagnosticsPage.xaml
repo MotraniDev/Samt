@@ -94,18 +94,13 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <TextBlock x:Name="HijriOffsetLabel" VerticalAlignment="Center" TextWrapping="Wrap" />
-                    <NumberBox
-                        x:Name="HijriOffsetBox"
-                        Language="en-US"
-                        FontFamily="{StaticResource SamtNumericFont}"
-                        Minimum="-3"
-                        Maximum="3"
-                        SmallChange="1"
-                        LargeChange="1"
-                        SpinButtonPlacementMode="Inline"
-                        Width="140"
-                        Value="{x:Bind ViewModel.HijriDayOffset, Mode=TwoWay}"
-                        ValueChanged="HijriOffsetBox_OnValueChanged" />
+                    <TextBlock
+                        x:Name="HijriOffsetValue"
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        VerticalAlignment="Center"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource SamtGoldBrush}"
+                        Text="{x:Bind ViewModel.HijriDayOffset, Mode=OneWay}" />
                     <TextBlock
                         x:Name="HijriOffsetHint"
                         VerticalAlignment="Center"
