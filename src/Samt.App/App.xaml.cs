@@ -4,6 +4,7 @@ using Samt.Core.Formatting;
 using Samt.Core.Notifications;
 using Samt.Core.Storage;
 using Samt_App.Helpers;
+using Samt_App.Overlay;
 using Samt_App.Services;
 
 namespace Samt_App;
@@ -14,6 +15,8 @@ public partial class App : Application
     private NotificationHost? _notificationHost;
     private ToastNotificationService? _toasts;
     private TrayIconService? _tray;
+    private AdhanAudioService? _audio;
+    private OverlayService? _overlay;
     private SingleInstanceService? _singleInstance;
     private bool _exitRequested;
 
@@ -95,16 +98,19 @@ public partial class App : Application
             _toasts = new ToastNotificationService();
             _toasts.Initialize(_tray);
 
+            _audio = new AdhanAudioService();
+            _overlay = new OverlayService(Localization, _audio);
+
             _window = new MainWindow();
             MainWindow = _window;
             ApplyThemeFromSettings();
             WireCloseToTray(_window);
             WindowActivation.ShowCentered(_window);
 
-            _notificationHost = new NotificationHost(State, Localization, _toasts, _tray);
+            _notificationHost = new NotificationHost(State, Localization, _toasts, _tray, _overlay, _audio);
             _notificationHost.Start();
 
-            LaunchLog.Write("Window shown; notification host started");
+            LaunchLog.Write("Window shown; notification host started (toast + overlay + audio)");
         }
         catch (Exception ex)
         {
@@ -164,6 +170,53 @@ public partial class App : Application
         }
     }
 
+    /// <summary>Design-lab: preview production overlay + optional adhan channels with lab tunables.</summary>
+    public static void PreviewPrayerChannels(
+        bool prayerStart,
+        double opacity = 0.94,
+        int animationMs = 320,
+        string? edgeTag = null,
+        string? variantTag = null)
+    {
+        try
+        {
+            var app = Current as App;
+            var edge = edgeTag?.ToLowerInvariant() switch
+            {
+                "top" => OverlayEdge.Top,
+                "bottom" => OverlayEdge.Bottom,
+                "start" or "left" => OverlayEdge.Left,
+                "end" or "right" => OverlayEdge.Right,
+                _ => prayerStart ? OverlayEdge.Bottom : OverlayEdge.Top
+            };
+
+            OverlayVisualStyle? style = variantTag?.ToUpperInvariant() switch
+            {
+                "B" => OverlayVisualStyle.BottomDock,
+                "A" or "C" => OverlayVisualStyle.TopRibbon,
+                _ => prayerStart ? OverlayVisualStyle.BottomDock : OverlayVisualStyle.TopRibbon
+            };
+
+            // Variant C uses start-edge motion unless the edge box already chose something else.
+            if (string.Equals(variantTag, "C", StringComparison.OrdinalIgnoreCase)
+                && (edgeTag is null || edgeTag is "Top"))
+            {
+                edge = OverlayEdge.Left;
+            }
+
+            app?._notificationHost?.PreviewNow(
+                prayerStart ? PlannedNotificationKind.PrayerStart : PlannedNotificationKind.BeforePrayer,
+                opacity: Math.Clamp(opacity, 0.30, 1.0),
+                animationMs: Math.Clamp(animationMs, 80, 1200),
+                entryEdge: edge,
+                style: style);
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"PreviewPrayerChannels failed: {ex.Message}");
+        }
+    }
+
     private void RequestExit()
     {
         _exitRequested = true;
@@ -171,6 +224,8 @@ public partial class App : Application
         LaunchLog.Write("Exit requested from tray");
 
         _notificationHost?.Dispose();
+        _overlay?.Dispose();
+        _audio?.Dispose();
         _toasts?.Unregister();
         _tray?.Dispose();
         _singleInstance?.Dispose();

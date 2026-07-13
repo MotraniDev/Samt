@@ -1,6 +1,9 @@
+using System.Numerics;
+using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Samt.Core.Domain;
@@ -87,23 +90,46 @@ public sealed partial class DesignLabPage : Page
 
     private void StopBtn_OnClick(object sender, RoutedEventArgs e)
     {
-        // Quick dismiss animation.
-        var story = new Storyboard();
-        var fade = new DoubleAnimation
+        var (dx, dy) = EdgeOffset();
+        var duration = TimeSpan.FromMilliseconds(Math.Max(140, _durationMs * 0.55));
+
+        try
         {
-            To = 0,
-            Duration = TimeSpan.FromMilliseconds(Math.Max(120, _durationMs * 0.6)),
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
-        };
-        Storyboard.SetTarget(fade, ToastCard);
-        Storyboard.SetTargetProperty(fade, "Opacity");
-        story.Children.Add(fade);
-        story.Completed += (_, _) =>
+            var visual = ElementCompositionPreview.GetElementVisual(ToastCard);
+            var compositor = visual.Compositor;
+            // Ease-in dismiss: cubic-bezier(0.4, 0, 0.7, 0)
+            var easeIn = compositor.CreateCubicBezierEasingFunction(
+                new Vector2(0.40f, 0.0f), new Vector2(0.70f, 0.0f));
+
+            var move = compositor.CreateVector3KeyFrameAnimation();
+            move.InsertKeyFrame(0f, visual.Offset);
+            move.InsertKeyFrame(1f, new Vector3((float)dx, (float)dy, 0), easeIn);
+            move.Duration = duration;
+            move.StopBehavior = AnimationStopBehavior.SetToFinalValue;
+
+            var fade = compositor.CreateScalarKeyFrameAnimation();
+            fade.InsertKeyFrame(0f, visual.Opacity);
+            fade.InsertKeyFrame(1f, 0f, easeIn);
+            fade.Duration = duration;
+            fade.StopBehavior = AnimationStopBehavior.SetToFinalValue;
+
+            var batch = compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
+            batch.Completed += (_, _) =>
+            {
+                ResetTransformOffStage();
+                visual.Offset = Vector3.Zero;
+                visual.Opacity = (float)Math.Clamp(_opacityPercent / 100.0, 0.3, 1.0);
+                ApplyOpacity();
+            };
+            visual.StartAnimation("Offset", move);
+            visual.StartAnimation("Opacity", fade);
+            batch.End();
+        }
+        catch
         {
             ResetTransformOffStage();
             ApplyOpacity();
-        };
-        story.Begin();
+        }
     }
 
     private void FireToastBtn_OnClick(object sender, RoutedEventArgs e)
@@ -120,6 +146,50 @@ public sealed partial class DesignLabPage : Page
         catch (Exception ex)
         {
             Helpers.LaunchLog.Write($"DesignLab toast test failed: {ex.Message}");
+        }
+    }
+
+    private void FireOverlayBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            ToastSubtitle.Text =
+                $"Production overlay · opacity {LatinDigits.Number((int)_opacityPercent)}% · {LatinDigits.Number((int)_durationMs)}ms";
+            PlayEntrance();
+            App.PreviewPrayerChannels(
+                prayerStart: true,
+                opacity: Math.Clamp(_opacityPercent / 100.0, 0.30, 1.0),
+                animationMs: (int)_durationMs,
+                edgeTag: _edge,
+                variantTag: string.IsNullOrEmpty(_variant) ? "B" : _variant);
+            Helpers.LaunchLog.Write(
+                $"DesignLab overlay+audio opacity={_opacityPercent} duration={_durationMs} edge={_edge} variant={_variant}");
+        }
+        catch (Exception ex)
+        {
+            Helpers.LaunchLog.Write($"DesignLab overlay preview failed: {ex.Message}");
+        }
+    }
+
+    private void FirePreAlertBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            ToastSubtitle.Text =
+                $"Pre-alert · opacity {LatinDigits.Number((int)_opacityPercent)}% · {LatinDigits.Number((int)_durationMs)}ms";
+            PlayEntrance();
+            App.PreviewPrayerChannels(
+                prayerStart: false,
+                opacity: Math.Clamp(_opacityPercent / 100.0, 0.30, 1.0),
+                animationMs: (int)_durationMs,
+                edgeTag: _edge,
+                variantTag: string.IsNullOrEmpty(_variant) ? "A" : _variant);
+            Helpers.LaunchLog.Write(
+                $"DesignLab pre-alert opacity={_opacityPercent} duration={_durationMs} edge={_edge} variant={_variant}");
+        }
+        catch (Exception ex)
+        {
+            Helpers.LaunchLog.Write($"DesignLab pre-alert preview failed: {ex.Message}");
         }
     }
 
@@ -202,44 +272,67 @@ public sealed partial class DesignLabPage : Page
 
     private void PlayEntrance()
     {
-        ResetTransformOffStage();
-        ApplyOpacity(); // sets target opacity; start from 0 then animate to it
+        var (dx, dy) = EdgeOffset();
         var targetOpacity = Math.Clamp(_opacityPercent / 100.0, 0.3, 1.0);
-        ToastCard.Opacity = 0;
-
         var duration = TimeSpan.FromMilliseconds(_durationMs);
-        var story = new Storyboard();
 
-        var moveX = new DoubleAnimation
+        // Keep XAML transform in sync for Stop / Reset paths.
+        ToastTransform.TranslateX = 0;
+        ToastTransform.TranslateY = 0;
+        ToastBgBrush.Opacity = 1;
+
+        // Composition animations are independent and reliable on WinUI 3 (Storyboard
+        // transform paths often no-op without special setup).
+        try
         {
-            To = 0,
-            Duration = duration,
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        Storyboard.SetTarget(moveX, ToastTransform);
-        Storyboard.SetTargetProperty(moveX, "TranslateX");
-        story.Children.Add(moveX);
+            var visual = ElementCompositionPreview.GetElementVisual(ToastCard);
+            var compositor = visual.Compositor;
 
-        var moveY = new DoubleAnimation
+            visual.Offset = new Vector3((float)dx, (float)dy, 0);
+            visual.Opacity = 0f;
+
+            // Match production: cubic-bezier(0.16, 1, 0.3, 1) ease-out for position.
+            var easeOut = compositor.CreateCubicBezierEasingFunction(
+                new Vector2(0.16f, 1.0f), new Vector2(0.30f, 1.0f));
+            // Opacity: cubic-bezier(0.2, 0, 0, 1)
+            var easeOpacity = compositor.CreateCubicBezierEasingFunction(
+                new Vector2(0.20f, 0.0f), new Vector2(0.0f, 1.0f));
+
+            var move = compositor.CreateVector3KeyFrameAnimation();
+            move.InsertKeyFrame(0f, new Vector3((float)dx, (float)dy, 0));
+            move.InsertKeyFrame(1f, Vector3.Zero, easeOut);
+            move.Duration = duration;
+            move.StopBehavior = AnimationStopBehavior.SetToFinalValue;
+
+            var fade = compositor.CreateScalarKeyFrameAnimation();
+            fade.InsertKeyFrame(0f, 0f);
+            fade.InsertKeyFrame(1f, (float)targetOpacity, easeOpacity);
+            fade.Duration = duration;
+            fade.StopBehavior = AnimationStopBehavior.SetToFinalValue;
+
+            visual.StartAnimation("Offset", move);
+            visual.StartAnimation("Opacity", fade);
+            Helpers.LaunchLog.Write($"DesignLab Play ease-out dx={dx} dy={dy} opacity={targetOpacity:0.##} dur={_durationMs}");
+        }
+        catch (Exception ex)
         {
-            To = 0,
-            Duration = duration,
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        Storyboard.SetTarget(moveY, ToastTransform);
-        Storyboard.SetTargetProperty(moveY, "TranslateY");
-        story.Children.Add(moveY);
-
-        var fade = new DoubleAnimation
-        {
-            To = targetOpacity,
-            Duration = duration,
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-        };
-        Storyboard.SetTarget(fade, ToastCard);
-        Storyboard.SetTargetProperty(fade, "Opacity");
-        story.Children.Add(fade);
-
-        story.Begin();
+            Helpers.LaunchLog.Write($"DesignLab composition play failed, storyboard fallback: {ex.Message}");
+            // Fallback storyboard
+            ToastTransform.TranslateX = dx;
+            ToastTransform.TranslateY = dy;
+            ToastCard.Opacity = 0;
+            var story = new Storyboard();
+            var fade = new DoubleAnimation
+            {
+                From = 0,
+                To = targetOpacity,
+                Duration = duration,
+                EnableDependentAnimation = true
+            };
+            Storyboard.SetTarget(fade, ToastCard);
+            Storyboard.SetTargetProperty(fade, "Opacity");
+            story.Children.Add(fade);
+            story.Begin();
+        }
     }
 }

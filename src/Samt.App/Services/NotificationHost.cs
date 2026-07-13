@@ -6,11 +6,12 @@ using Samt.Core.Locations;
 using Samt.Core.Notifications;
 using Samt.Core.Time;
 using Samt_App.Helpers;
+using Samt_App.Overlay;
 
 namespace Samt_App.Services;
 
 /// <summary>
-/// Rebuilds today's notification plan and fires due toasts.
+/// Rebuilds today's notification plan and fires due toast / overlay / audio channels.
 /// Reschedules on settings change, day rollover, and a 15s poll.
 /// </summary>
 public sealed class NotificationHost : IDisposable
@@ -19,6 +20,8 @@ public sealed class NotificationHost : IDisposable
     private readonly LocalizationService _localization;
     private readonly ToastNotificationService _toasts;
     private readonly TrayIconService _tray;
+    private readonly OverlayService _overlay;
+    private readonly AdhanAudioService _audio;
     private readonly IPrayerEngine _engine = new PrayerEngine();
     private readonly NotificationPlanner _planner = new();
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(15) };
@@ -31,12 +34,16 @@ public sealed class NotificationHost : IDisposable
         AppState state,
         LocalizationService localization,
         ToastNotificationService toasts,
-        TrayIconService tray)
+        TrayIconService tray,
+        OverlayService overlay,
+        AdhanAudioService audio)
     {
         _state = state;
         _localization = localization;
         _toasts = toasts;
         _tray = tray;
+        _overlay = overlay;
+        _audio = audio;
     }
 
     public void Start()
@@ -46,6 +53,33 @@ public sealed class NotificationHost : IDisposable
         RebuildPlan();
         _timer.Start();
         LaunchLog.Write($"NotificationHost started with {_plan.Count} planned events");
+    }
+
+    /// <summary>Design-lab / diagnostics: fire channels for a synthetic event now.</summary>
+    public void PreviewNow(
+        PlannedNotificationKind kind,
+        PrayerEvent prayer = PrayerEvent.Fajr,
+        double? opacity = null,
+        int? animationMs = null,
+        OverlayEdge? entryEdge = null,
+        OverlayVisualStyle? style = null)
+    {
+        var channels = kind == PlannedNotificationKind.PrayerStart
+            ? NotificationChannel.All
+            : NotificationChannel.WindowsToast | NotificationChannel.Overlay;
+
+        var planned = new PlannedNotification
+        {
+            Id = "preview-" + Guid.NewGuid().ToString("N")[..8],
+            FireAt = DateTimeOffset.Now,
+            Kind = kind,
+            Prayer = prayer,
+            Channels = channels,
+            OffsetMinutes = kind == PlannedNotificationKind.BeforePrayer ? 15 : null
+        };
+
+        // Design lab always wants motion — do not honor OS reduce-motion here.
+        Dispatch(planned, opacity, animationMs, entryEdge, style, forceMotion: true);
     }
 
     public void Dispose()
@@ -59,6 +93,7 @@ public sealed class NotificationHost : IDisposable
         _timer.Stop();
         _timer.Tick -= OnTick;
         _state.SettingsChanged -= OnSettingsChanged;
+        // Overlay/audio lifetime is owned by App.
     }
 
     private void OnSettingsChanged(object? sender, EventArgs e)
@@ -150,18 +185,92 @@ public sealed class NotificationHost : IDisposable
                 continue;
             }
 
-            if (item.Channels.HasFlag(NotificationChannel.WindowsToast)
-                || item.Channels == NotificationChannel.All)
-            {
-                var prayerName = _localization.GetPrayerName(item.Prayer);
-                var title = item.Kind == PlannedNotificationKind.BeforePrayer
-                    ? _localization.Get("NextPrayer")
-                    : prayerName;
-                _toasts.Show(item, prayerName, title);
-            }
-
+            Dispatch(item);
             _fired.Add(item.Id);
         }
+    }
+
+    private void Dispatch(
+        PlannedNotification item,
+        double? opacityOverride = null,
+        int? animationMsOverride = null,
+        OverlayEdge? edgeOverride = null,
+        OverlayVisualStyle? styleOverride = null,
+        bool forceMotion = false)
+    {
+        var prayerName = _localization.GetPrayerName(item.Prayer);
+        var channels = item.Channels;
+        var wantsToast = channels.HasFlag(NotificationChannel.WindowsToast)
+                         || channels == NotificationChannel.All;
+        var wantsOverlay = channels.HasFlag(NotificationChannel.Overlay)
+                           || channels == NotificationChannel.All;
+        var wantsAudio = channels.HasFlag(NotificationChannel.Audio)
+                         || channels == NotificationChannel.All;
+
+        if (wantsToast)
+        {
+            var title = item.Kind == PlannedNotificationKind.BeforePrayer
+                ? _localization.Get("NextPrayer")
+                : prayerName;
+            _toasts.Show(item, prayerName, title);
+        }
+
+        // Overlay service owns audio when both are requested (stop button stops adhan).
+        if (wantsOverlay)
+        {
+            var audio = ResolveAudio(item, wantsAudio);
+            var overlay = ResolveOverlay(item);
+            if (overlay.Enabled)
+            {
+                _overlay.Show(
+                    item,
+                    prayerName,
+                    audio,
+                    overlay,
+                    styleOverride: styleOverride,
+                    edgeOverride: edgeOverride,
+                    opacityOverride: opacityOverride,
+                    animationMsOverride: animationMsOverride,
+                    forceMotion: forceMotion);
+            }
+            else if (wantsAudio && item.Kind == PlannedNotificationKind.PrayerStart)
+            {
+                _audio.Play(audio);
+            }
+        }
+        else if (wantsAudio && item.Kind == PlannedNotificationKind.PrayerStart)
+        {
+            _audio.Play(ResolveAudio(item, wantsAudio: true));
+        }
+    }
+
+    private AudioProfile ResolveAudio(PlannedNotification item, bool wantsAudio)
+    {
+        if (!wantsAudio || item.Kind != PlannedNotificationKind.PrayerStart)
+        {
+            return new AudioProfile { Source = AudioSource.Silent };
+        }
+
+        // Prefer per-rule audio when present; else app default.
+        var ruleAudio = _state.Settings.NotificationRules
+            .FirstOrDefault(r =>
+                r.Enabled
+                && r.Kind == NotificationEventKind.PrayerStart
+                && r.Audio is not null)?.Audio;
+
+        return ruleAudio ?? _state.Settings.DefaultAudio ?? new AudioProfile();
+    }
+
+    private OverlayProfile ResolveOverlay(PlannedNotification item)
+    {
+        var ruleOverlay = _state.Settings.NotificationRules
+            .FirstOrDefault(r =>
+                r.Enabled
+                && ((item.Kind == PlannedNotificationKind.PrayerStart && r.Kind == NotificationEventKind.PrayerStart)
+                    || (item.Kind == PlannedNotificationKind.BeforePrayer && r.Kind == NotificationEventKind.BeforePrayer))
+                && r.Overlay is not null)?.Overlay;
+
+        return ruleOverlay ?? _state.Settings.DefaultOverlay ?? new OverlayProfile();
     }
 
     private void UpdateTrayTooltip(LocationProfile location, DateTimeOffset now)

@@ -30,12 +30,34 @@ public static class SettingsJson
                 KnownLocations.Algiers
             ],
             NotificationRules = CreateDefaultNotificationRules(),
-            DefaultAudio = new AudioProfile(),
-            DefaultOverlay = new OverlayProfile()
+            DefaultAudio = CreateDefaultAudio(),
+            DefaultOverlay = CreateDefaultOverlay()
         };
     }
 
-    /// <summary>Prayer-start toasts for five prayers; pre-alert 15 minutes before each.</summary>
+    /// <summary>Soft system tone; replace with licensed Bundled/LocalFile adhan when available.</summary>
+    public static AudioProfile CreateDefaultAudio()
+        => new()
+        {
+            Source = AudioSource.WindowsDefault,
+            Loop = false
+        };
+
+    /// <summary>Bottom dock entry for prayer-start overlays; hold a few seconds after audio.</summary>
+    public static OverlayProfile CreateDefaultOverlay()
+        => new()
+        {
+            Enabled = true,
+            EntryEdge = OverlayEdge.Bottom,
+            AnimationDuration = TimeSpan.FromMilliseconds(280),
+            PostAudioHold = TimeSpan.FromSeconds(5),
+            Opacity = 0.94
+        };
+
+    /// <summary>
+    /// Prayer-start: toast + overlay + audio.
+    /// Pre-alert (15 min): toast + top ribbon overlay (no audio).
+    /// </summary>
     public static IReadOnlyList<NotificationRule> CreateDefaultNotificationRules()
     {
         var five = new[]
@@ -54,7 +76,7 @@ public static class SettingsJson
                 Id = Guid.Parse("b1111111-1111-4111-8111-111111111111"),
                 Kind = NotificationEventKind.PrayerStart,
                 TargetPrayers = five,
-                Channels = NotificationChannel.WindowsToast,
+                Channels = NotificationChannel.All,
                 Enabled = true
             },
             new NotificationRule
@@ -63,7 +85,7 @@ public static class SettingsJson
                 Kind = NotificationEventKind.BeforePrayer,
                 TargetPrayers = five,
                 OffsetMinutes = 15,
-                Channels = NotificationChannel.WindowsToast,
+                Channels = NotificationChannel.WindowsToast | NotificationChannel.Overlay,
                 Enabled = true
             }
         ];
@@ -109,11 +131,66 @@ public static class SettingsJson
             HijriDayOffset = settings.HijriDayOffset,
             Locations = locations,
             NotificationRules = settings.NotificationRules is { Count: > 0 }
-                ? settings.NotificationRules
+                ? UpgradeLegacyDefaultRules(settings.NotificationRules)
                 : CreateDefaultNotificationRules(),
-            DefaultAudio = settings.DefaultAudio ?? new AudioProfile(),
-            DefaultOverlay = settings.DefaultOverlay ?? new OverlayProfile()
+            DefaultAudio = settings.DefaultAudio ?? CreateDefaultAudio(),
+            DefaultOverlay = settings.DefaultOverlay ?? CreateDefaultOverlay()
         };
+    }
+
+    /// <summary>
+    /// Phase 3 defaults used toast-only on fixed rule GUIDs. Promote those to Phase 4 channels
+    /// without clobbering custom rules the user may have edited.
+    /// </summary>
+    private static IReadOnlyList<NotificationRule> UpgradeLegacyDefaultRules(
+        IReadOnlyList<NotificationRule> rules)
+    {
+        var startId = Guid.Parse("b1111111-1111-4111-8111-111111111111");
+        var beforeId = Guid.Parse("b2222222-2222-4222-8222-222222222222");
+        var list = new List<NotificationRule>(rules.Count);
+
+        foreach (var rule in rules)
+        {
+            if (rule.Id == startId
+                && rule.Kind == NotificationEventKind.PrayerStart
+                && rule.Channels == NotificationChannel.WindowsToast)
+            {
+                list.Add(new NotificationRule
+                {
+                    Id = rule.Id,
+                    Kind = rule.Kind,
+                    TargetPrayers = rule.TargetPrayers,
+                    OffsetMinutes = rule.OffsetMinutes,
+                    Channels = NotificationChannel.All,
+                    Enabled = rule.Enabled,
+                    Audio = rule.Audio,
+                    Overlay = rule.Overlay
+                });
+                continue;
+            }
+
+            if (rule.Id == beforeId
+                && rule.Kind == NotificationEventKind.BeforePrayer
+                && rule.Channels == NotificationChannel.WindowsToast)
+            {
+                list.Add(new NotificationRule
+                {
+                    Id = rule.Id,
+                    Kind = rule.Kind,
+                    TargetPrayers = rule.TargetPrayers,
+                    OffsetMinutes = rule.OffsetMinutes,
+                    Channels = NotificationChannel.WindowsToast | NotificationChannel.Overlay,
+                    Enabled = rule.Enabled,
+                    Audio = rule.Audio,
+                    Overlay = rule.Overlay
+                });
+                continue;
+            }
+
+            list.Add(rule);
+        }
+
+        return list;
     }
 
     private static JsonSerializerOptions CreateOptions()

@@ -116,7 +116,6 @@ public sealed class LocalizationService
         ["AsrMadhab"] = "مذهب العصر",
         ["AsrStandard"] = "الجمهور",
         ["AsrHanafi"] = "الحنفي",
-        ["PhaseBanner"] = "المرحلة 0–2: الهيكل، المحرك، المواقع، اليوم",
         ["NextPrayer"] = "الصلاة التالية",
         ["DayComplete"] = "انتهت صلوات اليوم",
         ["CalcStatusFormat"] = "{0} · {1}",
@@ -144,6 +143,11 @@ public sealed class LocalizationService
         ["GpsLocationName"] = "موقعي (GPS)",
         ["InvalidLatitude"] = "خط العرض غير صالح (−90 إلى 90).",
         ["InvalidLongitude"] = "خط الطول غير صالح (−180 إلى 180).",
+        ["OverlayPrayerEntered"] = "دخل وقت الصلاة",
+        ["OverlayPreAlertFormat"] = "بعد {0} دقيقة",
+        ["OverlayStopAdhan"] = "إيقاف الأذان",
+        ["OverlayDismiss"] = "إخفاء",
+        ["PhaseBanner"] = "المرحلة 0–4: الهيكل، المحرك، المواقع، اليوم، الإشعارات، الأذان",
     };
 
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
@@ -181,7 +185,6 @@ public sealed class LocalizationService
         ["AsrMadhab"] = "Asr madhab",
         ["AsrStandard"] = "Standard",
         ["AsrHanafi"] = "Hanafi",
-        ["PhaseBanner"] = "Phase 0–2: shell, engine, locations, today",
         ["NextPrayer"] = "Next prayer",
         ["DayComplete"] = "Day's prayers complete",
         ["CalcStatusFormat"] = "{0} · {1}",
@@ -209,5 +212,10 @@ public sealed class LocalizationService
         ["GpsLocationName"] = "My location (GPS)",
         ["InvalidLatitude"] = "Invalid latitude (−90 to 90).",
         ["InvalidLongitude"] = "Invalid longitude (−180 to 180).",
+        ["OverlayPrayerEntered"] = "It is time to pray",
+        ["OverlayPreAlertFormat"] = "in {0} min",
+        ["OverlayStopAdhan"] = "Stop adhan",
+        ["OverlayDismiss"] = "Dismiss",
+        ["PhaseBanner"] = "Phase 0–4: shell, engine, locations, today, notifications, adhan",
     };
 }

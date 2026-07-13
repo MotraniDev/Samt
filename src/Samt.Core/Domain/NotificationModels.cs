@@ -1,6 +1,6 @@
 namespace Samt.Core.Domain;
 
-/// <summary>Domain stubs for later phases (scheduling / audio / overlay).</summary>
+/// <summary>Notification kinds used by rules and the planner.</summary>
 public enum NotificationEventKind
 {
     BeforePrayer = 0,
@@ -40,6 +40,9 @@ public sealed class OverlayProfile
     public OverlayEdge EntryEdge { get; init; } = OverlayEdge.Top;
     public TimeSpan AnimationDuration { get; init; } = TimeSpan.FromMilliseconds(280);
     public TimeSpan PostAudioHold { get; init; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>Window opacity 0.30–1.0 (applied via layered HWND alpha).</summary>
+    public double Opacity { get; init; } = 0.94;
 }
 
 public enum OverlayEdge

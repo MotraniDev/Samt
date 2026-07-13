@@ -12,4 +12,4 @@
 
 **Default lean:** B for prayer-start + adhan; A for pre-alert only.  
 **Latin digits:** all mock times use `LatinDigitsTextBlock`.  
-**Delete** DesignLab when Phase 4 ships the real overlay.
+**Phase 4:** production surface is `OverlayService` / `OverlayWindow` (B @ start, A @ pre-alert). Design lab kept for motion experiments + “Fire overlay+audio”.

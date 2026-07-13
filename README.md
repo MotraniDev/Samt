@@ -68,7 +68,7 @@ dotnet run --project src\Samt.App\Samt.App.csproj -p:Platform=x64
 - [x] **Phase 1** — pure prayer engine, methods, Asr madhab, high-latitude rules, diagnostics UI, Kennadsa baseline fixture
 - [x] **Phase 2** — daily home + countdown, locations (manual/GPS), offline JSON settings, Latin digits (0–9)
 - [x] **Phase 3** — tray icon, single-instance, notification host, prayer toasts (close hides to tray)
-- [ ] Phase 4 — adhan audio + overlay window (see Design lab prototypes A/B/C)
+- [x] **Phase 4** — adhan audio + overlay window (bottom dock @ start, top ribbon pre-alert; Design lab previews)
 
 ## Agent skills (shortlist)
 

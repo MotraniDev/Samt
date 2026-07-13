@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Window
+    x:Class="Samt_App.Overlay.OverlayWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="SAMT">
+
+    <!--
+      Floating prayer card. Window is sized to the card and painted navy so the host
+      never shows as a black strip (true HWND alpha is unreliable on WinUI unpackaged).
+      Signature: quiet gold on deep navy; Latin digits for time.
+    -->
+    <Grid x:Name="RootGrid" Background="#071525">
+        <Border
+            x:Name="Card"
+            VerticalAlignment="Stretch"
+            HorizontalAlignment="Stretch"
+            Margin="0"
+            Padding="22,16"
+            CornerRadius="18"
+            BorderBrush="{StaticResource SamtGoldBrush}"
+            BorderThickness="1"
+            Opacity="1"
+            RenderTransformOrigin="0.5,0.5">
+            <Border.Background>
+                <SolidColorBrush x:Name="CardBg" Color="#071525" />
+            </Border.Background>
+            <Border.RenderTransform>
+                <CompositeTransform x:Name="CardTransform" TranslateY="0" />
+            </Border.RenderTransform>
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Spacing="4" VerticalAlignment="Center">
+                    <TextBlock
+                        x:Name="TitleText"
+                        Text=""
+                        FontFamily="{StaticResource SamtUiFont}"
+                        FontSize="22"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource SamtIvoryBrush}" />
+                    <TextBlock
+                        x:Name="TimeText"
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        Text=""
+                        FontSize="32"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource SamtGoldSoftBrush}" />
+                    <TextBlock
+                        x:Name="SubtitleText"
+                        Text=""
+                        FontFamily="{StaticResource SamtUiFont}"
+                        FontSize="13"
+                        Opacity="0.78"
+                        Foreground="{StaticResource SamtIvoryBrush}" />
+                </StackPanel>
+
+                <Button
+                    x:Name="StopButton"
+                    Grid.Column="1"
+                    MinWidth="108"
+                    MinHeight="40"
+                    Padding="16,8"
+                    VerticalAlignment="Center"
+                    Click="StopButton_OnClick"
+                    Content="Stop"
+                    Style="{StaticResource AccentButtonStyle}" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
