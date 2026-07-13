@@ -1,6 +1,6 @@
 # Design: Phase 3 — Tray, scheduling, Windows toast
 
-**Status:** Draft for implementation (skills: design / grill-me)  
+**Status:** Implemented (v1 personal) — tray + host + toast; polish deferred  
 **Stack:** WinUI 3, Windows App SDK, single-process tray host  
 
 ## Problem

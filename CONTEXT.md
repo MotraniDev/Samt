@@ -32,4 +32,4 @@ Cloud sync, Store listing, mosque search, full adhkar suite, claiming official t
 
 ## Phases
 
-0–2 done (shell, engine, today, locations, settings). Next: tray + scheduling + toast (3), adhan + overlay (4).
+0–3 done (shell, engine, today, locations, settings, tray, notification host, toast). Next: adhan + overlay (4).

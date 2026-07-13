@@ -29,10 +29,44 @@ public static class SettingsJson
                 KnownLocations.Oran,
                 KnownLocations.Algiers
             ],
-            NotificationRules = [],
+            NotificationRules = CreateDefaultNotificationRules(),
             DefaultAudio = new AudioProfile(),
             DefaultOverlay = new OverlayProfile()
         };
+    }
+
+    /// <summary>Prayer-start toasts for five prayers; pre-alert 15 minutes before each.</summary>
+    public static IReadOnlyList<NotificationRule> CreateDefaultNotificationRules()
+    {
+        var five = new[]
+        {
+            PrayerEvent.Fajr,
+            PrayerEvent.Dhuhr,
+            PrayerEvent.Asr,
+            PrayerEvent.Maghrib,
+            PrayerEvent.Isha
+        };
+
+        return
+        [
+            new NotificationRule
+            {
+                Id = Guid.Parse("b1111111-1111-4111-8111-111111111111"),
+                Kind = NotificationEventKind.PrayerStart,
+                TargetPrayers = five,
+                Channels = NotificationChannel.WindowsToast,
+                Enabled = true
+            },
+            new NotificationRule
+            {
+                Id = Guid.Parse("b2222222-2222-4222-8222-222222222222"),
+                Kind = NotificationEventKind.BeforePrayer,
+                TargetPrayers = five,
+                OffsetMinutes = 15,
+                Channels = NotificationChannel.WindowsToast,
+                Enabled = true
+            }
+        ];
     }
 
     public static string Serialize(AppSettings settings)
@@ -74,7 +108,9 @@ public static class SettingsJson
             ShowMissedAlertOnResume = settings.ShowMissedAlertOnResume,
             HijriDayOffset = settings.HijriDayOffset,
             Locations = locations,
-            NotificationRules = settings.NotificationRules ?? [],
+            NotificationRules = settings.NotificationRules is { Count: > 0 }
+                ? settings.NotificationRules
+                : CreateDefaultNotificationRules(),
             DefaultAudio = settings.DefaultAudio ?? new AudioProfile(),
             DefaultOverlay = settings.DefaultOverlay ?? new OverlayProfile()
         };

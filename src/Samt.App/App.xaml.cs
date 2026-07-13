@@ -9,6 +9,10 @@ namespace Samt_App;
 public partial class App : Application
 {
     private Window? _window;
+    private NotificationHost? _notificationHost;
+    private ToastNotificationService? _toasts;
+    private TrayIconService? _tray;
+    private bool _exitRequested;
 
     public App()
     {
@@ -16,9 +20,7 @@ public partial class App : Application
 
         UnhandledException += (_, e) =>
         {
-            LaunchLog.Write($"UnhandledException (Handled={e.Handled}): {e.Exception}");
-            // Do not swallow launch-critical errors forever without a window.
-            // Still mark handled so we can keep process only if a window exists.
+            LaunchLog.Write($"UnhandledException: {e.Exception}");
             if (_window is not null)
             {
                 e.Handled = true;
@@ -36,11 +38,21 @@ public partial class App : Application
     public static AppState State { get; private set; } = null!;
     public static Window? MainWindow { get; private set; }
 
+    /// <summary>True when user chose Exit from tray (process should end).</summary>
+    public static bool IsExitRequested { get; private set; }
+
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         LaunchLog.Write("OnLaunched begin");
         try
         {
+            if (!await SingleInstanceService.TryClaimAsync())
+            {
+                // Another instance owns the key — exit quietly.
+                Environment.Exit(0);
+                return;
+            }
+
             var dataDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "SAMT");
@@ -48,14 +60,13 @@ public partial class App : Application
 
             try
             {
-                var store = new JsonSettingsStore(dataDir);
-                State = new AppState(store);
+                State = new AppState(new JsonSettingsStore(dataDir));
                 await State.LoadAsync();
                 LaunchLog.Write("Settings loaded");
             }
             catch (Exception ex)
             {
-                LaunchLog.Write($"Settings load failed, using defaults: {ex.Message}");
+                LaunchLog.Write($"Settings load failed: {ex.Message}");
                 State = new AppState(new JsonSettingsStore(dataDir));
                 await State.LoadAsync();
             }
@@ -72,16 +83,28 @@ public partial class App : Application
 
             LatinDigits.ApplyProcessDefaults(Localization.CurrentLanguage);
 
+            _tray = new TrayIconService();
+            _tray.Initialize();
+            _tray.OpenRequested += (_, _) => ShowMainWindow();
+            _tray.ExitRequested += (_, _) => RequestExit();
+
+            _toasts = new ToastNotificationService();
+            _toasts.Initialize(_tray);
+
             _window = new MainWindow();
             MainWindow = _window;
             ApplyThemeFromSettings();
+            WireCloseToTray(_window);
             WindowActivation.ShowCentered(_window);
-            LaunchLog.Write("Window shown");
+
+            _notificationHost = new NotificationHost(State, Localization, _toasts, _tray);
+            _notificationHost.Start();
+
+            LaunchLog.Write("Window shown; notification host started");
         }
         catch (Exception ex)
         {
             LaunchLog.Write($"OnLaunched FAILED: {ex}");
-            // Last resort: try empty window so user sees something.
             try
             {
                 _window = new Window { Title = "SAMT — launch error" };
@@ -98,6 +121,56 @@ public partial class App : Application
             {
                 LaunchLog.Write($"Fallback window failed: {ex2}");
             }
+        }
+    }
+
+    public static void ShowMainWindow()
+    {
+        if (MainWindow is null)
+        {
+            return;
+        }
+
+        WindowActivation.ShowCentered(MainWindow);
+    }
+
+    private void RequestExit()
+    {
+        _exitRequested = true;
+        IsExitRequested = true;
+        LaunchLog.Write("Exit requested from tray");
+
+        _notificationHost?.Dispose();
+        _toasts?.Unregister();
+        _tray?.Dispose();
+
+        _window?.Close();
+        Environment.Exit(0);
+    }
+
+    private void WireCloseToTray(Window window)
+    {
+        try
+        {
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+            var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
+            appWindow.Closing += (_, e) =>
+            {
+                if (_exitRequested || IsExitRequested)
+                {
+                    return; // allow close
+                }
+
+                // Hide instead of exit — stay in tray for notifications.
+                e.Cancel = true;
+                appWindow.Hide();
+                LaunchLog.Write("Window hidden to tray");
+            };
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Close-to-tray wire failed: {ex.Message}");
         }
     }
 
