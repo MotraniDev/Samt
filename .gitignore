@@ -45,3 +45,6 @@ Desktop.ini
 *.log
 .env
 .env.*
+
+## Build / release artifacts
+artifacts/
