@@ -23,7 +23,7 @@ function Write-SamtOk {
 }
 
 function Write-SamtInfo {
-    param([Parameter(Mandatory)][string]$Message)
+    param([AllowEmptyString()][string]$Message = '')
     Write-Host "    $Message" -ForegroundColor DarkGray
 }
 

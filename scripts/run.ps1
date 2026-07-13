@@ -50,6 +50,14 @@ function Write-SamtCrashHint {
     }
 }
 
+function Show-SamtLaunchLog {
+    $log = Join-Path $env:LOCALAPPDATA 'SAMT\launch.log'
+    if (Test-Path $log) {
+        Write-SamtInfo "Launch log: $log"
+        Get-Content $log -Tail 10 | ForEach-Object { Write-SamtInfo $_ }
+    }
+}
+
 if (-not $Platform) {
     $Platform = Get-DefaultPlatform
 }
@@ -109,27 +117,44 @@ else {
 
     Write-SamtInfo $exe
     $dir = Split-Path -Parent $exe
+
+    # Note existing instance (single-instance will signal it to show, then exit 0).
+    $existing = @(Get-Process -Name 'Samt.App' -ErrorAction SilentlyContinue)
+    if ($existing.Count -gt 0) {
+        $ids = ($existing | ForEach-Object Id) -join ', '
+        Write-SamtInfo "Already running: $ids - will ask it to show the window"
+    }
+
     $proc = Start-Process -FilePath $exe -WorkingDirectory $dir -PassThru
-    Write-SamtOk "Started PID $($proc.Id). Close the window to stop the app."
-    # Smoke-check longer than prior REGDB crash window (~4s without self-contained WASDK).
-    Start-Sleep -Seconds 6
+    Write-SamtOk "Started PID $($proc.Id)."
+    Start-Sleep -Seconds 4
+
+    $byName = @(Get-Process -Name 'Samt.App' -ErrorAction SilentlyContinue)
+
     if ($proc.HasExited) {
         $code = $proc.ExitCode
+        if ($code -eq 0 -and $byName.Count -gt 0) {
+            # Secondary instance exited after signaling primary (single-instance).
+            $ids = ($byName | ForEach-Object Id) -join ', '
+            Write-SamtOk "SAMT already running (PID $ids). Primary was asked to show."
+            Write-SamtInfo 'If you still see no window: check the tray (overflow chevron), click SAMT -> Open.'
+            Show-SamtLaunchLog
+            return
+        }
+
         Write-SamtCrashHint -ExitCode $code
-        Write-SamtWarn 'If you see REGDB_E_CLASSNOTREG / Class not registered: rebuild with WindowsAppSDKSelfContained=true (already in csproj).'
+        Write-SamtWarn 'If REGDB_E_CLASSNOTREG: rebuild with WindowsAppSDKSelfContained=true (already in csproj).'
+        Show-SamtLaunchLog
         throw "App exited early with code $code"
     }
 
-    # Confirm by name — PID alone can be confusing after exit
-    $byName = Get-Process -Name 'Samt.App' -ErrorAction SilentlyContinue
-    if (-not $byName) {
+    if ($byName.Count -eq 0) {
+        Show-SamtLaunchLog
         throw 'Process finished during smoke check (Samt.App not listed).'
     }
 
-    Write-SamtOk "App is still running (PID $($byName.Id)). Use: Stop-Process -Name Samt.App -Force"
-    $log = Join-Path $env:LOCALAPPDATA 'SAMT\launch.log'
-    if (Test-Path $log) {
-        Write-SamtInfo "Launch log: $log"
-        Get-Content $log -Tail 8 | ForEach-Object { Write-SamtInfo $_ }
-    }
+    $ids = ($byName | ForEach-Object Id) -join ', '
+    Write-SamtOk "App is still running (PID $ids)."
+    Write-SamtInfo 'Close the window to hide to tray. Tray menu: Open / Exit. Shell stop: Stop-Process -Name Samt.App -Force'
+    Show-SamtLaunchLog
 }

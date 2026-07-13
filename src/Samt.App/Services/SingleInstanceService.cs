@@ -1,48 +1,125 @@
-using Microsoft.Windows.AppLifecycle;
+using System.Threading;
 using Samt_App.Helpers;
 
 namespace Samt_App.Services;
 
-/// <summary>Ensures only one SAMT process runs; redirects second launches to the first.</summary>
-public static class SingleInstanceService
+/// <summary>
+/// Single-instance for unpackaged WinUI using a named Mutex + Event.
+/// AppLifecycle AppInstance is unreliable here (stale keys / no Activate callback).
+/// </summary>
+public sealed class SingleInstanceService : IDisposable
 {
-    private const string InstanceKey = "SAMT-SingleInstance";
+    private const string MutexName = "Local\\SAMT-PrayerApp-SingleInstance";
+    private const string ShowEventName = "Local\\SAMT-PrayerApp-ShowWindow";
 
-    /// <returns>True if this process should continue; false if it should exit.</returns>
-    public static async Task<bool> TryClaimAsync()
+    private Mutex? _mutex;
+    private EventWaitHandle? _showEvent;
+    private CancellationTokenSource? _listenCts;
+    private bool _ownsMutex;
+
+    /// <summary>
+    /// Try to become the primary instance.
+    /// If another instance owns the mutex, signal it to show and return false (caller should exit).
+    /// </summary>
+    public bool TryClaimAsPrimary()
     {
         try
         {
-            var current = AppInstance.GetCurrent();
-            var keyInstance = AppInstance.FindOrRegisterForKey(InstanceKey);
-            if (keyInstance.IsCurrent)
+            _mutex = new Mutex(initiallyOwned: true, MutexName, out var createdNew);
+            _ownsMutex = createdNew;
+
+            _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
+
+            if (!createdNew)
             {
-                current.Activated += OnActivated;
-                LaunchLog.Write("Single-instance: primary");
-                return true;
+                LaunchLog.Write("Single-instance: secondary — signaling primary to show");
+                try
+                {
+                    // Release our non-owned wait immediately if we didn't create.
+                    // createdNew=false means another process holds the mutex.
+                    _showEvent.Set();
+                }
+                catch (Exception ex)
+                {
+                    LaunchLog.Write($"Show signal failed: {ex.Message}");
+                }
+
+                // Give primary a moment to wake, then secondary exits.
+                Thread.Sleep(200);
+                return false;
             }
 
-            LaunchLog.Write("Single-instance: redirecting to existing process");
-            var args = current.GetActivatedEventArgs();
-            await keyInstance.RedirectActivationToAsync(args);
-            return false;
+            LaunchLog.Write("Single-instance: primary (mutex)");
+            StartShowListener();
+            return true;
         }
         catch (Exception ex)
         {
-            // Unpackaged environments may not support AppInstance — continue as multi-instance.
-            LaunchLog.Write($"Single-instance unavailable: {ex.Message}");
+            LaunchLog.Write($"Single-instance unavailable, continuing: {ex.Message}");
             return true;
         }
     }
 
-    private static void OnActivated(object? sender, AppActivationArguments e)
+    private void StartShowListener()
     {
-        App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+        if (_showEvent is null)
         {
-            if (App.MainWindow is { } window)
+            return;
+        }
+
+        _listenCts = new CancellationTokenSource();
+        var token = _listenCts.Token;
+        var showEvent = _showEvent;
+
+        _ = Task.Run(() =>
+        {
+            while (!token.IsCancellationRequested)
             {
-                WindowActivation.ShowCentered(window);
+                try
+                {
+                    if (showEvent.WaitOne(TimeSpan.FromMilliseconds(500)))
+                    {
+                        LaunchLog.Write("Single-instance: show signal received");
+                        App.MainWindow?.DispatcherQueue.TryEnqueue(() => App.ShowMainWindow());
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    LaunchLog.Write($"Show listener error: {ex.Message}");
+                    Thread.Sleep(500);
+                }
             }
-        });
+        }, token);
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            _listenCts?.Cancel();
+            _listenCts?.Dispose();
+            _showEvent?.Dispose();
+            if (_ownsMutex)
+            {
+                try
+                {
+                    _mutex?.ReleaseMutex();
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+
+            _mutex?.Dispose();
+        }
+        catch
+        {
+            // ignore
+        }
     }
 }

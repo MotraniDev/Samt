@@ -12,6 +12,7 @@ public partial class App : Application
     private NotificationHost? _notificationHost;
     private ToastNotificationService? _toasts;
     private TrayIconService? _tray;
+    private SingleInstanceService? _singleInstance;
     private bool _exitRequested;
 
     public App()
@@ -38,7 +39,6 @@ public partial class App : Application
     public static AppState State { get; private set; } = null!;
     public static Window? MainWindow { get; private set; }
 
-    /// <summary>True when user chose Exit from tray (process should end).</summary>
     public static bool IsExitRequested { get; private set; }
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
@@ -46,9 +46,11 @@ public partial class App : Application
         LaunchLog.Write("OnLaunched begin");
         try
         {
-            if (!await SingleInstanceService.TryClaimAsync())
+            _singleInstance = new SingleInstanceService();
+            if (!_singleInstance.TryClaimAsPrimary())
             {
-                // Another instance owns the key — exit quietly.
+                // Another instance is running and was asked to show — exit this process cleanly.
+                LaunchLog.Write("Exiting secondary instance");
                 Environment.Exit(0);
                 return;
             }
@@ -143,8 +145,17 @@ public partial class App : Application
         _notificationHost?.Dispose();
         _toasts?.Unregister();
         _tray?.Dispose();
+        _singleInstance?.Dispose();
 
-        _window?.Close();
+        try
+        {
+            _window?.Close();
+        }
+        catch
+        {
+            // ignore
+        }
+
         Environment.Exit(0);
     }
 
@@ -159,10 +170,9 @@ public partial class App : Application
             {
                 if (_exitRequested || IsExitRequested)
                 {
-                    return; // allow close
+                    return;
                 }
 
-                // Hide instead of exit — stay in tray for notifications.
                 e.Cancel = true;
                 appWindow.Hide();
                 LaunchLog.Write("Window hidden to tray");
