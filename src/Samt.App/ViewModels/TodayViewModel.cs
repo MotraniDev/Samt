@@ -43,6 +43,28 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
     public string MethodName =>
         CalculationMethods.GetById(_appState.Settings.ActiveCalculationProfileId).DisplayName;
 
+    /// <summary>
+    /// Short multi-line label for the calculation-method circle (e.g. Algeria / 18° / 17°).
+    /// </summary>
+    public string MethodCircleText
+    {
+        get
+        {
+            var name = MethodName;
+            // "Algeria (18°/17°)" → "Algeria\n18° · 17°" for centered fit inside the circle.
+            var open = name.IndexOf('(');
+            var close = name.IndexOf(')');
+            if (open > 0 && close > open)
+            {
+                var title = name[..open].Trim();
+                var angles = name[(open + 1)..close].Trim().Replace('/', '·');
+                return title + "\n" + angles;
+            }
+
+            return name;
+        }
+    }
+
     public string DateText
     {
         get
@@ -127,6 +149,8 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
     public void RefreshLabels()
     {
         OnPropertyChanged(nameof(NextPrayerName));
+        OnPropertyChanged(nameof(MethodName));
+        OnPropertyChanged(nameof(MethodCircleText));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Disclaimer));
         RefreshHijriAndQibla();
@@ -147,6 +171,7 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
 
         OnPropertyChanged(nameof(LocationName));
         OnPropertyChanged(nameof(MethodName));
+        OnPropertyChanged(nameof(MethodCircleText));
         OnPropertyChanged(nameof(DateText));
         OnPropertyChanged(nameof(CoordinatesText));
         OnPropertyChanged(nameof(TimeZoneText));

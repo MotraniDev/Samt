@@ -53,20 +53,47 @@
                             Text="{x:Bind ViewModel.HijriDateText, Mode=OneWay}" />
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
-                    <Border Style="{StaticResource SamtPillBorder}">
+                <StackPanel
+                    x:Name="MethodChromeStack"
+                    Grid.Column="1"
+                    Spacing="6"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Right"
+                    Margin="0,0,44,0">
+                    <!-- Calculation method circle (e.g. Algeria 18°/17°) — compact, centered text -->
+                    <Border
+                        x:Name="MethodCircle"
+                        Width="92"
+                        Height="92"
+                        CornerRadius="46"
+                        Padding="8"
+                        Background="{StaticResource SamtCardBrush}"
+                        BorderBrush="{StaticResource SamtGoldBrush}"
+                        BorderThickness="1.5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top">
                         <TextBlock
-                            Style="{StaticResource SamtSectionLabel}"
+                            x:Name="MethodCircleText"
+                            Style="{StaticResource LatinDigitsTextBlock}"
+                            FontFamily="{StaticResource SamtUiFont}"
+                            FontSize="10"
+                            FontWeight="SemiBold"
+                            LineHeight="13"
+                            CharacterSpacing="-20"
                             Foreground="{StaticResource SamtGoldSoftBrush}"
                             Opacity="1"
-                            TextWrapping="Wrap"
-                            MaxWidth="140"
-                            Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" />
+                            TextWrapping="WrapWholeWords"
+                            TextAlignment="Center"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            MaxLines="4"
+                            Text="{x:Bind ViewModel.MethodCircleText, Mode=OneWay}" />
                     </Border>
                     <Border
                         Padding="10,4"
                         CornerRadius="999"
                         Background="{StaticResource SamtGoldBrush}"
+                        HorizontalAlignment="Center"
                         Visibility="{x:Bind ViewModel.RamadanBadgeVisibility, Mode=OneWay}">
                         <TextBlock
                             x:Name="RamadanBadgeText"

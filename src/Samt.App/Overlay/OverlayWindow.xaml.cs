@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Samt.Core.Domain;
@@ -53,8 +54,18 @@ public sealed partial class OverlayWindow : Window
     private bool _chromeReady;
     private RectInt32 _finalRect;
     private int _motionGen;
+    private string _muteLabel = "Mute";
+    private string _unmuteLabel = "Unmute";
+    private bool _isMuted;
+    private DateTimeOffset? _countdownTo;
+    private DispatcherTimer? _countdownTimer;
+    private bool _countdownZeroRaised;
 
     public event EventHandler? StopRequested;
+    public event EventHandler? CloseRequested;
+    public event EventHandler? MuteToggleRequested;
+    /// <summary>Raised once when a live pre-adhan countdown reaches zero.</summary>
+    public event EventHandler? CountdownReachedZero;
 
     public OverlayWindow()
     {
@@ -71,38 +82,74 @@ public sealed partial class OverlayWindow : Window
         string timeText,
         string subtitle,
         string stopLabel,
+        string muteLabel,
+        string unmuteLabel,
+        string closeLabel,
+        string eyebrowLabel,
         OverlayVisualStyle style,
         OverlayEdge entryEdge,
         FlowDirection flowDirection,
         double opacity,
         int animationMs,
-        bool reduceMotion)
+        bool reduceMotion,
+        bool isMuted = false,
+        DateTimeOffset? countdownTo = null)
     {
         EnsureChrome();
+        StopCountdown();
 
         TitleText.Text = prayerName;
         TimeText.Text = timeText;
         SubtitleText.Text = subtitle;
         StopButton.Content = stopLabel;
-        // Decorative eyebrow — localized short label above the prayer name.
-        EyebrowText.Text = flowDirection == FlowDirection.RightToLeft
-            ? "حان وقت الصلاة"
-            : "Prayer time";
+        _muteLabel = muteLabel;
+        _unmuteLabel = unmuteLabel;
+        ToolTipService.SetToolTip(CloseButton, closeLabel);
+        // Decorative eyebrow — localized "Adhan time" above the prayer name.
+        EyebrowText.Text = eyebrowLabel;
         RootGrid.FlowDirection = flowDirection;
+        // Chrome buttons stay physical LTR so mute/close stay on the visual far-right.
+        ChromeButtons.FlowDirection = FlowDirection.LeftToRight;
         _style = style;
         _entryEdge = entryEdge;
         _targetOpacity = Math.Clamp(opacity, 0.30, 1.0);
         _animationMs = Math.Clamp(animationMs, 80, 1200);
         _reduceMotion = reduceMotion;
+        _countdownTo = countdownTo;
+        _countdownZeroRaised = false;
 
         // Card stays fully visible; motion is on the window itself.
         Card.Opacity = 1;
         CardTransform.TranslateX = 0;
         CardTransform.TranslateY = 0;
 
+        SetMutedVisual(isMuted);
         ApplyStyleLayout();
         _finalRect = ComputeWorkAreaRect();
         ApplyWindowAlpha(_targetOpacity);
+
+        if (_countdownTo is not null)
+        {
+            TickCountdown();
+            StartCountdown();
+        }
+    }
+
+    /// <summary>Refresh the gold time line with remaining HH:MM:SS until Adhan (local clock).</summary>
+    public void UpdateCountdownDisplay(DateTimeOffset adhanAt)
+    {
+        _countdownTo = adhanAt;
+        TickCountdown();
+    }
+
+    /// <summary>Update mute button glyph/tooltip to match current mute state.</summary>
+    public void SetMutedVisual(bool muted)
+    {
+        _isMuted = muted;
+        // E767 = Volume, E74F = Mute
+        MuteIcon.Glyph = muted ? "\uE74F" : "\uE767";
+        ToolTipService.SetToolTip(MuteButton, muted ? _unmuteLabel : _muteLabel);
+        MuteButton.Opacity = muted ? 0.75 : 1.0;
     }
 
     public void ShowTopmost()
@@ -169,6 +216,7 @@ public sealed partial class OverlayWindow : Window
 
     public void HideOverlay(bool immediate = false)
     {
+        StopCountdown();
         CancelMotion();
         if (immediate || _reduceMotion)
         {
@@ -191,6 +239,7 @@ public sealed partial class OverlayWindow : Window
 
     private void ApplyHide()
     {
+        StopCountdown();
         CancelMotion();
         try
         {
@@ -207,15 +256,87 @@ public sealed partial class OverlayWindow : Window
         }
     }
 
+    private void StartCountdown()
+    {
+        StopCountdown(keepTarget: true);
+        _countdownTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _countdownTimer.Tick += (_, _) => TickCountdown();
+        _countdownTimer.Start();
+    }
+
+    private void StopCountdown(bool keepTarget = false)
+    {
+        if (_countdownTimer is not null)
+        {
+            try
+            {
+                _countdownTimer.Stop();
+            }
+            catch
+            {
+                // ignore
+            }
+
+            _countdownTimer = null;
+        }
+
+        if (!keepTarget)
+        {
+            _countdownTo = null;
+        }
+    }
+
+    private void TickCountdown()
+    {
+        if (_countdownTo is not { } target)
+        {
+            return;
+        }
+
+        // Device local clock vs Adhan instant (DateTimeOffset comparison is UTC-safe).
+        var remaining = target - DateTimeOffset.Now;
+        if (remaining < TimeSpan.Zero)
+        {
+            remaining = TimeSpan.Zero;
+        }
+
+        TimeText.Text = Samt.Core.Time.PrayerTimeline.FormatCountdownHms(remaining);
+
+        if (remaining <= TimeSpan.Zero && !_countdownZeroRaised)
+        {
+            _countdownZeroRaised = true;
+            StopCountdown(keepTarget: true);
+            try
+            {
+                CountdownReachedZero?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                LaunchLog.Write($"CountdownReachedZero: {ex.Message}");
+            }
+        }
+    }
+
     private void StopButton_OnClick(object sender, RoutedEventArgs e)
         => StopRequested?.Invoke(this, EventArgs.Empty);
+
+    private void CloseButton_OnClick(object sender, RoutedEventArgs e)
+        => CloseRequested?.Invoke(this, EventArgs.Empty);
+
+    private void MuteButton_OnClick(object sender, RoutedEventArgs e)
+        => MuteToggleRequested?.Invoke(this, EventArgs.Empty);
 
     private void RootGrid_OnKeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (e.Key == VirtualKey.Escape)
         {
             e.Handled = true;
-            StopRequested?.Invoke(this, EventArgs.Empty);
+            CloseRequested?.Invoke(this, EventArgs.Empty);
+        }
+        else if (e.Key == VirtualKey.M)
+        {
+            e.Handled = true;
+            MuteToggleRequested?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -295,6 +416,9 @@ public sealed partial class OverlayWindow : Window
                 StopButton.MinWidth = 96;
                 StopButton.MinHeight = 36;
                 StopButton.Padding = new Thickness(14, 8, 14, 8);
+                MuteButton.Width = MuteButton.Height = 34;
+                CloseButton.Width = CloseButton.Height = 34;
+                MuteIcon.FontSize = 14;
                 TextureImage.Opacity = 0.36;
                 break;
 
@@ -310,6 +434,9 @@ public sealed partial class OverlayWindow : Window
                 StopButton.MinWidth = 84;
                 StopButton.MinHeight = 34;
                 StopButton.Padding = new Thickness(12, 6, 12, 6);
+                MuteButton.Width = MuteButton.Height = 32;
+                CloseButton.Width = CloseButton.Height = 32;
+                MuteIcon.FontSize = 13;
                 TextureImage.Opacity = 0.40;
                 break;
 
@@ -325,6 +452,9 @@ public sealed partial class OverlayWindow : Window
                 StopButton.MinWidth = 120;
                 StopButton.MinHeight = 46;
                 StopButton.Padding = new Thickness(20, 10, 20, 10);
+                MuteButton.Width = MuteButton.Height = 40;
+                CloseButton.Width = CloseButton.Height = 40;
+                MuteIcon.FontSize = 16;
                 TextureImage.Opacity = 0.48;
                 break;
         }
@@ -358,17 +488,17 @@ public sealed partial class OverlayWindow : Window
             int heightDip;
             switch (_style)
             {
-                case OverlayVisualStyle.TopRibbon: // A compact
-                    widthDip = 420;
-                    heightDip = 112;
+                case OverlayVisualStyle.TopRibbon: // A compact (+ room for mute/close chrome)
+                    widthDip = 440;
+                    heightDip = 128;
                     break;
                 case OverlayVisualStyle.EdgeDock: // C slim
-                    widthDip = 340;
-                    heightDip = 120;
+                    widthDip = 360;
+                    heightDip = 136;
                     break;
                 default: // B hero
-                    widthDip = Math.Min(720, Math.Max(420, (int)(work.Width / scale) - 64));
-                    heightDip = 168;
+                    widthDip = Math.Min(720, Math.Max(440, (int)(work.Width / scale) - 64));
+                    heightDip = 188;
                     break;
             }
 

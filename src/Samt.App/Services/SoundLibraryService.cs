@@ -35,6 +35,7 @@ public static class SoundLibraryService
             Id = BuiltInSoundIds.Takbir,
             DisplayNameAr = "تكبير",
             DisplayNameEn = "Takbir",
+            // Synthetic cue generated on first use if no packaged file is present.
             RelativeFileName = "phrase-takbir.wav",
             IsBuiltIn = true,
             Role = SoundCatalogRole.PreAlert
@@ -44,7 +45,8 @@ public static class SoundLibraryService
             Id = BuiltInSoundIds.HayyaAlaSalah,
             DisplayNameAr = "حي على الصلاة",
             DisplayNameEn = "Hayya 'ala as-salah",
-            RelativeFileName = "phrase-hayya-alas-salah.wav",
+            // Prefer packaged Haya-ALA-SALAT.mp3; falls back to synthetic phrase wav.
+            RelativeFileName = "Haya-ALA-SALAT.mp3",
             IsBuiltIn = true,
             Role = SoundCatalogRole.PreAlert
         },
@@ -170,6 +172,23 @@ public static class SoundLibraryService
                 return path;
             }
 
+            // Alternate filenames shipped historically / differently cased.
+            if (soundId == BuiltInSoundIds.HayyaAlaSalah)
+            {
+                path = FindBuiltInFile("phrase-hayya-alas-salah.wav")
+                       ?? FindBuiltInFile("Haya-ALA-SALAT.mp3");
+                if (path is not null)
+                {
+                    return path;
+                }
+            }
+
+            if (soundId is BuiltInSoundIds.Takbir or BuiltInSoundIds.HayyaAlaSalah)
+            {
+                // Generate a short distinct cue so pre-alert never fails silently.
+                return EnsurePhraseCuePath(soundId);
+            }
+
             LaunchLog.Write($"Sound library missing built-in file: {rel}");
             return AdhanAudioService.EnsureDefaultTonePath();
         }
@@ -195,6 +214,77 @@ public static class SoundLibraryService
         ];
 
         return candidates.FirstOrDefault(File.Exists);
+    }
+
+    /// <summary>
+    /// Short synthetic pre-alert cue (takbir / hayya) written once under LocalAppData\SAMT\tones.
+    /// Used when packaged phrase files are absent.
+    /// </summary>
+    internal static string EnsurePhraseCuePath(string soundId)
+    {
+        var dir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "SAMT",
+            "tones");
+        Directory.CreateDirectory(dir);
+
+        var isHayya = soundId == BuiltInSoundIds.HayyaAlaSalah;
+        var fileName = isHayya ? "phrase-hayya-alas-salah.wav" : "phrase-takbir.wav";
+        var path = Path.Combine(dir, fileName);
+        if (!File.Exists(path))
+        {
+            // Distinct soft pulses: takbir ~ lower / shorter; hayya slightly longer rising pair.
+            WritePhraseCueWav(path, isHayya ? 3.0 : 1.8, isHayya ? 440.0 : 523.25, isHayya ? 587.33 : 659.25);
+            LaunchLog.Write($"Sound library generated phrase cue: {path}");
+        }
+
+        return path;
+    }
+
+    private static void WritePhraseCueWav(string path, double durationSec, double freqA, double freqB)
+    {
+        const int sampleRate = 22050;
+        var sampleCount = (int)(sampleRate * durationSec);
+        var data = new short[sampleCount];
+
+        for (var i = 0; i < sampleCount; i++)
+        {
+            var t = i / (double)sampleRate;
+            var half = durationSec * 0.48;
+            var inFirst = t < half;
+            var local = inFirst ? t / half : (t - half) / Math.Max(0.01, durationSec - half);
+            var env = Math.Sin(Math.PI * Math.Clamp(local, 0, 1)) * 0.28;
+            // Gap between the two syllables.
+            if (t > half - 0.04 && t < half + 0.06)
+            {
+                env = 0;
+            }
+
+            var freq = inFirst ? freqA : freqB;
+            var sample = env * Math.Sin(2 * Math.PI * freq * t);
+            data[i] = (short)(sample * short.MaxValue);
+        }
+
+        using var fs = File.Create(path);
+        using var bw = new BinaryWriter(fs);
+        var byteCount = data.Length * 2;
+        bw.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
+        bw.Write(36 + byteCount);
+        bw.Write(System.Text.Encoding.ASCII.GetBytes("WAVE"));
+        bw.Write(System.Text.Encoding.ASCII.GetBytes("fmt "));
+        bw.Write(16);
+        bw.Write((short)1);
+        bw.Write((short)1);
+        bw.Write(sampleRate);
+        bw.Write(sampleRate * 2);
+        bw.Write((short)2);
+        bw.Write((short)16);
+        bw.Write(System.Text.Encoding.ASCII.GetBytes("data"));
+        bw.Write(byteCount);
+        foreach (var s in data)
+        {
+            bw.Write(s);
+        }
     }
 
     /// <summary>Copy a user-selected audio file into the library folder and return a catalog entry.</summary>

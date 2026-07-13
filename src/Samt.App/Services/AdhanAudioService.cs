@@ -13,12 +13,29 @@ public sealed class AdhanAudioService : IDisposable
 {
     private MediaPlayer? _player;
     private bool _disposed;
+    private bool _muted;
     private static string? _defaultTonePath;
 
     public event EventHandler? PlaybackEnded;
     public event EventHandler? PlaybackStarted;
+    public event EventHandler? MuteChanged;
 
     public bool IsPlaying { get; private set; }
+
+    public bool IsMuted
+    {
+        get => _muted;
+        private set
+        {
+            if (_muted == value)
+            {
+                return;
+            }
+
+            _muted = value;
+            MuteChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     public void Play(AudioProfile? profile)
     {
@@ -40,21 +57,25 @@ public sealed class AdhanAudioService : IDisposable
                 return;
             }
 
+            // MediaPlayer needs a file:// URI on Windows for local paths.
+            var uri = path.StartsWith("file:", StringComparison.OrdinalIgnoreCase)
+                ? new Uri(path)
+                : new Uri(new FileInfo(path).FullName);
+
             _player = new MediaPlayer
             {
                 IsLoopingEnabled = profile.Loop,
-                AudioCategory = MediaPlayerAudioCategory.Media
+                AudioCategory = MediaPlayerAudioCategory.Media,
+                IsMuted = _muted,
+                Volume = 1.0
             };
             _player.MediaEnded += OnMediaEnded;
             _player.MediaFailed += OnMediaFailed;
-            var uri = path.StartsWith("file:", StringComparison.OrdinalIgnoreCase)
-                ? new Uri(path)
-                : new Uri(path, UriKind.Absolute);
             _player.Source = MediaSource.CreateFromUri(uri);
             _player.Play();
             IsPlaying = true;
             PlaybackStarted?.Invoke(this, EventArgs.Empty);
-            LaunchLog.Write($"AdhanAudio playing: {path}");
+            LaunchLog.Write($"AdhanAudio playing: {path} muted={_muted}");
         }
         catch (Exception ex)
         {
@@ -63,6 +84,27 @@ public sealed class AdhanAudioService : IDisposable
             DisposePlayer();
         }
     }
+
+    /// <summary>Mute or unmute the current (and future) playback without stopping the track.</summary>
+    public void SetMuted(bool muted)
+    {
+        IsMuted = muted;
+        try
+        {
+            if (_player is not null)
+            {
+                _player.IsMuted = muted;
+            }
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"AdhanAudio mute failed: {ex.Message}");
+        }
+
+        LaunchLog.Write($"AdhanAudio muted={muted}");
+    }
+
+    public void ToggleMute() => SetMuted(!IsMuted);
 
     public void Stop() => StopInternal(raiseEnded: true);
 

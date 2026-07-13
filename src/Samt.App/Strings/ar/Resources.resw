@@ -5,7 +5,7 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="AppDisplayName" xml:space="preserve"><value>سَمت</value></data>
-  <data name="AppTagline" xml:space="preserve"><value>مواقيت الصلاة والأذان</value></data>
+  <data name="AppTagline" xml:space="preserve"><value>مواقيت الأذان</value></data>
   <data name="NavToday" xml:space="preserve"><value>اليوم</value></data>
   <data name="NavLocations" xml:space="preserve"><value>المواقع</value></data>
   <data name="NavAlerts" xml:space="preserve"><value>التنبيهات</value></data>
@@ -29,7 +29,7 @@
   <data name="Longitude" xml:space="preserve"><value>خط الطول</value></data>
   <data name="TimeZone" xml:space="preserve"><value>المنطقة الزمنية</value></data>
   <data name="Inputs" xml:space="preserve"><value>المدخلات</value></data>
-  <data name="Results" xml:space="preserve"><value>نتائج اليوم</value></data>
+  <data name="Results" xml:space="preserve"><value>مواقيت الأذان اليوم</value></data>
   <data name="Disclaimer" xml:space="preserve"><value>هذه تقديرات فلكية محلية وليست مصدراً رسمياً. تحقق من جدول مسجدك. الأرقام تُعرض بالأرقام اللاتينية (0-9).</value></data>
   <data name="Prayer.Imsak" xml:space="preserve"><value>الإمساك</value></data>
   <data name="Prayer.Fajr" xml:space="preserve"><value>الفجر</value></data>
@@ -44,8 +44,11 @@
   <data name="AsrStandard" xml:space="preserve"><value>الجمهور</value></data>
   <data name="AsrHanafi" xml:space="preserve"><value>الحنفي</value></data>
   <data name="PhaseBanner" xml:space="preserve"><value>المرحلة 0–2: الهيكل، المحرك، المواقع، اليوم</value></data>
-  <data name="NextPrayer" xml:space="preserve"><value>الصلاة التالية</value></data>
-  <data name="DayComplete" xml:space="preserve"><value>انتهت صلوات اليوم</value></data>
+  <data name="AdhanTime" xml:space="preserve"><value>موعد الأذان</value></data>
+  <data name="NextPrayer" xml:space="preserve"><value>الأذان التالي</value></data>
+  <data name="NextAdhan" xml:space="preserve"><value>الأذان التالي</value></data>
+  <data name="DayComplete" xml:space="preserve"><value>انتهت مواقيت الأذان اليوم</value></data>
+  <data name="OverlayAdhanArrived" xml:space="preserve"><value>حان موعد الأذان</value></data>
   <data name="CalcStatusFormat" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="SavedLocations" xml:space="preserve"><value>المواقع المحفوظة</value></data>
   <data name="LocationEditor" xml:space="preserve"><value>تحرير الموقع</value></data>

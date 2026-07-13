@@ -55,4 +55,8 @@ public static class PrayerTimeline
 
     public static string FormatCountdown(TimeSpan remaining)
         => LatinDigits.Duration(remaining);
+
+    /// <summary>Always HH:MM:SS for alert overlays (pre-adhan live timer).</summary>
+    public static string FormatCountdownHms(TimeSpan remaining)
+        => LatinDigits.DurationHms(remaining);
 }

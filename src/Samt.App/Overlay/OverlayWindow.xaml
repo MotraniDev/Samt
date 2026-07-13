@@ -72,13 +72,68 @@
                     Data="M 44,44 L 0,44 L 0,32 M 44,44 L 44,0 L 32,0 M 44,44 L 14,14"
                     IsHitTestVisible="False" />
 
-                <Grid x:Name="ContentPanel" Padding="24,18" ColumnSpacing="18">
+                <Grid x:Name="ContentPanel" Padding="24,18" ColumnSpacing="14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                    <StackPanel x:Name="TextStack" Spacing="6" VerticalAlignment="Center">
+                    <!-- Top chrome: mute + close (always mouse-clickable) -->
+                    <StackPanel
+                        x:Name="ChromeButtons"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        Orientation="Horizontal"
+                        Spacing="8"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,0,0,4">
+                        <Button
+                            x:Name="MuteButton"
+                            Width="40"
+                            Height="40"
+                            Padding="0"
+                            Click="MuteButton_OnClick"
+                            Background="#331F4D3A"
+                            BorderBrush="{StaticResource SamtGoldSoftBrush}"
+                            BorderThickness="1"
+                            CornerRadius="20"
+                            ToolTipService.ToolTip="Mute">
+                            <FontIcon
+                                x:Name="MuteIcon"
+                                Glyph="&#xE767;"
+                                FontSize="16"
+                                Foreground="{StaticResource SamtGoldBrightBrush}" />
+                        </Button>
+                        <Button
+                            x:Name="CloseButton"
+                            Width="40"
+                            Height="40"
+                            Padding="0"
+                            Click="CloseButton_OnClick"
+                            Background="#33C4A35A"
+                            BorderBrush="{StaticResource SamtGoldBrush}"
+                            BorderThickness="1"
+                            CornerRadius="20"
+                            ToolTipService.ToolTip="Close">
+                            <FontIcon
+                                Glyph="&#xE711;"
+                                FontSize="14"
+                                Foreground="{StaticResource SamtIvoryBrush}" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel
+                        x:Name="TextStack"
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Spacing="6"
+                        VerticalAlignment="Center"
+                        Margin="0,8,0,0">
                         <TextBlock
                             x:Name="EyebrowText"
                             FontFamily="{StaticResource SamtUiFont}"
@@ -114,11 +169,13 @@
 
                     <Button
                         x:Name="StopButton"
+                        Grid.Row="1"
                         Grid.Column="1"
                         MinWidth="112"
                         MinHeight="44"
                         Padding="18,10"
                         VerticalAlignment="Center"
+                        Margin="0,8,0,0"
                         Click="StopButton_OnClick"
                         Content="Stop"
                         FontFamily="{StaticResource SamtUiFont}"

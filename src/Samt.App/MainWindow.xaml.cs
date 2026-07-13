@@ -102,17 +102,11 @@ public sealed partial class MainWindow : Window
 
         CompactChrome.Visibility = showCompact ? Visibility.Visible : Visibility.Collapsed;
 
-        // Dock compact chrome to the pane edge (start = left in LTR, right in RTL).
-        if (Content is FrameworkElement root)
-        {
-            var rtl = root.FlowDirection == FlowDirection.RightToLeft;
-            CompactChrome.HorizontalAlignment = rtl
-                ? HorizontalAlignment.Right
-                : HorizontalAlignment.Left;
-            CompactChrome.Margin = rtl
-                ? new Thickness(0, 0, 4, 10)
-                : new Thickness(4, 0, 0, 10);
-        }
+        // Always pin compact chrome to the physical far-left bottom, independent of RTL/pane side.
+        // Keeps language / theme / exit flush to the bottom edge without growing window height.
+        CompactChrome.HorizontalAlignment = HorizontalAlignment.Left;
+        CompactChrome.VerticalAlignment = VerticalAlignment.Bottom;
+        CompactChrome.Margin = new Thickness(8, 0, 0, 10);
     }
 
     private void NavView_OnSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)

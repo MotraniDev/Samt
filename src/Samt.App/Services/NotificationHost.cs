@@ -25,7 +25,8 @@ public sealed class NotificationHost : IDisposable
     private readonly AdhanAudioService _audio;
     private readonly IPrayerEngine _engine = new PrayerEngine();
     private readonly NotificationPlanner _planner = new();
-    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(15) };
+    // 1s poll keeps Adhan fire aligned with the pre-alert live countdown (HH:MM:SS).
+    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly HashSet<string> _fired = new(StringComparer.Ordinal);
     private readonly HashSet<string> _missedReported = new(StringComparer.Ordinal);
     private IReadOnlyList<PlannedNotification> _plan = [];
@@ -58,6 +59,7 @@ public sealed class NotificationHost : IDisposable
         _dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
         _state.SettingsChanged += OnSettingsChanged;
         _timer.Tick += OnTick;
+        _overlay.PreAlertCountdownReachedZero += OnPreAlertCountdownReachedZero;
         try
         {
             SystemEvents.PowerModeChanged += OnPowerModeChanged;
@@ -72,6 +74,22 @@ public sealed class NotificationHost : IDisposable
         ReportMissedSinceDayStart();
         _timer.Start();
         LaunchLog.Write($"NotificationHost started with {_plan.Count} planned events");
+    }
+
+    private void OnPreAlertCountdownReachedZero(object? sender, EventArgs e)
+    {
+        // Countdown hit 00:00:00 — fire due Adhan start immediately (do not wait for next poll).
+        try
+        {
+            var now = ResolveLocalNow(out _, out _);
+            FireDue(now);
+            _lastTickLocal = now;
+            LaunchLog.Write("Pre-alert countdown zero → FireDue");
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"OnPreAlertCountdownReachedZero: {ex.Message}");
+        }
     }
 
     /// <summary>Design-lab / diagnostics: fire channels for a synthetic event now.</summary>
@@ -112,6 +130,7 @@ public sealed class NotificationHost : IDisposable
         _timer.Stop();
         _timer.Tick -= OnTick;
         _state.SettingsChanged -= OnSettingsChanged;
+        _overlay.PreAlertCountdownReachedZero -= OnPreAlertCountdownReachedZero;
         try
         {
             SystemEvents.PowerModeChanged -= OnPowerModeChanged;
@@ -375,8 +394,8 @@ public sealed class NotificationHost : IDisposable
         if (wantsToast)
         {
             var title = item.Kind == PlannedNotificationKind.BeforePrayer
-                ? _localization.Get("NextPrayer")
-                : prayerName;
+                ? _localization.Get("NextAdhan")
+                : _localization.Get("AdhanTime");
             _toasts.Show(item, prayerName, title);
         }
 

@@ -70,6 +70,23 @@ public static class LatinDigits
         return EnsureLatin(text);
     }
 
+    /// <summary>Always <c>HH:MM:SS</c> (Latin digits) — used by pre-adhan overlay countdown.</summary>
+    public static string DurationHms(TimeSpan value)
+    {
+        if (value < TimeSpan.Zero)
+        {
+            value = TimeSpan.Zero;
+        }
+
+        var text = string.Format(
+            FormatCulture,
+            "{0:00}:{1:00}:{2:00}",
+            (int)value.TotalHours,
+            value.Minutes,
+            value.Seconds);
+        return EnsureLatin(text);
+    }
+
     public static string Date(DateOnly value, string format = "yyyy-MM-dd")
         => EnsureLatin(value.ToString(format, FormatCulture));
 

@@ -5,7 +5,7 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="AppDisplayName" xml:space="preserve"><value>SAMT</value></data>
-  <data name="AppTagline" xml:space="preserve"><value>Prayer times and adhan</value></data>
+  <data name="AppTagline" xml:space="preserve"><value>Adhan times</value></data>
   <data name="NavToday" xml:space="preserve"><value>Today</value></data>
   <data name="NavLocations" xml:space="preserve"><value>Locations</value></data>
   <data name="NavAlerts" xml:space="preserve"><value>Alerts</value></data>
@@ -29,7 +29,7 @@
   <data name="Longitude" xml:space="preserve"><value>Longitude</value></data>
   <data name="TimeZone" xml:space="preserve"><value>Time zone</value></data>
   <data name="Inputs" xml:space="preserve"><value>Inputs</value></data>
-  <data name="Results" xml:space="preserve"><value>Today's results</value></data>
+  <data name="Results" xml:space="preserve"><value>Today's Adhan times</value></data>
   <data name="Disclaimer" xml:space="preserve"><value>Local astronomical estimates — not an official source. Verify against your mosque timetable. Numbers use Latin digits (0-9).</value></data>
   <data name="Prayer.Imsak" xml:space="preserve"><value>Imsak</value></data>
   <data name="Prayer.Fajr" xml:space="preserve"><value>Fajr</value></data>
@@ -44,8 +44,11 @@
   <data name="AsrStandard" xml:space="preserve"><value>Standard</value></data>
   <data name="AsrHanafi" xml:space="preserve"><value>Hanafi</value></data>
   <data name="PhaseBanner" xml:space="preserve"><value>Phase 0–2: shell, engine, locations, today</value></data>
-  <data name="NextPrayer" xml:space="preserve"><value>Next prayer</value></data>
-  <data name="DayComplete" xml:space="preserve"><value>Day's prayers complete</value></data>
+  <data name="AdhanTime" xml:space="preserve"><value>Adhan time</value></data>
+  <data name="NextPrayer" xml:space="preserve"><value>Next Adhan</value></data>
+  <data name="NextAdhan" xml:space="preserve"><value>Next Adhan</value></data>
+  <data name="DayComplete" xml:space="preserve"><value>Day's Adhan times complete</value></data>
+  <data name="OverlayAdhanArrived" xml:space="preserve"><value>Adhan time has arrived</value></data>
   <data name="CalcStatusFormat" xml:space="preserve"><value>{0} · {1}</value></data>
   <data name="SavedLocations" xml:space="preserve"><value>Saved locations</value></data>
   <data name="LocationEditor" xml:space="preserve"><value>Edit location</value></data>

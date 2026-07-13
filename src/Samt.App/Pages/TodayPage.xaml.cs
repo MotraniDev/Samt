@@ -60,13 +60,23 @@ public sealed partial class TodayPage : Page
                 ? new Thickness(14, 20, 14, 20)
                 : new Thickness(16, 24, 16, 24);
 
+        // Method circle scales with mini-window (compact chrome is bottom-right, not top).
+        var circle = tight ? 76 : compact ? 84 : 92;
+        MethodCircle.Width = circle;
+        MethodCircle.Height = circle;
+        MethodCircle.CornerRadius = new CornerRadius(circle / 2.0);
+        MethodCircleText.FontSize = tight ? 8.5 : compact ? 9.5 : 10;
+        MethodCircleText.LineHeight = tight ? 11 : compact ? 12 : 13;
+        MethodChromeStack.Margin = new Thickness(0, 0, 0, 0);
+
         OrnamentTop.Opacity = tight ? 0.35 : 0.55;
         OrnamentBottom.Opacity = tight ? 0.35 : 0.55;
+        // Bottom inset so content clears far-right bottom compact chrome (lang/theme/exit).
         RootScroll.Padding = tight
-            ? new Thickness(12, 12, 12, 12)
+            ? new Thickness(12, 12, 12, 110)
             : compact
-                ? new Thickness(16, 14, 16, 14)
-                : new Thickness(20, 16, 20, 16);
+                ? new Thickness(16, 14, 16, 110)
+                : new Thickness(20, 16, 20, 110);
     }
 
     private void ApplyLabels()

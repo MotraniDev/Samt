@@ -16,7 +16,7 @@
                        Style="{StaticResource SamtBody}"
                        TextWrapping="Wrap" Opacity="0.8" />
 
-            <!-- Prayer start -->
+            <!-- Adhan time -->
             <Border Padding="18" CornerRadius="16"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1">

@@ -211,7 +211,7 @@ public sealed partial class DesignLabPage : Page
                 ToastCard.MaxWidth = 720;
                 ToastTitle.Text = "المغرب";
                 ToastTime.Text = "18:28";
-                ToastSubtitle.Text = "دخل وقت الصلاة";
+                ToastSubtitle.Text = "حان موعد الأذان";
                 StopBtn.Content = "إيقاف الأذان";
                 ToastBgBrush.Color = Color.FromArgb(255, 0x07, 0x15, 0x25);
                 ApplyTypeScale(eyebrow: 12, title: 34, time: 38, subtitle: 16, stop: 15, stackGap: 6, padX: 26, padY: 20);
@@ -239,7 +239,7 @@ public sealed partial class DesignLabPage : Page
                 ToastCard.MaxWidth = 420;
                 ToastTitle.Text = "الفجر";
                 ToastTime.Text = "05:12";
-                ToastSubtitle.Text = "دخل وقت الصلاة";
+                ToastSubtitle.Text = "حان موعد الأذان";
                 StopBtn.Content = "إيقاف";
                 ToastBgBrush.Color = Color.FromArgb(255, 0x0B, 0x1F, 0x33);
                 ApplyTypeScale(eyebrow: 10, title: 22, time: 26, subtitle: 13, stop: 13, stackGap: 3, padX: 18, padY: 12);

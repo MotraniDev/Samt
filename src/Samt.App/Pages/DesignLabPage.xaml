@@ -62,7 +62,7 @@
                             <TextBlock
                                 x:Name="ToastEyebrow"
                                 FontFamily="{StaticResource SamtUiFont}"
-                                Text="حان وقت الصلاة"
+                                Text="موعد الأذان"
                                 Foreground="{StaticResource SamtGoldSoftBrush}"
                                 FontSize="11"
                                 FontWeight="SemiBold"
@@ -82,7 +82,7 @@
                                 FontSize="30" />
                             <TextBlock
                                 x:Name="ToastSubtitle"
-                                Text="دخل وقت الصلاة"
+                                Text="حان موعد الأذان"
                                 FontFamily="{StaticResource SamtNaskhFont}"
                                 Foreground="{StaticResource SamtIvoryBrush}"
                                 Opacity="0.85"

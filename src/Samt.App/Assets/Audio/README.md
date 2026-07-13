@@ -11,8 +11,8 @@ Built-in catalog used by **Alerts → Sound library**:
 | `adhan-abdul-basit` | `library/adhan-abdul-basit.mp3` | Full adhan |
 | `adhan-abdul-ghaffar` | `library/adhan-abdul-ghaffar.mp3` | Full adhan |
 | `adhan-abdul-hakam` | `library/adhan-abdul-hakam.mp3` | Full adhan |
-| `phrase-takbir` | `library/phrase-takbir.wav` | Pre-alert cue (default) |
-| `phrase-hayya-alas-salah` | `library/phrase-hayya-alas-salah.wav` | Pre-alert cue |
+| `phrase-takbir` | synthetic WAV under LocalAppData (or `library/phrase-takbir.wav`) | Pre-alert cue (default) |
+| `phrase-hayya-alas-salah` | `library/Haya-ALA-SALAT.mp3` (fallback: synthetic WAV) | Pre-alert cue |
 | `soft-tone` | generated at runtime | Soft beep |
 | `silent` | — | No audio |
 

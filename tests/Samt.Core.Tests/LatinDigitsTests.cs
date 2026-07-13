@@ -32,6 +32,14 @@ public class LatinDigitsTests
     }
 
     [Fact]
+    public void DurationHms_AlwaysUsesThreeParts()
+    {
+        Assert.Equal("00:05:09", LatinDigits.DurationHms(new TimeSpan(0, 5, 9)));
+        Assert.Equal("02:05:09", LatinDigits.DurationHms(new TimeSpan(2, 5, 9)));
+        Assert.Equal("00:00:00", LatinDigits.DurationHms(TimeSpan.FromSeconds(-3)));
+    }
+
+    [Fact]
     public void Number_FormatsWithLatinDigits()
     {
         Assert.Equal("31.5569", LatinDigits.Number(31.5569, "0.0000"));
