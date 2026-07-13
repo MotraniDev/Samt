@@ -1,4 +1,3 @@
-using System.Drawing;
 using H.NotifyIcon;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -23,7 +22,7 @@ public sealed class TrayIconService : IDisposable
             {
                 ToolTipText = "SAMT",
                 // Generated icon from app resources when possible.
-                Icon = CreateDefaultIcon(),
+                Icon = AppIconHelper.CreateTrayIcon(),
                 ContextMenuMode = ContextMenuMode.PopupMenu
             };
 
@@ -106,20 +105,6 @@ public sealed class TrayIconService : IDisposable
         }
 
         _icon = null;
-    }
-
-    private static Icon CreateDefaultIcon()
-    {
-        // Simple solid icon so we do not depend on .ico decoding edge cases.
-        var bmp = new Bitmap(16, 16);
-        using (var g = Graphics.FromImage(bmp))
-        {
-            g.Clear(Color.FromArgb(0x0B, 0x1F, 0x33));
-            using var brush = new SolidBrush(Color.FromArgb(0xC4, 0xA3, 0x5A));
-            g.FillEllipse(brush, 2, 2, 12, 12);
-        }
-
-        return Icon.FromHandle(bmp.GetHicon());
     }
 
     private sealed class RelayCommand(Action execute) : System.Windows.Input.ICommand

@@ -232,6 +232,16 @@ public sealed class LocalizationService
         ["MissedAlertTitle"] = "فات تنبيه صلاة",
         ["MissedAlertBodyOne"] = "فات تنبيه {0} ({1}). لا يُعاد تشغيل الأذان المتأخر.",
         ["MissedAlertBodyMany"] = "فاتت {0} تنبيهات: {1}. لا يُعاد تشغيل الأذان المتأخر.",
+        ["SoundLibrary"] = "مكتبة الأصوات",
+        ["SoundLibraryHint"] = "اختر أذان دخول الصلاة، وصوت التنبيه المسبق (تكبير / حي على الصلاة / نغمة). يمكنك إضافة ملفاتك.",
+        ["AdhanSound"] = "صوت الأذان (دخول الصلاة)",
+        ["PreAlertSound"] = "صوت التنبيه المسبق",
+        ["PreviewSound"] = "استماع",
+        ["AddSound"] = "إضافة صوت…",
+        ["StopSound"] = "إيقاف",
+        ["SoundLibraryNote"] = "عينات الأذان من PrayTimes.org للاستخدام الشخصي. عبارات التكبير وحي على الصلاة نغمات قصيرة قابلة للاستبدال. تحقق من الترخيص قبل أي نشر عام.",
+        ["SoundAdded"] = "أُضيف الصوت إلى المكتبة.",
+        ["SoundAddFailed"] = "تعذّر إضافة الصوت:",
         ["PhaseBanner"] = "المرحلة 0–7: الهيكل حتى الصقل والتسليم الشخصي",
     };
 
@@ -386,6 +396,16 @@ public sealed class LocalizationService
         ["MissedAlertTitle"] = "Missed prayer alert",
         ["MissedAlertBodyOne"] = "Missed {0} ({1}). Late adhan is not replayed.",
         ["MissedAlertBodyMany"] = "Missed {0} alerts: {1}. Late adhan is not replayed.",
+        ["SoundLibrary"] = "Sound library",
+        ["SoundLibraryHint"] = "Choose the prayer-start adhan and a pre-alert cue (takbir / hayya 'ala as-salah / soft tone). You can add your own files.",
+        ["AdhanSound"] = "Adhan sound (prayer start)",
+        ["PreAlertSound"] = "Pre-alert sound",
+        ["PreviewSound"] = "Preview",
+        ["AddSound"] = "Add sound…",
+        ["StopSound"] = "Stop",
+        ["SoundLibraryNote"] = "Adhan samples from PrayTimes.org for personal offline use. Takbir and Hayya cues are short synthetic tones you can replace. Re-verify licensing before any public release.",
+        ["SoundAdded"] = "Sound added to the library.",
+        ["SoundAddFailed"] = "Could not add sound:",
         ["PhaseBanner"] = "Phase 0–7: shell through polish & personal delivery",
     };
 }

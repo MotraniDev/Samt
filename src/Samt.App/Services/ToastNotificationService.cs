@@ -96,7 +96,7 @@ public sealed class ToastNotificationService
         {
             if (App.MainWindow is { } window)
             {
-                WindowActivation.ShowCentered(window);
+                WindowActivation.Restore(window);
             }
         });
     }

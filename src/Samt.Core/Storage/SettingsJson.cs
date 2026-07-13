@@ -33,15 +33,19 @@ public static class SettingsJson
             ],
             NotificationRules = CreateDefaultNotificationRules(),
             DefaultAudio = CreateDefaultAudio(),
-            DefaultOverlay = CreateDefaultOverlay()
+            DefaultOverlay = CreateDefaultOverlay(),
+            AdhanSoundId = BuiltInSoundIds.AdhanAlaqsa,
+            PreAlertSoundId = BuiltInSoundIds.Takbir,
+            UserSounds = []
         };
     }
 
-    /// <summary>Soft system tone; replace with licensed Bundled/LocalFile adhan when available.</summary>
+    /// <summary>Default prayer-start audio: library adhan (Al-Aqsa sample).</summary>
     public static AudioProfile CreateDefaultAudio()
         => new()
         {
-            Source = AudioSource.WindowsDefault,
+            Source = AudioSource.Library,
+            SoundId = BuiltInSoundIds.AdhanAlaqsa,
             Loop = false
         };
 
@@ -114,9 +118,54 @@ public static class SettingsJson
             NotificationRules = settings.NotificationRules is { Count: > 0 }
                 ? UpgradeLegacyDefaultRules(settings.NotificationRules)
                 : CreateDefaultNotificationRules(),
-            DefaultAudio = settings.DefaultAudio ?? CreateDefaultAudio(),
-            DefaultOverlay = settings.DefaultOverlay ?? CreateDefaultOverlay()
+            DefaultAudio = NormalizeAudio(settings.DefaultAudio),
+            DefaultOverlay = settings.DefaultOverlay ?? CreateDefaultOverlay(),
+            AdhanSoundId = string.IsNullOrWhiteSpace(settings.AdhanSoundId)
+                ? BuiltInSoundIds.AdhanAlaqsa
+                : settings.AdhanSoundId.Trim(),
+            PreAlertSoundId = string.IsNullOrWhiteSpace(settings.PreAlertSoundId)
+                ? BuiltInSoundIds.Takbir
+                : settings.PreAlertSoundId.Trim(),
+            UserSounds = NormalizeUserSounds(settings.UserSounds)
         };
+    }
+
+    private static AudioProfile NormalizeAudio(AudioProfile? audio)
+    {
+        if (audio is null)
+        {
+            return CreateDefaultAudio();
+        }
+
+        // Promote legacy soft-tone defaults to library adhan.
+        if (audio.Source is AudioSource.WindowsDefault or AudioSource.Bundled
+            && string.IsNullOrWhiteSpace(audio.SoundId)
+            && string.IsNullOrWhiteSpace(audio.FilePath))
+        {
+            return CreateDefaultAudio();
+        }
+
+        return audio;
+    }
+
+    private static IReadOnlyList<UserSoundEntry> NormalizeUserSounds(IReadOnlyList<UserSoundEntry>? entries)
+    {
+        if (entries is null || entries.Count == 0)
+        {
+            return [];
+        }
+
+        return entries
+            .Where(e => e is not null
+                        && !string.IsNullOrWhiteSpace(e.Id)
+                        && !string.IsNullOrWhiteSpace(e.FilePath))
+            .Select(e => new UserSoundEntry
+            {
+                Id = e.Id.Trim(),
+                DisplayName = string.IsNullOrWhiteSpace(e.DisplayName) ? e.Id : e.DisplayName.Trim(),
+                FilePath = e.FilePath.Trim()
+            })
+            .ToList();
     }
 
     /// <summary>

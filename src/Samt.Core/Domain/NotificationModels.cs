@@ -23,6 +23,10 @@ public sealed class AudioProfile
 {
     public AudioSource Source { get; init; } = AudioSource.WindowsDefault;
     public string? FilePath { get; init; }
+
+    /// <summary>Catalog id from the sound library (preferred over FilePath when set).</summary>
+    public string? SoundId { get; init; }
+
     public bool Loop { get; init; }
 }
 
@@ -31,7 +35,9 @@ public enum AudioSource
     Silent = 0,
     WindowsDefault = 1,
     Bundled = 2,
-    LocalFile = 3
+    LocalFile = 3,
+    /// <summary>Resolve via App sound library catalog id (<see cref="AudioProfile.SoundId"/>).</summary>
+    Library = 4
 }
 
 public sealed class OverlayProfile
@@ -83,6 +89,15 @@ public sealed class AppSettings
     public AudioProfile DefaultAudio { get; init; } = new();
     public OverlayProfile DefaultOverlay { get; init; } = new();
 
+    /// <summary>Full adhan / prayer-start sound library id.</summary>
+    public string AdhanSoundId { get; init; } = BuiltInSoundIds.AdhanAlaqsa;
+
+    /// <summary>Pre-alert cue (takbir, hayya, soft tone, or user sound).</summary>
+    public string PreAlertSoundId { get; init; } = BuiltInSoundIds.Takbir;
+
+    /// <summary>User-added sounds (copied under LocalAppData\SAMT\sounds).</summary>
+    public IReadOnlyList<UserSoundEntry> UserSounds { get; init; } = [];
+
     public LocationProfile? GetActiveLocation()
     {
         if (Locations.Count == 0)
@@ -118,7 +133,10 @@ public sealed class AppSettings
         int? hijriDayOffset = null,
         IReadOnlyList<NotificationRule>? notificationRules = null,
         AudioProfile? defaultAudio = null,
-        OverlayProfile? defaultOverlay = null)
+        OverlayProfile? defaultOverlay = null,
+        string? adhanSoundId = null,
+        string? preAlertSoundId = null,
+        IReadOnlyList<UserSoundEntry>? userSounds = null)
         => new()
         {
             SchemaVersion = CurrentSchemaVersion,
@@ -133,6 +151,9 @@ public sealed class AppSettings
             Locations = locations ?? Locations,
             NotificationRules = notificationRules ?? NotificationRules,
             DefaultAudio = defaultAudio ?? DefaultAudio,
-            DefaultOverlay = defaultOverlay ?? DefaultOverlay
+            DefaultOverlay = defaultOverlay ?? DefaultOverlay,
+            AdhanSoundId = adhanSoundId ?? AdhanSoundId,
+            PreAlertSoundId = preAlertSoundId ?? PreAlertSoundId,
+            UserSounds = userSounds ?? UserSounds
         };
 }

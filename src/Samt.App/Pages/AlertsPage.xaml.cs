@@ -3,6 +3,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using Samt.Core.Domain;
 using Samt_App.ViewModels;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace Samt_App.Pages;
 
@@ -14,6 +16,7 @@ public sealed partial class AlertsPage : Page
         InitializeComponent();
         App.Localization.LanguageChanged += (_, _) => ApplyLabels();
         Loaded += (_, _) => ApplyLabels();
+        Unloaded += (_, _) => ViewModel.StopPreview();
     }
 
     public AlertsViewModel ViewModel { get; }
@@ -60,19 +63,70 @@ public sealed partial class AlertsPage : Page
         BeforeMaghribCheck.Content = loc.GetPrayerName(PrayerEvent.Maghrib);
         BeforeIshaCheck.Content = loc.GetPrayerName(PrayerEvent.Isha);
 
+        SoundSection.Text = loc.Get("SoundLibrary");
+        SoundHint.Text = loc.Get("SoundLibraryHint");
+        AdhanSoundLabel.Text = loc.Get("AdhanSound");
+        PreAlertSoundLabel.Text = loc.Get("PreAlertSound");
+        PreviewAdhanButton.Content = loc.Get("PreviewSound");
+        PreviewPreAlertButton.Content = loc.Get("PreviewSound");
+        AddSoundButton.Content = loc.Get("AddSound");
+        StopSoundButton.Content = loc.Get("StopSound");
+        SoundLibraryNote.Text = loc.Get("SoundLibraryNote");
+
         SaveButton.Content = loc.Get("SaveAlerts");
         FridayHint.Text = loc.Get("AlertsFridayHint");
+        Bindings.Update();
     }
 
     private async void SaveButton_OnClick(object sender, RoutedEventArgs e)
     {
         try
         {
+            ViewModel.StopPreview();
             await ViewModel.SaveAsync();
         }
         catch (Exception ex)
         {
             Helpers.LaunchLog.Write($"Alerts save button failed: {ex}");
+        }
+    }
+
+    private void PreviewAdhanButton_OnClick(object sender, RoutedEventArgs e)
+        => ViewModel.PreviewAdhan();
+
+    private void PreviewPreAlertButton_OnClick(object sender, RoutedEventArgs e)
+        => ViewModel.PreviewPreAlert();
+
+    private void StopSoundButton_OnClick(object sender, RoutedEventArgs e)
+        => ViewModel.StopPreview();
+
+    private async void AddSoundButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var picker = new FileOpenPicker();
+            picker.FileTypeFilter.Add(".mp3");
+            picker.FileTypeFilter.Add(".wav");
+            picker.FileTypeFilter.Add(".m4a");
+            picker.FileTypeFilter.Add(".wma");
+            picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
+
+            var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+            InitializeWithWindow.Initialize(picker, hwnd);
+
+            var file = await picker.PickSingleFileAsync();
+            if (file is null)
+            {
+                return;
+            }
+
+            await ViewModel.AddUserSoundAsync(file.Path);
+            Bindings.Update();
+        }
+        catch (Exception ex)
+        {
+            Helpers.LaunchLog.Write($"Add sound picker failed: {ex}");
+            ViewModel.StatusMessage = App.Localization.Get("SoundAddFailed") + " " + ex.Message;
         }
     }
 }

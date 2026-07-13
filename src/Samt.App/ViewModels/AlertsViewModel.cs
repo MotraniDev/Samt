@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -9,11 +10,12 @@ using Samt_App.Services;
 
 namespace Samt_App.ViewModels;
 
-/// <summary>Edits general + per-prayer notification rules (Phase 5).</summary>
+/// <summary>Edits general + per-prayer notification rules and sound library picks.</summary>
 public sealed class AlertsViewModel : INotifyPropertyChanged
 {
     private readonly AppState _appState;
     private readonly LocalizationService _localization;
+    private readonly AdhanAudioService _previewAudio = new();
     private bool _suppress;
     private bool _beforeEnabled = true;
     private bool _startEnabled = true;
@@ -40,6 +42,8 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
     private bool _beforeIsha = true;
     private string _statusMessage = string.Empty;
     private string _priorityNote = string.Empty;
+    private SoundPickItem? _selectedAdhanSound;
+    private SoundPickItem? _selectedPreAlertSound;
 
     public AlertsViewModel(AppState appState, LocalizationService localization)
     {
@@ -54,6 +58,9 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
         };
         LoadFromSettings();
     }
+
+    public ObservableCollection<SoundPickItem> AdhanSoundOptions { get; } = [];
+    public ObservableCollection<SoundPickItem> PreAlertSoundOptions { get; } = [];
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -150,7 +157,7 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
     public string StatusMessage
     {
         get => _statusMessage;
-        private set
+        set
         {
             var next = LatinDigits.EnsureLatin(value ?? string.Empty);
             if (_statusMessage == next)
@@ -178,9 +185,54 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
         }
     }
 
+    public SoundPickItem? SelectedAdhanSound
+    {
+        get => _selectedAdhanSound;
+        set
+        {
+            if (ReferenceEquals(_selectedAdhanSound, value)
+                || (_selectedAdhanSound?.Id == value?.Id && value is not null))
+            {
+                if (!ReferenceEquals(_selectedAdhanSound, value) && value is not null)
+                {
+                    _selectedAdhanSound = value;
+                    OnPropertyChanged();
+                }
+
+                return;
+            }
+
+            _selectedAdhanSound = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public SoundPickItem? SelectedPreAlertSound
+    {
+        get => _selectedPreAlertSound;
+        set
+        {
+            if (ReferenceEquals(_selectedPreAlertSound, value)
+                || (_selectedPreAlertSound?.Id == value?.Id && value is not null))
+            {
+                if (!ReferenceEquals(_selectedPreAlertSound, value) && value is not null)
+                {
+                    _selectedPreAlertSound = value;
+                    OnPropertyChanged();
+                }
+
+                return;
+            }
+
+            _selectedPreAlertSound = value;
+            OnPropertyChanged();
+        }
+    }
+
     public void RefreshLabels()
     {
         PriorityNote = _localization.Get("AlertsPriorityNote");
+        RebuildSoundOptions();
     }
 
     public void LoadFromSettings()
@@ -216,13 +268,10 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
             MaghribException = FormatException(model, PrayerEvent.Maghrib);
             IshaException = FormatException(model, PrayerEvent.Isha);
 
-            // Seed Fajr 30 as a helpful default when no exception is stored yet.
-            if (string.IsNullOrWhiteSpace(FajrException)
-                && model.GeneralBeforeMinutes == 15
-                && !model.BeforeExceptions.ContainsKey(PrayerEvent.Fajr))
-            {
-                // Keep empty so we don't invent overrides; UI placeholder shows 30.
-            }
+            RebuildSoundOptions();
+            SelectSounds(
+                _appState.Settings.AdhanSoundId,
+                _appState.Settings.PreAlertSoundId);
 
             RefreshLabels();
         }
@@ -230,6 +279,83 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
         {
             _suppress = false;
         }
+    }
+
+    public void PreviewAdhan()
+    {
+        var id = SelectedAdhanSound?.Id ?? _appState.Settings.AdhanSoundId;
+        _previewAudio.Play(SoundLibraryService.ProfileForSoundId(id));
+    }
+
+    public void PreviewPreAlert()
+    {
+        var id = SelectedPreAlertSound?.Id ?? _appState.Settings.PreAlertSoundId;
+        _previewAudio.Play(SoundLibraryService.ProfileForSoundId(id));
+    }
+
+    public void StopPreview() => _previewAudio.Stop();
+
+    public async Task AddUserSoundAsync(string filePath)
+    {
+        try
+        {
+            var entry = SoundLibraryService.ImportUserFile(filePath);
+            var list = _appState.Settings.UserSounds.ToList();
+            list.Add(entry);
+            _suppress = true;
+            try
+            {
+                await _appState.UpdateAsync(s => s.With(userSounds: list));
+            }
+            finally
+            {
+                _suppress = false;
+            }
+
+            RebuildSoundOptions();
+            SelectedAdhanSound = AdhanSoundOptions.FirstOrDefault(o => o.Id == entry.Id)
+                                 ?? SelectedAdhanSound;
+            StatusMessage = _localization.Get("SoundAdded");
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"AddUserSound failed: {ex.Message}");
+            StatusMessage = _localization.Get("SoundAddFailed") + " " + ex.Message;
+        }
+    }
+
+    private void RebuildSoundOptions()
+    {
+        var arabic = _localization.IsArabic;
+        var catalog = SoundLibraryService.GetCatalog(_appState.Settings);
+
+        AdhanSoundOptions.Clear();
+        PreAlertSoundOptions.Clear();
+
+        foreach (var item in catalog)
+        {
+            var pick = new SoundPickItem(item.Id, SoundLibraryService.DisplayName(item, arabic));
+            // Full list available for both pickers (user may use a short adhan as pre-alert, etc.)
+            AdhanSoundOptions.Add(pick);
+            PreAlertSoundOptions.Add(new SoundPickItem(item.Id, pick.DisplayName));
+        }
+
+        SelectSounds(
+            SelectedAdhanSound?.Id ?? _appState.Settings.AdhanSoundId,
+            SelectedPreAlertSound?.Id ?? _appState.Settings.PreAlertSoundId);
+
+        OnPropertyChanged(nameof(AdhanSoundOptions));
+        OnPropertyChanged(nameof(PreAlertSoundOptions));
+    }
+
+    private void SelectSounds(string? adhanId, string? preId)
+    {
+        SelectedAdhanSound = AdhanSoundOptions.FirstOrDefault(o => o.Id == adhanId)
+                             ?? AdhanSoundOptions.FirstOrDefault(o => o.Id == BuiltInSoundIds.AdhanAlaqsa)
+                             ?? AdhanSoundOptions.FirstOrDefault();
+        SelectedPreAlertSound = PreAlertSoundOptions.FirstOrDefault(o => o.Id == preId)
+                                ?? PreAlertSoundOptions.FirstOrDefault(o => o.Id == BuiltInSoundIds.Takbir)
+                                ?? PreAlertSoundOptions.FirstOrDefault();
     }
 
     public async Task SaveAsync()
@@ -352,10 +478,18 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
                 BeforeEnabled,
                 StartEnabled);
 
+            var adhanId = SelectedAdhanSound?.Id ?? BuiltInSoundIds.AdhanAlaqsa;
+            var preId = SelectedPreAlertSound?.Id ?? BuiltInSoundIds.Takbir;
+            var defaultAudio = SoundLibraryService.ProfileForSoundId(adhanId);
+
             _suppress = true;
             try
             {
-                await _appState.UpdateAsync(s => s.With(notificationRules: rules));
+                await _appState.UpdateAsync(s => s.With(
+                    notificationRules: rules,
+                    adhanSoundId: adhanId,
+                    preAlertSoundId: preId,
+                    defaultAudio: defaultAudio));
             }
             finally
             {
@@ -363,7 +497,7 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
             }
 
             StatusMessage = _localization.Get("AlertsSaved");
-            LaunchLog.Write($"Alerts saved: general={general}m, exceptions={exceptions.Count}");
+            LaunchLog.Write($"Alerts saved: general={general}m, exceptions={exceptions.Count}, adhan={adhanId}, pre={preId}");
         }
         catch (Exception ex)
         {
@@ -447,4 +581,12 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+}
+
+public sealed class SoundPickItem(string id, string displayName)
+{
+    public string Id { get; } = id;
+    public string DisplayName { get; } = displayName;
+
+    public override string ToString() => DisplayName;
 }

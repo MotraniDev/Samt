@@ -380,10 +380,20 @@ public sealed class NotificationHost : IDisposable
             _toasts.Show(item, prayerName, title);
         }
 
+        // Pre-alert plays a short library cue with toast/overlay (not the full adhan).
+        // Prayer-start plays adhan only when the Audio channel is enabled.
+        var wantsCue = item.Kind == PlannedNotificationKind.BeforePrayer
+                       && (wantsToast || wantsOverlay)
+                       && !string.Equals(
+                           _state.Settings.PreAlertSoundId,
+                           BuiltInSoundIds.Silent,
+                           StringComparison.OrdinalIgnoreCase);
+
+        var audio = ResolveAudio(item, wantsAudio: wantsAudio || wantsCue);
+
         // Overlay service owns audio when both are requested (stop button stops adhan).
         if (wantsOverlay)
         {
-            var audio = ResolveAudio(item, wantsAudio);
             var overlay = ResolveOverlay(item);
             if (overlay.Enabled)
             {
@@ -398,32 +408,51 @@ public sealed class NotificationHost : IDisposable
                     animationMsOverride: animationMsOverride,
                     forceMotion: forceMotion);
             }
-            else if (wantsAudio && item.Kind == PlannedNotificationKind.PrayerStart)
+            else if (audio.Source != AudioSource.Silent)
             {
                 _audio.Play(audio);
             }
         }
-        else if (wantsAudio && item.Kind == PlannedNotificationKind.PrayerStart)
+        else if (audio.Source != AudioSource.Silent)
         {
-            _audio.Play(ResolveAudio(item, wantsAudio: true));
+            _audio.Play(audio);
         }
     }
 
     private AudioProfile ResolveAudio(PlannedNotification item, bool wantsAudio)
     {
-        if (!wantsAudio || item.Kind != PlannedNotificationKind.PrayerStart)
+        if (!wantsAudio)
         {
             return new AudioProfile { Source = AudioSource.Silent };
         }
 
-        // Prefer per-rule audio when present; else app default.
+        if (item.Kind == PlannedNotificationKind.BeforePrayer)
+        {
+            // Pre-alert cue (takbir / hayya / soft / user) — not the full adhan.
+            return SoundLibraryService.ProfileForSoundId(_state.Settings.PreAlertSoundId);
+        }
+
+        if (item.Kind != PlannedNotificationKind.PrayerStart)
+        {
+            return new AudioProfile { Source = AudioSource.Silent };
+        }
+
+        // Prefer explicit library selection; then per-rule audio; then DefaultAudio.
+        var adhanId = _state.Settings.AdhanSoundId;
+        if (!string.IsNullOrWhiteSpace(adhanId))
+        {
+            return SoundLibraryService.ProfileForSoundId(adhanId);
+        }
+
         var ruleAudio = _state.Settings.NotificationRules
             .FirstOrDefault(r =>
                 r.Enabled
                 && r.Kind == NotificationEventKind.PrayerStart
                 && r.Audio is not null)?.Audio;
 
-        return ruleAudio ?? _state.Settings.DefaultAudio ?? new AudioProfile();
+        return ruleAudio
+               ?? _state.Settings.DefaultAudio
+               ?? SoundLibraryService.ProfileForSoundId(BuiltInSoundIds.AdhanAlaqsa);
     }
 
     private OverlayProfile ResolveOverlay(PlannedNotification item)

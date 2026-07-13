@@ -167,7 +167,8 @@ public partial class App : Application
             return;
         }
 
-        WindowActivation.ShowCentered(MainWindow);
+        // Fast path: restore previous size/position without re-centering (avoids multi-second hang).
+        WindowActivation.Restore(MainWindow);
     }
 
     private void HideMainWindowToTray()

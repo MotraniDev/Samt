@@ -88,7 +88,10 @@ public class SettingsStoreTests
         Assert.Equal(NotificationChannel.WindowsToast | NotificationChannel.Overlay, generalBefore.Channels);
         Assert.Equal(15, generalBefore.OffsetMinutes);
         Assert.Equal(30, fajrException.OffsetMinutes);
-        Assert.Equal(AudioSource.WindowsDefault, settings.DefaultAudio.Source);
+        Assert.Equal(AudioSource.Library, settings.DefaultAudio.Source);
+        Assert.Equal(BuiltInSoundIds.AdhanAlaqsa, settings.DefaultAudio.SoundId);
+        Assert.Equal(BuiltInSoundIds.AdhanAlaqsa, settings.AdhanSoundId);
+        Assert.Equal(BuiltInSoundIds.Takbir, settings.PreAlertSoundId);
         Assert.True(settings.DefaultOverlay.Enabled);
         Assert.Equal(OverlayEdge.Bottom, settings.DefaultOverlay.EntryEdge);
         Assert.InRange(settings.DefaultOverlay.Opacity, 0.3, 1.0);

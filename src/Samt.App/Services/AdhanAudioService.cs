@@ -33,7 +33,7 @@ public sealed class AdhanAudioService : IDisposable
         {
             StopInternal(raiseEnded: false);
 
-            var path = ResolvePath(profile);
+            var path = ResolvePath(profile, App.State?.Settings);
             if (path is null)
             {
                 LaunchLog.Write("AdhanAudio: no playable path; skipping");
@@ -157,12 +157,24 @@ public sealed class AdhanAudioService : IDisposable
     }
 
     /// <summary>Resolve a file:// or absolute path for the given profile.</summary>
-    public static string? ResolvePath(AudioProfile profile)
+    public static string? ResolvePath(AudioProfile profile, AppSettings? settings = null)
     {
         switch (profile.Source)
         {
             case AudioSource.Silent:
                 return null;
+
+            case AudioSource.Library:
+            {
+                var id = profile.SoundId;
+                if (string.IsNullOrWhiteSpace(id) && !string.IsNullOrWhiteSpace(profile.FilePath))
+                {
+                    id = profile.FilePath;
+                }
+
+                settings ??= TryCurrentSettings();
+                return SoundLibraryService.ResolvePath(id, settings ?? new AppSettings());
+            }
 
             case AudioSource.LocalFile:
                 if (!string.IsNullOrWhiteSpace(profile.FilePath) && File.Exists(profile.FilePath))
@@ -174,17 +186,48 @@ public sealed class AdhanAudioService : IDisposable
                 return EnsureDefaultTonePath();
 
             case AudioSource.Bundled:
+            {
+                // Prefer library id if present; else legacy single adhan.* under Assets/Audio.
+                if (!string.IsNullOrWhiteSpace(profile.SoundId))
+                {
+                    settings ??= TryCurrentSettings();
+                    return SoundLibraryService.ResolvePath(profile.SoundId, settings ?? new AppSettings());
+                }
+
                 var bundled = FindBundledAdhan();
                 if (bundled is not null)
                 {
                     return bundled;
                 }
 
+                // Fall through to default library adhan.
+                settings ??= TryCurrentSettings();
+                var fromLib = SoundLibraryService.ResolvePath(
+                    BuiltInSoundIds.AdhanAlaqsa,
+                    settings ?? new AppSettings());
+                if (fromLib is not null)
+                {
+                    return fromLib;
+                }
+
                 LaunchLog.Write("AdhanAudio bundled asset missing; falling back to default tone");
                 return EnsureDefaultTonePath();
+            }
 
             default: // WindowsDefault
                 return EnsureDefaultTonePath();
+        }
+    }
+
+    private static AppSettings? TryCurrentSettings()
+    {
+        try
+        {
+            return App.State?.Settings;
+        }
+        catch
+        {
+            return null;
         }
     }
 
@@ -193,6 +236,7 @@ public sealed class AdhanAudioService : IDisposable
         var baseDir = AppContext.BaseDirectory;
         string[] candidates =
         [
+            Path.Combine(baseDir, "Assets", "Audio", "library", "adhan-alaqsa.mp3"),
             Path.Combine(baseDir, "Assets", "Audio", "adhan.mp3"),
             Path.Combine(baseDir, "Assets", "Audio", "adhan.wav"),
             Path.Combine(baseDir, "Assets", "Audio", "adhan.m4a")
