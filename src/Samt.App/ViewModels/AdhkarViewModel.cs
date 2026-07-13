@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Samt.Core.Adhkar;
+using Samt.Core.Formatting;
 using Samt_App.Services;
 
 namespace Samt_App.ViewModels;
@@ -17,41 +19,51 @@ public sealed class AdhkarViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public ObservableCollection<AdhkarSection> Sections { get; } = [];
+    public ObservableCollection<AdhkarSectionVm> Sections { get; } = [];
 
     public string Disclaimer => _localization.Get("AdhkarDisclaimer");
+    public string Subtitle => _localization.Get("AdhkarSubtitle");
 
     public void RefreshLabels()
     {
         Rebuild();
         OnPropertyChanged(nameof(Disclaimer));
+        OnPropertyChanged(nameof(Subtitle));
     }
+
+    public void OpenReader(AdhkarCollectionKind kind)
+        => App.AdhkarReminders?.OpenReader(kind);
 
     private void Rebuild()
     {
         Sections.Clear();
-        Sections.Add(BuildSection("Adhkar.AfterPrayer", "Adhkar.AfterPrayer", itemCount: 3));
-        Sections.Add(BuildSection("Adhkar.Morning", "Adhkar.Morning", itemCount: 2));
-        Sections.Add(BuildSection("Adhkar.Evening", "Adhkar.Evening", itemCount: 2));
-    }
-
-    private AdhkarSection BuildSection(string titleKey, string itemPrefix, int itemCount)
-    {
-        var items = new List<AdhkarItem>(itemCount);
-        for (var i = 1; i <= itemCount; i++)
+        foreach (var collection in AdhkarCatalog.All)
         {
-            items.Add(new AdhkarItem(
-                _localization.Get($"{itemPrefix}.{i}.Arabic"),
-                _localization.Get($"{itemPrefix}.{i}.Translation")));
-        }
+            var items = collection.Items.Select(i =>
+            {
+                var translation = i.TranslationKey is null
+                    ? string.Empty
+                    : _localization.Get(i.TranslationKey);
+                var repeat = i.RepeatCount is { } n and > 1
+                    ? LatinDigits.EnsureLatin($"× {n}")
+                    : null;
+                return new AdhkarItemVm(i.ArabicText, translation, repeat);
+            }).ToList();
 
-        return new AdhkarSection(_localization.Get(titleKey), items);
+            Sections.Add(new AdhkarSectionVm(
+                collection.Kind,
+                _localization.Get(collection.TitleKey),
+                items));
+        }
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-public sealed record AdhkarSection(string Title, IReadOnlyList<AdhkarItem> Items);
+public sealed record AdhkarSectionVm(
+    AdhkarCollectionKind Kind,
+    string Title,
+    IReadOnlyList<AdhkarItemVm> Items);
 
-public sealed record AdhkarItem(string ArabicText, string Translation);
+public sealed record AdhkarItemVm(string ArabicText, string Translation, string? RepeatBadge);

@@ -1,110 +1,109 @@
 # سَمت / SAMT
 
-Local Windows prayer-times app (personal v1). Offline calculation, Arabic-first RTL UI, English supported.
+**English** | [العربية](#العربية)
+
+Local Windows prayer-times app. Offline calculation, Arabic-first RTL UI, languages: **Arabic** (default), English, French, Spanish. **Latin digits only (0–9).**
 
 **Not an official timetable.** Verify against your mosque.
+
+**Publisher:** MotraniSoft · **Repo:** [github.com/MotraniDev/Samt](https://github.com/MotraniDev/Samt)
+
+---
+
+## Features
+
+| Area | What you get |
+|------|----------------|
+| **Prayer times** | Offline astronomical calculation (Algeria method default + other profiles) |
+| **Locations** | Saved places, **Windows GPS**, **free place-name search** (OpenStreetMap Nominatim), manual coordinates |
+| **Alerts** | Toast, overlay, adhan audio, pre-alerts, Friday / Jumu‘ah rules |
+| **Themes** | Curated packages: System, Light, Dark, Ramadan, Algeria, Morocco |
+| **Adhkar** | Offline Morning / Evening / After-prayer / Sleep collections; mini reader; optional scheduled reminders |
+| **Updates** | Optional check against a GitHub Releases **JSON manifest**; download only after approval; SHA-256 verify |
+| **Languages** | ar / en / fr / es — choose in **Settings** (not on the main chrome) |
+| **Tray** | Close hides to tray; Exit from pane or tray menu |
+
+## Screenshots / video
+
+Add screenshots under `docs/media/` (or link releases). Video walkthrough welcome when available.
 
 ## Solution layout
 
 | Project | Role |
 |---------|------|
-| `src/Samt.Core` | Domain model + offline prayer engine |
-| `src/Samt.App` | WinUI 3 shell (Today, Locations, Alerts, Adhkar, Diagnostics, Design lab) |
-| `tests/Samt.Core.Tests` | Unit tests (engine, rounding, fixtures) |
-| `tools/GenerateBaseline` | Regenerates Kennadsa regression CSV |
-| `testdata/kennadsa` | Comparison fixtures + source notes |
+| `src/Samt.Core` | Domain model + offline prayer engine + Adhkar catalog |
+| `src/Samt.App` | WinUI 3 shell (Today, Locations, Alerts, Adhkar, **Settings**, Diagnostics, Design lab) |
+| `tests/Samt.Core.Tests` | Unit tests |
+| `tools/GenerateBaseline` | Kennadsa regression CSV |
+| `testdata/kennadsa` | Comparison fixtures |
 
 ## Requirements
 
-- Windows 10 22H2+ or Windows 11 (template min version is 1809; personal target is newer)
+- Windows 10 22H2+ or Windows 11
 - .NET 9 SDK
 - Windows App SDK runtime (restored via NuGet with the app)
 
 ## Scripts (PowerShell)
 
-From the repo root:
-
 | Script | Purpose |
 |--------|---------|
 | `.\scripts\build.ps1` | Restore + build (optional `-Test`) |
-| `.\scripts\test.ps1` | Run unit tests |
-| `.\scripts\run.ps1` | Build (unless `-NoBuild`) and launch the app |
-| `.\scripts\release.ps1` | Release publish → `artifacts/release/` + zip |
-| `.\scripts\release.ps1 -Installer` | Publish + Windows **Setup.exe** (needs Inno Setup 6) |
-| `.\scripts\installer.ps1` | Build Setup.exe only (publishes first unless `-SkipPublish`) |
-| `.\scripts\clean.ps1` | Remove `bin`/`obj` (add `-Artifacts` for release output) |
-
-Examples:
+| `.\scripts\test.ps1` | Unit tests |
+| `.\scripts\run.ps1` | Build and launch |
+| `.\scripts\release.ps1` | Publish zip under `artifacts/release/` |
+| `.\scripts\release.ps1 -Installer` | Publish + Setup.exe (Inno Setup 6) |
+| `.\scripts\installer.ps1` | Installer only |
 
 ```powershell
-# Debug build + tests
 .\scripts\build.ps1 -Test
-
-# Run the app
 .\scripts\run.ps1
-
-# Personal release (x64, self-contained)
-.\scripts\release.ps1 -Platform x64 -Open
-
-# Release + Windows installer (Setup.exe)
 .\scripts\installer.ps1 -Platform x64 -Open
-# or: .\scripts\release.ps1 -Installer
-
-# Tests only
-.\scripts\test.ps1 -Configuration Release
 ```
 
-If script execution is blocked:
+## Release update manifest
 
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+Publish `samt-release.json` on the GitHub Release (see ADR `docs/adr/0001-github-releases-update-distribution.md`):
+
+```json
+{
+  "version": "2026.7.14",
+  "notes": "Theme packages and Settings hub",
+  "downloadUrl": "https://github.com/MotraniDev/Samt/releases/download/v2026.7.14/SAMT-Setup-2026.7.14-x64.exe",
+  "sha256": "lowercase-hex-of-installer"
+}
 ```
 
-## Build & test (raw dotnet)
+Default app URL:  
+`https://github.com/MotraniDev/Samt/releases/latest/download/samt-release.json`
 
-```powershell
-dotnet test tests\Samt.Core.Tests\Samt.Core.Tests.csproj -c Release
-dotnet build src\Samt.App\Samt.App.csproj -c Debug -p:Platform=x64
-dotnet run --project src\Samt.App\Samt.App.csproj -p:Platform=x64
-```
+## Privacy
 
-## Phase status
+- Prayer calculation is fully offline.
+- GPS and place search are optional and user-initiated; coordinates stay on device.
+- Update check only contacts the configured release manifest URL when enabled.
 
-- [x] **Phase 0** — solution, domain models, ar/en strings, light/dark/system theme, RTL/LTR
-- [x] **Phase 1** — pure prayer engine, methods, Asr madhab, high-latitude rules, diagnostics UI, Kennadsa baseline fixture
-- [x] **Phase 2** — daily home + countdown, locations (manual/GPS), offline JSON settings, Latin digits (0–9)
-- [x] **Phase 3** — tray icon, single-instance, notification host, prayer toasts (close hides to tray)
-- [x] **Phase 4** — adhan audio + overlay window (bottom dock @ start, top ribbon pre-alert; Design lab previews)
-- [x] **Phase 5** — advanced rules (general pre-alert + per-prayer exceptions), Friday/Jumu‘ah, Alerts settings page
-- [x] **Phase 6** — Hijri date + day offset, qibla bearing, Ramadan Imsak/Iftar on Today, light offline Adhkar page
-- [x] **Phase 7** — auto-start, missed-on-resume, diagnostics status, a11y names, personal SETUP + release notes
+---
 
-## Agent skills (shortlist)
+<a id="العربية"></a>
 
-Configured in `AGENTS.md` + `docs/agents/`. Prefer: **frontend-design**, **rtl** concepts, **prototype**, **tdd**, **design**, **grill-me**, **check-work**.
+## العربية
 
-## Settings path
+تطبيق مواقيت صلاة لـ Windows. الحساب **أوفلاين**، الواجهة **عربية أولاً** (RTL)، اللغات: **العربية** (افتراضي)، الإنجليزية، الفرنسية، الإسبانية. **الأرقام لاتينية 0–9 فقط.**
 
-`%LocalAppData%\SAMT\settings.json` (with `settings.bak` backup)
+**ليس جدولاً رسمياً.** راجع مسجدك.
 
-## Personal setup
+**الناشر:** MotraniSoft · **المستودع:** [github.com/MotraniDev/Samt](https://github.com/MotraniDev/Samt)
 
-See [docs/SETUP.md](docs/SETUP.md) for install, auto-start, tray behavior, and a short soak checklist.
+### المزايا
 
-## Display digits
+- مواقيت أذان محلية مع طرق حساب متعددة (افتراضي: طريقة الجزائر).
+- مواقع محفوظة، **GPS**، **بحث بالاسم** (بيانات مفتوحة Nominatim)، وإدخال يدوي.
+- تنبيهات: إشعار Windows، نافذة عائمة، صوت الأذان، تنبيه مسبق، الجمعة.
+- **حزم مظهر:** تلقائي، فاتح، داكن، رمضان، الجزائر، المغرب.
+- **أذكار** أوفلاين (صباح / مساء / بعد الصلاة / نوم) مع قارئ مصغّر وتذكير اختياري.
+- **تحديثات اختيارية** عبر ملف JSON على GitHub Releases بموافقة المستخدم.
+- **الإعدادات** للغة والمظهر والتحديثات والأذكار والروابط (GitHub).
 
-**Rule: always Latin digits.** UI language may be Arabic (RTL), but times and numbers always use `0–9`, never Arabic-Indic (`٠–٩`).
+### البناء
 
-Implementation:
-
-- Format via `Samt.Core.Formatting.LatinDigits`
-- Numeric WinUI controls use `Language="en-US"` styles in `Themes/SamtTheme.xaml` (blocks XAML digit substitution)
-- See `AGENTS.md`
-
-## Default calculation
-
-Algeria-style preset: **Fajr 18° / Isha 17°**, Maghrib = sunset, Asr standard (factor 1). Seed location: **Kennadsa**.
-
-## License notes
-
-Personal project. Adhan audio and branding assets must be licensed before any public release.
+انظر أوامر PowerShell أعلاه. المثبّت يدعم العربية (افتراضي) والإنجليزية والفرنسية والإسبانية.

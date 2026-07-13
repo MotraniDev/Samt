@@ -45,6 +45,10 @@ public sealed partial class LocationsPage : Page
         FridayFixedTimeItem.Content = App.Localization.Get("FridayFixedTime");
         FixedFridayLabel.Text = App.Localization.Get("FixedFridayTime");
         SuppressDhuhrCheck.Content = App.Localization.Get("SuppressDhuhrOnFriday");
+        PlaceSearchLabel.Text = App.Localization.Get("PlaceSearch");
+        PlaceSearchButton.Content = App.Localization.Get("PlaceSearch");
+        PlaceSearchAttribution.Text = App.Localization.Get("PlaceSearchAttribution");
+        PlaceSearchBox.PlaceholderText = App.Localization.Get("PlaceSearchHint");
     }
 
     private async void ActivateButton_OnClick(object sender, RoutedEventArgs e)
@@ -70,4 +74,23 @@ public sealed partial class LocationsPage : Page
 
     private async void GpsButton_OnClick(object sender, RoutedEventArgs e)
         => await ViewModel.DetectGpsAsync();
+
+    private async void PlaceSearchButton_OnClick(object sender, RoutedEventArgs e)
+        => await ViewModel.SearchPlacesAsync();
+
+    private void PlaceResultsList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ViewModel.SelectedPlaceResult is not null)
+        {
+            ViewModel.ApplyPlaceResult(ViewModel.SelectedPlaceResult);
+        }
+    }
+
+    private void PlaceResultsList_OnDoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+    {
+        if (ViewModel.SelectedPlaceResult is not null)
+        {
+            ViewModel.ApplyPlaceResult(ViewModel.SelectedPlaceResult);
+        }
+    }
 }

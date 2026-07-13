@@ -43,6 +43,11 @@
                         <FontIcon Glyph="&#xE8D7;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem x:Name="NavSettings" Tag="settings">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE713;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem x:Name="NavDiagnostics" Tag="diagnostics">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE9D9;" />
@@ -56,7 +61,7 @@
             </NavigationView.MenuItems>
 
             <NavigationView.PaneFooter>
-                <!-- Expanded footer (full pane) -->
+                <!-- Expanded footer: brand + exit only (language/theme live in Settings). -->
                 <StackPanel x:Name="PaneFooterExpanded" Padding="12,8,12,14" Spacing="8">
                     <StackPanel Spacing="0" Margin="0,0,0,2">
                         <TextBlock
@@ -74,20 +79,6 @@
                             HorizontalAlignment="Center"
                             Text="SAMT" />
                     </StackPanel>
-                    <ComboBox x:Name="LanguageBox" HorizontalAlignment="Stretch"
-                              FontFamily="{StaticResource SamtUiFont}"
-                              SelectionChanged="LanguageBox_OnSelectionChanged">
-                        <ComboBoxItem Content="العربية" Tag="ar" />
-                        <ComboBoxItem Content="English" Tag="en-US" />
-                    </ComboBox>
-                    <ComboBox x:Name="ThemeBox" HorizontalAlignment="Stretch"
-                              FontFamily="{StaticResource SamtUiFont}"
-                              SelectionChanged="ThemeBox_OnSelectionChanged">
-                        <ComboBoxItem x:Name="ThemeSystemItem" Tag="System" />
-                        <ComboBoxItem x:Name="ThemeLightItem" Tag="Light" />
-                        <ComboBoxItem x:Name="ThemeDarkItem" Tag="Dark" />
-                    </ComboBox>
-                    <!-- Window close only hides to tray — explicit exit is required. -->
                     <Button
                         x:Name="ExitAppButton"
                         HorizontalAlignment="Stretch"
@@ -105,7 +96,7 @@
             <Frame x:Name="ContentFrame" />
         </NavigationView>
 
-        <!-- Compact chrome when nav pane is collapsed — far left, flush to bottom edge -->
+        <!-- Compact chrome when nav pane is collapsed — exit only -->
         <Border
             x:Name="CompactChrome"
             HorizontalAlignment="Left"
@@ -116,24 +107,6 @@
             Background="Transparent"
             Canvas.ZIndex="10">
             <StackPanel Spacing="4" HorizontalAlignment="Center">
-                <Button
-                    x:Name="CompactLangButton"
-                    Width="36"
-                    Height="32"
-                    Padding="0"
-                    Click="CompactLangButton_OnClick"
-                    ToolTipService.ToolTip="Language">
-                    <FontIcon Glyph="&#xE774;" FontSize="13" />
-                </Button>
-                <Button
-                    x:Name="CompactThemeButton"
-                    Width="36"
-                    Height="32"
-                    Padding="0"
-                    Click="CompactThemeButton_OnClick"
-                    ToolTipService.ToolTip="Theme">
-                    <FontIcon Glyph="&#xE793;" FontSize="13" />
-                </Button>
                 <Button
                     x:Name="CompactExitButton"
                     Width="36"

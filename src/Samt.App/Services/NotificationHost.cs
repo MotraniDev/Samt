@@ -54,6 +54,9 @@ public sealed class NotificationHost : IDisposable
     /// <summary>Remaining future planned events (for diagnostics).</summary>
     public int PlannedCount => _plan.Count;
 
+    /// <summary>Raised after a prayer-start notification is dispatched (for Adhkar queue).</summary>
+    public event EventHandler<PrayerEvent>? PrayerStartDispatched;
+
     public void Start()
     {
         _dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
@@ -435,6 +438,18 @@ public sealed class NotificationHost : IDisposable
         else if (audio.Source != AudioSource.Silent)
         {
             _audio.Play(audio);
+        }
+
+        if (item.Kind == PlannedNotificationKind.PrayerStart)
+        {
+            try
+            {
+                PrayerStartDispatched?.Invoke(this, item.Prayer);
+            }
+            catch (Exception ex)
+            {
+                LaunchLog.Write($"PrayerStartDispatched handler failed: {ex.Message}");
+            }
         }
     }
 

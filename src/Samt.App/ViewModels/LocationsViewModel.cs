@@ -16,8 +16,11 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
     private readonly AppState _appState;
     private readonly LocalizationService _localization;
     private readonly WindowsGeolocationService _geo = new();
+    private readonly NominatimPlaceSearchService _placeSearch = new();
     private LocationProfile? _selected;
     private string _name = string.Empty;
+    private string _placeQuery = string.Empty;
+    private PlaceSearchResult? _selectedPlaceResult;
     private string _latitude = string.Empty;
     private string _longitude = string.Empty;
     private string _timeZoneId = KnownLocations.AlgeriaTimeZoneId;
@@ -42,7 +45,39 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
 
     public ObservableCollection<LocationProfile> Locations { get; } = [];
 
+    public ObservableCollection<PlaceSearchResult> PlaceResults { get; } = [];
+
     public IReadOnlyList<string> TimeZoneIds { get; } = BuildTimeZoneList();
+
+    public string PlaceQuery
+    {
+        get => _placeQuery;
+        set
+        {
+            if (_placeQuery == value)
+            {
+                return;
+            }
+
+            _placeQuery = value ?? string.Empty;
+            OnPropertyChanged();
+        }
+    }
+
+    public PlaceSearchResult? SelectedPlaceResult
+    {
+        get => _selectedPlaceResult;
+        set
+        {
+            if (ReferenceEquals(_selectedPlaceResult, value))
+            {
+                return;
+            }
+
+            _selectedPlaceResult = value;
+            OnPropertyChanged();
+        }
+    }
 
     public LocationProfile? SelectedLocation
     {
@@ -458,6 +493,62 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         {
             IsBusy = false;
         }
+    }
+
+    public async Task SearchPlacesAsync()
+    {
+        if (string.IsNullOrWhiteSpace(PlaceQuery))
+        {
+            PlaceResults.Clear();
+            StatusMessage = _localization.Get("PlaceSearchHint");
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = _localization.Get("PlaceSearch") + "…";
+        try
+        {
+            var results = await _placeSearch.SearchAsync(PlaceQuery);
+            PlaceResults.Clear();
+            foreach (var r in results)
+            {
+                PlaceResults.Add(r);
+            }
+
+            StatusMessage = PlaceResults.Count == 0
+                ? _localization.Get("PlaceSearchNoResults")
+                : LatinDigits.EnsureLatin($"{PlaceResults.Count}");
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"SearchPlacesAsync failed: {ex}");
+            PlaceResults.Clear();
+            StatusMessage = _localization.Get("PlaceSearchFailed");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>Fill the editor from a place-search hit so the user can refine and save.</summary>
+    public void ApplyPlaceResult(PlaceSearchResult? place = null)
+    {
+        place ??= SelectedPlaceResult;
+        if (place is null)
+        {
+            return;
+        }
+
+        SelectedLocation = null;
+        Name = place.DisplayName;
+        Latitude = LatinDigits.Number(place.Latitude, "0.######");
+        Longitude = LatinDigits.Number(place.Longitude, "0.######");
+        TimeZoneId = place.TimeZoneId;
+        FridayModeIndex = 0;
+        FixedFridayTime = "13:00";
+        SuppressDhuhrOnFriday = true;
+        StatusMessage = _localization.Get("ApplyPlaceResult") + " — " + place.CoordinateText;
     }
 
     private async Task SafeUpdateAsync(Func<AppSettings, AppSettings> mutate)

@@ -40,6 +40,7 @@
     <!-- Arabic / UI typefaces (OFL) + islamic textures -->
     <Content Include="Assets\Fonts\**\*" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Textures\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Publisher\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

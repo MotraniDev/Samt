@@ -37,6 +37,45 @@
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1">
                 <StackPanel Spacing="12">
                     <TextBlock x:Name="EditorHeader" Style="{StaticResource SamtPageTitle}" FontSize="22" />
+
+                    <TextBlock x:Name="PlaceSearchLabel" Opacity="0.75" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            x:Name="PlaceSearchBox"
+                            Text="{x:Bind ViewModel.PlaceQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            PlaceholderText="Kennadsa, Oran…" />
+                        <Button
+                            x:Name="PlaceSearchButton"
+                            Grid.Column="1"
+                            VerticalAlignment="Stretch"
+                            Click="PlaceSearchButton_OnClick" />
+                    </Grid>
+                    <ListView
+                        x:Name="PlaceResultsList"
+                        Height="100"
+                        ItemsSource="{x:Bind ViewModel.PlaceResults, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedPlaceResult, Mode=TwoWay}"
+                        DoubleTapped="PlaceResultsList_OnDoubleTapped"
+                        SelectionChanged="PlaceResultsList_OnSelectionChanged">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Spacing="2" Padding="4,6">
+                                    <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+                                    <TextBlock
+                                        Style="{StaticResource LatinDigitsTextBlock}"
+                                        Text="{Binding CoordinateText}"
+                                        Opacity="0.65"
+                                        FontSize="12" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <TextBlock x:Name="PlaceSearchAttribution" FontSize="11" Opacity="0.55" TextWrapping="Wrap" />
+
                     <TextBlock x:Name="NameLabel" Opacity="0.75" />
                     <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock x:Name="LatLabel" Opacity="0.75" />

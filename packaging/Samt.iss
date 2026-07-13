@@ -26,7 +26,7 @@
 
 #define MyAppName "SAMT"
 #define MyAppNameAr "سَمت"
-#define MyAppPublisher "SAMT"
+#define MyAppPublisher "MotraniSoft"
 #define MyAppURL "https://github.com/MotraniDev/Samt"
 #define MyAppExeName "Samt.App.exe"
 #define MyAppId "{{A3F8C2E1-9B4D-4F6A-8E2C-1D0B7A5E9F34}"
@@ -78,9 +78,12 @@ RestartApplications=no
 ; Allow reinstall / upgrade over previous personal install
 AllowNoIcons=yes
 
+; Arabic first = default installer language. Also en / fr / es.
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "arabic"; MessagesFile: "compiler:Languages\Arabic.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked

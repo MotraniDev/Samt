@@ -5,10 +5,10 @@ using Samt.Core.Formatting;
 namespace Samt_App.Services;
 
 /// <summary>
-/// App strings for ar / en-US.
+/// App strings for ar / en-US / fr / es.
 /// Does not require ApplicationLanguages.PrimaryLanguageOverride (throws on many unpackaged WinUI runs).
 /// </summary>
-public sealed class LocalizationService
+public sealed partial class LocalizationService
 {
     public string CurrentLanguage { get; private set; } = "ar";
 
@@ -16,6 +16,9 @@ public sealed class LocalizationService
 
     public bool IsArabic =>
         CurrentLanguage.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>True when layout should be RTL (Arabic). French/Spanish/English are LTR.</summary>
+    public bool IsRightToLeft => IsArabic;
 
     public void Initialize(string? language = null)
     {
@@ -41,13 +44,18 @@ public sealed class LocalizationService
             return key ?? string.Empty;
         }
 
-        var map = IsArabic ? Arabic : English;
+        var map = MapFor(CurrentLanguage);
         if (map.TryGetValue(key, out var value))
         {
             return LatinDigits.EnsureLatin(value);
         }
 
-        // Namespace-style key without prefix match: return key as last resort.
+        // Fallback to English so incomplete catalogs still show usable UI.
+        if (!ReferenceEquals(map, English) && English.TryGetValue(key, out var english))
+        {
+            return LatinDigits.EnsureLatin(english);
+        }
+
         return key;
     }
 
@@ -55,7 +63,7 @@ public sealed class LocalizationService
         => Get($"Prayer.{prayer}");
 
     public FlowDirection FlowDirection =>
-        IsArabic ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        IsRightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
 
     private void ApplyLanguage(string language, bool raiseEvent)
     {
@@ -78,8 +86,46 @@ public sealed class LocalizationService
         }
     }
 
-    private static string Normalize(string language)
-        => language is "en" or "en-US" or "en-GB" ? "en-US" : "ar";
+    /// <summary>Normalizes to ar | en-US | fr | es.</summary>
+    public static string Normalize(string language)
+    {
+        if (string.IsNullOrWhiteSpace(language))
+        {
+            return "ar";
+        }
+
+        var t = language.Trim();
+        if (t.StartsWith("ar", StringComparison.OrdinalIgnoreCase))
+        {
+            return "ar";
+        }
+
+        if (t.StartsWith("fr", StringComparison.OrdinalIgnoreCase))
+        {
+            return "fr";
+        }
+
+        if (t.StartsWith("es", StringComparison.OrdinalIgnoreCase))
+        {
+            return "es";
+        }
+
+        if (t.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+        {
+            return "en-US";
+        }
+
+        return "ar";
+    }
+
+    private static Dictionary<string, string> MapFor(string language)
+        => language switch
+        {
+            "fr" => French,
+            "es" => Spanish,
+            "en-US" => English,
+            _ => Arabic
+        };
 
     private static readonly Dictionary<string, string> Arabic = new(StringComparer.Ordinal)
     {
@@ -91,11 +137,15 @@ public sealed class LocalizationService
         ["NavAdhkar"] = "الأذكار",
         ["NavDiagnostics"] = "التشخيص",
         ["NavDesignLab"] = "مختبر التصميم",
+        ["NavSettings"] = "الإعدادات",
         ["Language"] = "اللغة",
         ["Theme"] = "المظهر",
         ["ThemeSystem"] = "تلقائي",
         ["ThemeLight"] = "فاتح",
         ["ThemeDark"] = "داكن",
+        ["ThemeRamadan"] = "رمضان",
+        ["ThemeAlgeria"] = "الجزائر",
+        ["ThemeMorocco"] = "المغرب",
         ["Location"] = "الموقع",
         ["Method"] = "طريقة الحساب",
         ["Date"] = "التاريخ",
@@ -256,6 +306,56 @@ public sealed class LocalizationService
         ["SoundAdded"] = "أُضيف الصوت إلى المكتبة.",
         ["SoundAddFailed"] = "تعذّر إضافة الصوت:",
         ["PhaseBanner"] = "المرحلة 0–7: الهيكل حتى الصقل والتسليم الشخصي",
+        ["ExitApp"] = "خروج من التطبيق",
+        ["SettingsLanguageSection"] = "لغة العرض",
+        ["SettingsThemeSection"] = "المظهر",
+        ["SettingsAboutSection"] = "حول",
+        ["SettingsCommunitySection"] = "روابط رسمية",
+        ["SettingsUpdatesSection"] = "التحديثات",
+        ["SettingsAdhkarSection"] = "تذكير الأذكار",
+        ["OpenGitHub"] = "GitHub",
+        ["PublisherLabel"] = "الناشر",
+        ["VersionLabel"] = "الإصدار",
+        ["CheckForUpdates"] = "البحث عن تحديثات",
+        ["AutoCheckUpdates"] = "البحث تلقائياً عن التحديثات",
+        ["PlaceSearch"] = "البحث عن مكان",
+        ["PlaceSearchHint"] = "البحث بالاسم (يتطلب إنترنت). يمكنك تعديل الإحداثيات يدوياً.",
+        ["PlaceSearchNoResults"] = "لا نتائج.",
+        ["PlaceSearchFailed"] = "تعذّر البحث. تحقق من الشبكة أو أدخل الإحداثيات.",
+        ["PlaceSearchAttribution"] = "بحث الأماكن عبر بيانات مفتوحة (OpenStreetMap Nominatim).",
+        ["ApplyPlaceResult"] = "استخدام هذا المكان",
+        ["UpdateCheckFailed"] = "تعذّر التحقق من التحديثات.",
+        ["UpdateUpToDate"] = "أنت على أحدث إصدار ({0}).",
+        ["UpdateAvailableFormat"] = "يتوفر إصدار جديد {0} (الحالي {1}).",
+        ["UpdateHashMismatch"] = "فشل التحقق من سلامة ملف التحديث (SHA-256).",
+        ["UpdateDownloadPrompt"] = "هل تريد تنزيل المثبّت وتشغيله؟",
+        ["UpdateDownloading"] = "جاري تنزيل التحديث…",
+        ["Adhkar.Sleep"] = "أذكار النوم",
+        ["AdhkarOpenReader"] = "فتح القارئ",
+        ["AdhkarPlay"] = "تشغيل (قريباً)",
+        ["AdhkarPrev"] = "السابق",
+        ["AdhkarNext"] = "التالي",
+        ["AdhkarProgressFormat"] = "{0} / {1}",
+        ["AdhkarRemindersMaster"] = "تفعيل تذكير الأذكار",
+        ["AdhkarMorningToggle"] = "أذكار الصباح",
+        ["AdhkarEveningToggle"] = "أذكار المساء",
+        ["AdhkarAfterPrayerToggle"] = "أذكار بعد الصلاة",
+        ["AdhkarSleepToggle"] = "أذكار النوم",
+        ["Adhkar.Morning.3.Translation"] = "رضيت بالله رباً وبالإسلام ديناً وبمحمد ﷺ نبياً",
+        ["Adhkar.Morning.4.Translation"] = "اللهم بك أصبحنا وبك أمسينا وبك نحيا وبك نموت وإليك النشور",
+        ["Adhkar.Morning.5.Translation"] = "سبحان الله وبحمده",
+        ["Adhkar.Evening.3.Translation"] = "بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء وهو السميع العليم",
+        ["Adhkar.Evening.4.Translation"] = "اللهم بك أمسينا وبك أصبحنا وبك نحيا وبك نموت وإليك المصير",
+        ["Adhkar.Evening.5.Translation"] = "أعوذ بكلمات الله التامات من غضبه وعقابه وشر عباده ومن همزات الشياطين وأن يحضرون",
+        ["Adhkar.AfterPrayer.3a.Translation"] = "سبحان الله",
+        ["Adhkar.AfterPrayer.3b.Translation"] = "الحمد لله",
+        ["Adhkar.AfterPrayer.3c.Translation"] = "الله أكبر",
+        ["Adhkar.AfterPrayer.4.Translation"] = "لا إله إلا الله وحده لا شريك له، له الملك وله الحمد، وهو على كل شيء قدير",
+        ["Adhkar.Sleep.1.Translation"] = "باسمك اللهم أموت وأحيا",
+        ["Adhkar.Sleep.2.Translation"] = "اللهم قني عذابك يوم تبعث عبادك",
+        ["Adhkar.Sleep.3.Translation"] = "باسمك ربي وضعت جنبي وبك أرفعه…",
+        ["Adhkar.Sleep.4.Translation"] = "آمن الرسول بما أنزل إليه من ربه والمؤمنون (آية الكرسي / خواتيم البقرة — راجع مصدراً موثوقاً للنص الكامل)",
+        ["Adhkar.Sleep.5.Translation"] = "اللهم أسلمت نفسي إليك وفوضت أمري إليك…",
     };
 
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
@@ -268,11 +368,15 @@ public sealed class LocalizationService
         ["NavAdhkar"] = "Adhkar",
         ["NavDiagnostics"] = "Diagnostics",
         ["NavDesignLab"] = "Design lab",
+        ["NavSettings"] = "Settings",
         ["Language"] = "Language",
         ["Theme"] = "Theme",
         ["ThemeSystem"] = "System",
         ["ThemeLight"] = "Light",
         ["ThemeDark"] = "Dark",
+        ["ThemeRamadan"] = "Ramadan",
+        ["ThemeAlgeria"] = "Algeria",
+        ["ThemeMorocco"] = "Morocco",
         ["Location"] = "Location",
         ["Method"] = "Calculation method",
         ["Date"] = "Date",
@@ -433,5 +537,55 @@ public sealed class LocalizationService
         ["SoundAdded"] = "Sound added to the library.",
         ["SoundAddFailed"] = "Could not add sound:",
         ["PhaseBanner"] = "Phase 0–7: shell through polish & personal delivery",
+        ["ExitApp"] = "Exit app",
+        ["SettingsLanguageSection"] = "Display language",
+        ["SettingsThemeSection"] = "Theme",
+        ["SettingsAboutSection"] = "About",
+        ["SettingsCommunitySection"] = "Official links",
+        ["SettingsUpdatesSection"] = "Updates",
+        ["SettingsAdhkarSection"] = "Adhkar reminders",
+        ["OpenGitHub"] = "GitHub",
+        ["PublisherLabel"] = "Publisher",
+        ["VersionLabel"] = "Version",
+        ["CheckForUpdates"] = "Check for updates",
+        ["AutoCheckUpdates"] = "Check for updates automatically",
+        ["PlaceSearch"] = "Search for a place",
+        ["PlaceSearchHint"] = "Search by name (requires Internet). You can refine coordinates manually.",
+        ["PlaceSearchNoResults"] = "No results.",
+        ["PlaceSearchFailed"] = "Could not search. Check the network or enter coordinates.",
+        ["PlaceSearchAttribution"] = "Place search via open data (OpenStreetMap Nominatim).",
+        ["ApplyPlaceResult"] = "Use this place",
+        ["UpdateCheckFailed"] = "Could not check for updates.",
+        ["UpdateUpToDate"] = "You are on the latest version ({0}).",
+        ["UpdateAvailableFormat"] = "New version {0} is available (current {1}).",
+        ["UpdateHashMismatch"] = "Update file integrity check failed (SHA-256).",
+        ["UpdateDownloadPrompt"] = "Download and run the installer?",
+        ["UpdateDownloading"] = "Downloading update…",
+        ["Adhkar.Sleep"] = "Sleep adhkar",
+        ["AdhkarOpenReader"] = "Open reader",
+        ["AdhkarPlay"] = "Play (coming soon)",
+        ["AdhkarPrev"] = "Previous",
+        ["AdhkarNext"] = "Next",
+        ["AdhkarProgressFormat"] = "{0} / {1}",
+        ["AdhkarRemindersMaster"] = "Enable Adhkar reminders",
+        ["AdhkarMorningToggle"] = "Morning Adhkar",
+        ["AdhkarEveningToggle"] = "Evening Adhkar",
+        ["AdhkarAfterPrayerToggle"] = "After-prayer Adhkar",
+        ["AdhkarSleepToggle"] = "Sleep Adhkar",
+        ["Adhkar.Morning.3.Translation"] = "I am pleased with Allah as Lord, Islam as religion, and Muhammad ﷺ as Prophet.",
+        ["Adhkar.Morning.4.Translation"] = "O Allah, by You we enter the morning, by You we enter the evening, by You we live and die, and to You is the resurrection.",
+        ["Adhkar.Morning.5.Translation"] = "Glory be to Allah and praise is His.",
+        ["Adhkar.Evening.3.Translation"] = "In the name of Allah with whose name nothing on earth or in the heavens can cause harm…",
+        ["Adhkar.Evening.4.Translation"] = "O Allah, by You we enter the evening, by You we enter the morning…",
+        ["Adhkar.Evening.5.Translation"] = "I seek refuge in the perfect words of Allah from His anger and punishment…",
+        ["Adhkar.AfterPrayer.3a.Translation"] = "Glory be to Allah",
+        ["Adhkar.AfterPrayer.3b.Translation"] = "Praise be to Allah",
+        ["Adhkar.AfterPrayer.3c.Translation"] = "Allah is the Greatest",
+        ["Adhkar.AfterPrayer.4.Translation"] = "There is no god but Allah alone, without partner; His is the dominion and His is the praise, and He is over all things competent.",
+        ["Adhkar.Sleep.1.Translation"] = "In Your name, O Allah, I die and I live.",
+        ["Adhkar.Sleep.2.Translation"] = "O Allah, protect me from Your punishment on the Day You resurrect Your servants.",
+        ["Adhkar.Sleep.3.Translation"] = "In Your name, my Lord, I lay my side down and by You I raise it…",
+        ["Adhkar.Sleep.4.Translation"] = "The Messenger has believed in what was revealed to him from his Lord, and so have the believers… (see a trusted source for the full ayah).",
+        ["Adhkar.Sleep.5.Translation"] = "O Allah, I have submitted myself to You and entrusted my affair to You…",
     };
 }

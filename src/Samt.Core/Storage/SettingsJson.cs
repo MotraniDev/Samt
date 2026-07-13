@@ -24,6 +24,13 @@ public static class SettingsJson
             AsrMadhab = AsrMadhab.Standard,
             AutoStartEnabled = true,
             ShowMissedAlertOnResume = true,
+            AutoCheckUpdates = true,
+            AdhkarRemindersEnabled = false,
+            AdhkarMorningEnabled = true,
+            AdhkarEveningEnabled = true,
+            AdhkarAfterPrayerEnabled = true,
+            AdhkarSleepEnabled = true,
+            AdhkarSleepTime = "22:00",
             Locations =
             [
                 kennadsa,
@@ -114,6 +121,15 @@ public static class SettingsJson
             AsrMadhab = settings.AsrMadhab,
             AutoStartEnabled = settings.AutoStartEnabled,
             ShowMissedAlertOnResume = settings.ShowMissedAlertOnResume,
+            AutoCheckUpdates = settings.AutoCheckUpdates,
+            AdhkarRemindersEnabled = settings.AdhkarRemindersEnabled,
+            AdhkarMorningEnabled = settings.AdhkarMorningEnabled,
+            AdhkarEveningEnabled = settings.AdhkarEveningEnabled,
+            AdhkarAfterPrayerEnabled = settings.AdhkarAfterPrayerEnabled,
+            AdhkarSleepEnabled = settings.AdhkarSleepEnabled,
+            AdhkarSleepTime = string.IsNullOrWhiteSpace(settings.AdhkarSleepTime)
+                ? "22:00"
+                : settings.AdhkarSleepTime.Trim(),
             HijriDayOffset = HijriConverter.ClampDayOffset(settings.HijriDayOffset),
             Locations = locations,
             NotificationRules = settings.NotificationRules is { Count: > 0 }

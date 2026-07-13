@@ -83,6 +83,21 @@ public sealed class AppSettings
     public AsrMadhab AsrMadhab { get; init; } = AsrMadhab.Standard;
     public bool AutoStartEnabled { get; init; } = true;
     public bool ShowMissedAlertOnResume { get; init; } = true;
+
+    /// <summary>When true, the app may periodically check for a newer release manifest.</summary>
+    public bool AutoCheckUpdates { get; init; } = true;
+
+    /// <summary>Master switch for scheduled Adhkar reminders.</summary>
+    public bool AdhkarRemindersEnabled { get; init; } = false;
+
+    public bool AdhkarMorningEnabled { get; init; } = true;
+    public bool AdhkarEveningEnabled { get; init; } = true;
+    public bool AdhkarAfterPrayerEnabled { get; init; } = true;
+    public bool AdhkarSleepEnabled { get; init; } = true;
+
+    /// <summary>Local clock time for Sleep Adhkar prompt (HH:mm).</summary>
+    public string AdhkarSleepTime { get; init; } = "22:00";
+
     public int HijriDayOffset { get; init; }
     public IReadOnlyList<LocationProfile> Locations { get; init; } = [];
     public IReadOnlyList<NotificationRule> NotificationRules { get; init; } = [];
@@ -175,6 +190,13 @@ public sealed class AppSettings
         IReadOnlyList<LocationProfile>? locations = null,
         bool? autoStartEnabled = null,
         bool? showMissedAlertOnResume = null,
+        bool? autoCheckUpdates = null,
+        bool? adhkarRemindersEnabled = null,
+        bool? adhkarMorningEnabled = null,
+        bool? adhkarEveningEnabled = null,
+        bool? adhkarAfterPrayerEnabled = null,
+        bool? adhkarSleepEnabled = null,
+        string? adhkarSleepTime = null,
         int? hijriDayOffset = null,
         IReadOnlyList<NotificationRule>? notificationRules = null,
         AudioProfile? defaultAudio = null,
@@ -193,6 +215,13 @@ public sealed class AppSettings
             AsrMadhab = asrMadhab ?? AsrMadhab,
             AutoStartEnabled = autoStartEnabled ?? AutoStartEnabled,
             ShowMissedAlertOnResume = showMissedAlertOnResume ?? ShowMissedAlertOnResume,
+            AutoCheckUpdates = autoCheckUpdates ?? AutoCheckUpdates,
+            AdhkarRemindersEnabled = adhkarRemindersEnabled ?? AdhkarRemindersEnabled,
+            AdhkarMorningEnabled = adhkarMorningEnabled ?? AdhkarMorningEnabled,
+            AdhkarEveningEnabled = adhkarEveningEnabled ?? AdhkarEveningEnabled,
+            AdhkarAfterPrayerEnabled = adhkarAfterPrayerEnabled ?? AdhkarAfterPrayerEnabled,
+            AdhkarSleepEnabled = adhkarSleepEnabled ?? AdhkarSleepEnabled,
+            AdhkarSleepTime = adhkarSleepTime ?? AdhkarSleepTime,
             HijriDayOffset = hijriDayOffset ?? HijriDayOffset,
             Locations = locations ?? Locations,
             NotificationRules = notificationRules ?? NotificationRules,

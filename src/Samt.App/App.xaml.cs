@@ -17,6 +17,7 @@ public partial class App : Application
     private TrayIconService? _tray;
     private AdhanAudioService? _audio;
     private OverlayService? _overlay;
+    private AdhkarReminderService? _adhkarReminders;
     private SingleInstanceService? _singleInstance;
     private bool _exitRequested;
     private bool _startMinimized;
@@ -37,14 +38,17 @@ public partial class App : Application
         InitializeComponent();
         Localization = new LocalizationService();
         Theme = new ThemeService();
+        Updates = new UpdateService();
         LaunchLog.Write("App constructed");
     }
 
     public static LocalizationService Localization { get; private set; } = null!;
     public static ThemeService Theme { get; private set; } = null!;
+    public static UpdateService Updates { get; private set; } = null!;
     public static AppState State { get; private set; } = null!;
     public static Window? MainWindow { get; private set; }
     public static NotificationHost? Notifications { get; private set; }
+    public static AdhkarReminderService? AdhkarReminders { get; private set; }
 
     public static bool IsExitRequested { get; private set; }
 
@@ -151,7 +155,38 @@ public partial class App : Application
             Notifications = _notificationHost;
             _notificationHost.Start();
 
-            LaunchLog.Write("Window shown; notification host started (toast + overlay + audio)");
+            _adhkarReminders = new AdhkarReminderService(State);
+            AdhkarReminders = _adhkarReminders;
+            _overlay.Dismissed += (_, _) => _adhkarReminders.OnAdhanOverlayDismissed();
+            _notificationHost.PrayerStartDispatched += (_, prayer) =>
+            {
+                // Queue only while an overlay session is active; otherwise open After-prayer immediately.
+                _adhkarReminders.NotifyPrayerStartCompleted(prayer, overlayWasShown: _overlay.IsSessionActive);
+            };
+            _adhkarReminders.Start();
+
+            if (State.Settings.AutoCheckUpdates)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(8)).ConfigureAwait(false);
+                        var result = await Updates.CheckAsync().ConfigureAwait(false);
+                        if (result is { Success: true, UpdateAvailable: true })
+                        {
+                            LaunchLog.Write($"Update available: {result.AvailableVersion}");
+                            // User opens Settings → Check for updates to download (no silent download).
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LaunchLog.Write($"Background update check failed: {ex.Message}");
+                    }
+                });
+            }
+
+            LaunchLog.Write("Window shown; notification host + adhkar reminders started");
         }
         catch (Exception ex)
         {
@@ -425,12 +460,6 @@ public partial class App : Application
             return;
         }
 
-        var choice = State.Settings.Theme?.ToLowerInvariant() switch
-        {
-            "light" => AppThemeChoice.Light,
-            "dark" => AppThemeChoice.Dark,
-            _ => AppThemeChoice.System
-        };
-        Theme.Apply(MainWindow, choice);
+        Theme.ApplyPackage(MainWindow, State.Settings.Theme);
     }
 }

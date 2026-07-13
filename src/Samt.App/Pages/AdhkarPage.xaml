@@ -23,7 +23,7 @@
 
             <ItemsControl ItemsSource="{x:Bind ViewModel.Sections, Mode=OneWay}">
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:AdhkarSection">
+                    <DataTemplate x:DataType="vm:AdhkarSectionVm">
                         <Border
                             Margin="0,0,0,14"
                             Padding="20,18"
@@ -32,11 +32,11 @@
                             BorderBrush="{StaticResource SamtHairlineBrush}"
                             BorderThickness="1">
                             <StackPanel Spacing="14">
-                                <!-- Section header with gold accent bar -->
                                 <Grid ColumnSpacing="10">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="3" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Border
                                         Grid.Column="0"
@@ -50,16 +50,29 @@
                                         Foreground="{StaticResource SamtGoldBrush}"
                                         VerticalAlignment="Center"
                                         Text="{x:Bind Title}" />
+                                    <Button
+                                        Grid.Column="2"
+                                        Tag="{x:Bind Kind}"
+                                        Click="OpenReaderButton_OnClick"
+                                        FontFamily="{StaticResource SamtUiFont}"
+                                        Padding="12,6">
+                                        <TextBlock Text="📖" FontSize="14" />
+                                    </Button>
                                 </Grid>
                                 <ItemsControl ItemsSource="{x:Bind Items}">
                                     <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:AdhkarItem">
+                                        <DataTemplate x:DataType="vm:AdhkarItemVm">
                                             <StackPanel Spacing="6" Margin="0,0,0,14">
                                                 <TextBlock
                                                     Style="{StaticResource SamtNaskhText}"
                                                     FontSize="22"
                                                     Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                     Text="{x:Bind ArabicText}" />
+                                                <TextBlock
+                                                    Style="{StaticResource LatinDigitsTextBlock}"
+                                                    FontSize="12"
+                                                    Foreground="{StaticResource SamtGoldSoftBrush}"
+                                                    Text="{x:Bind RepeatBadge}" />
                                                 <TextBlock
                                                     Style="{StaticResource SamtBody}"
                                                     FontSize="13"

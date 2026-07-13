@@ -35,6 +35,9 @@ public sealed class OverlayService : IDisposable
 
     public bool IsVisible => _sessionActive && _window is not null;
 
+    /// <summary>True while an overlay session is active (may still be animating/hiding audio).</summary>
+    public bool IsSessionActive => _sessionActive;
+
     /// <summary>Pre-alert live countdown hit zero — host should fire Adhan start now.</summary>
     public event EventHandler? PreAlertCountdownReachedZero;
 
@@ -155,6 +158,9 @@ public sealed class OverlayService : IDisposable
         }
     }
 
+    /// <summary>Raised after the overlay is hidden (user dismiss, auto-hold, or stop).</summary>
+    public event EventHandler? Dismissed;
+
     public void Dismiss(bool stopAudio = true)
     {
         CancelAutoDismiss();
@@ -172,7 +178,19 @@ public sealed class OverlayService : IDisposable
             LaunchLog.Write($"Overlay hide failed: {ex.Message}");
         }
 
+        var wasActive = _sessionActive;
         _sessionActive = false;
+        if (wasActive)
+        {
+            try
+            {
+                Dismissed?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                LaunchLog.Write($"Overlay Dismissed handler failed: {ex.Message}");
+            }
+        }
     }
 
     public void Dispose()
