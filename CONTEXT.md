@@ -49,4 +49,6 @@ Cloud sync, Store listing, mosque search, paid Google Maps, live web scrape of A
 
 0–7 done (shell, engine, today, locations, tray, toast, overlay, adhan, advanced rules + Friday, qibla, Hijri, Ramadan UI, light adhkar, polish & personal delivery).
 
-**Next (phased):** Settings hub + fr/es → theme packages → place-name search → update check → Adhkar suite → publisher branding & bilingual README.
+Post-7 also delivered in-tree: Settings hub, fr/es, theme packages, place-name search, update check, expanded Adhkar suite, publisher branding & bilingual README.
+
+**Phase 8** (see `docs/design/phase-8-ux-polish-onboarding.md`): Adhkar auto-advance, global window transparency (overlay independent), contextual Settings icons, app icon redesign, first-run setup wizard (Skip → smart defaults; hidden on `--autostart`).

@@ -49,11 +49,22 @@ A backup `settings.bak` is written next to it when saves succeed.
 
 ## First run
 
-1. Confirm **location** (default Kennadsa) or add coordinates on **Locations**.
-2. Check **Today** prayer times against your mosque once.
-3. On **Alerts**, confirm pre-alert minutes and channels (toast / overlay / audio).
-4. Language: pane footer **العربية** / **English**. Digits always **0–9** (Latin).
-5. Close the window to hide to the **tray**; use tray **Exit** to stop notifications.
+On the first **interactive** launch (not `--autostart`), SAMT opens the **first-run setup wizard**:
+
+1. **Location** — Windows GPS, place-name search (Nominatim), or a default Algerian city seed.
+2. **Prayer times** — confirm calculation method and Asr madhab; preview today’s times.
+3. **Adhkar schedule** — optional reminders and default times.
+4. **Quick tour** — tray, Today, alerts, Adhkar reader.
+
+You can **Skip** at any time. Skip keeps smart defaults (Kennadsa seed, Algeria method, Arabic UI, Adhkar reminders off) and does **not** request GPS. Login auto-start never shows the wizard.
+
+Afterwards (or after Skip):
+
+1. Re-check **Today** times against your mosque once.
+2. On **Alerts**, confirm pre-alert minutes and channels (toast / overlay / audio).
+3. Language and theme: **Settings**. Digits always **0–9** (Latin).
+4. Close the window to hide to the **tray**; use tray **Exit** to stop notifications.
+5. Optional: **Settings → Transparency** for shell window opacity (Adhan overlay stays independent).
 
 ## Auto-start
 

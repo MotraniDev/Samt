@@ -110,6 +110,24 @@ public sealed class AppSettings
     /// </summary>
     public int AdhkarAfterPrayerDelayMinutes { get; init; }
 
+    /// <summary>
+    /// When true, the Adhkar reader advances to the next item after the current counter completes.
+    /// </summary>
+    public bool AdhkarAutoAdvanceEnabled { get; init; } = true;
+
+    /// <summary>
+    /// Global shell window opacity 0.30–1.0 (main, Adhkar reader, setup wizard).
+    /// Adhan overlay uses <see cref="DefaultOverlay"/> opacity instead.
+    /// </summary>
+    public double WindowOpacity { get; init; } = 1.0;
+
+    /// <summary>
+    /// When false, first interactive launch shows the setup wizard.
+    /// Defaults to true so existing installs without this field skip the wizard;
+    /// <c>SettingsJson.CreateDefault</c> sets false for brand-new installs.
+    /// </summary>
+    public bool SetupWizardCompleted { get; init; } = true;
+
     public int HijriDayOffset { get; init; }
     public IReadOnlyList<LocationProfile> Locations { get; init; } = [];
     public IReadOnlyList<NotificationRule> NotificationRules { get; init; } = [];
@@ -212,6 +230,9 @@ public sealed class AppSettings
         string? adhkarEveningTime = null,
         string? adhkarSleepTime = null,
         int? adhkarAfterPrayerDelayMinutes = null,
+        bool? adhkarAutoAdvanceEnabled = null,
+        double? windowOpacity = null,
+        bool? setupWizardCompleted = null,
         int? hijriDayOffset = null,
         IReadOnlyList<NotificationRule>? notificationRules = null,
         AudioProfile? defaultAudio = null,
@@ -240,6 +261,9 @@ public sealed class AppSettings
             AdhkarEveningTime = adhkarEveningTime ?? AdhkarEveningTime,
             AdhkarSleepTime = adhkarSleepTime ?? AdhkarSleepTime,
             AdhkarAfterPrayerDelayMinutes = adhkarAfterPrayerDelayMinutes ?? AdhkarAfterPrayerDelayMinutes,
+            AdhkarAutoAdvanceEnabled = adhkarAutoAdvanceEnabled ?? AdhkarAutoAdvanceEnabled,
+            WindowOpacity = windowOpacity ?? WindowOpacity,
+            SetupWizardCompleted = setupWizardCompleted ?? SetupWizardCompleted,
             HijriDayOffset = hijriDayOffset ?? HijriDayOffset,
             Locations = locations ?? Locations,
             NotificationRules = notificationRules ?? NotificationRules,

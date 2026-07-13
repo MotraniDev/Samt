@@ -18,7 +18,9 @@ Local Windows prayer-times app. Offline calculation, Arabic-first RTL UI, langua
 | **Locations** | Saved places, **Windows GPS**, **free place-name search** (OpenStreetMap Nominatim), manual coordinates |
 | **Alerts** | Toast, overlay, adhan audio, pre-alerts, Friday / Jumu‘ah rules |
 | **Themes** | Curated packages: System, Light, Dark, Ramadan, Algeria, Morocco |
-| **Adhkar** | Offline Morning / Evening / After-prayer / Sleep collections; mini reader; optional scheduled reminders |
+| **Adhkar** | Offline Morning / Evening / After-prayer / Sleep collections; mini reader with auto-advance option; optional scheduled reminders |
+| **First run** | Optional setup wizard (location, prayer method, Adhkar schedule, quick tour); Skip uses smart defaults |
+| **Transparency** | Global window opacity in Settings; Adhan overlay keeps its own opacity |
 | **Updates** | Optional check against a GitHub Releases **JSON manifest**; download only after approval; SHA-256 verify |
 | **Languages** | ar / en / fr / es — choose in **Settings** (not on the main chrome) |
 | **Tray** | Close hides to tray; Exit from pane or tray menu |

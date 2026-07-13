@@ -26,8 +26,13 @@ public sealed partial class MainWindow : Window
             allowMaximize: true);
 
         App.Localization.LanguageChanged += (_, _) => ApplyChromeLabels();
+        if (App.State is not null)
+        {
+            App.State.SettingsChanged += (_, _) => ApplyShellOpacityFromSettings();
+        }
 
         ApplyChromeLabels();
+        ApplyShellOpacityFromSettings();
 
         // Navigate early so content exists even if Loaded is delayed.
         try
@@ -38,6 +43,19 @@ public sealed partial class MainWindow : Window
         catch (Exception ex)
         {
             LaunchLog.Write($"MainWindow ctor navigate failed: {ex}");
+        }
+    }
+
+    public void ApplyShellOpacityFromSettings()
+    {
+        try
+        {
+            var opacity = App.State?.Settings.WindowOpacity ?? 1.0;
+            WindowChromeOpacity.Apply(this, opacity);
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"MainWindow opacity: {ex.Message}");
         }
     }
 

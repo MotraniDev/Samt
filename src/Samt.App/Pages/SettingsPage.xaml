@@ -22,8 +22,13 @@
             <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
                 <StackPanel Spacing="10">
-                    <TextBlock x:Name="LanguageSectionHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE774;" FontSize="16" Foreground="{StaticResource SamtGoldBrush}"
+                                  VerticalAlignment="Center" />
+                        <TextBlock x:Name="LanguageSectionHeader" FontWeight="SemiBold" FontSize="16"
+                                   Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
                     <ComboBox x:Name="LanguageBox" HorizontalAlignment="Stretch" MinWidth="120"
                               FontFamily="{StaticResource SamtUiFont}"
                               SelectionChanged="LanguageBox_OnSelectionChanged">
@@ -39,8 +44,13 @@
             <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
                 <StackPanel Spacing="10">
-                    <TextBlock x:Name="ThemeSectionHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE790;" FontSize="16" Foreground="{StaticResource SamtGoldBrush}"
+                                  VerticalAlignment="Center" />
+                        <TextBlock x:Name="ThemeSectionHeader" FontWeight="SemiBold" FontSize="16"
+                                   Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
                     <ComboBox x:Name="ThemeBox" HorizontalAlignment="Stretch" MinWidth="120"
                               FontFamily="{StaticResource SamtUiFont}"
                               SelectionChanged="ThemeBox_OnSelectionChanged">
@@ -58,8 +68,13 @@
             <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
                 <StackPanel Spacing="10">
-                    <TextBlock x:Name="AppOptionsHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE713;" FontSize="16" Foreground="{StaticResource SamtGoldBrush}"
+                                  VerticalAlignment="Center" />
+                        <TextBlock x:Name="AppOptionsHeader" FontWeight="SemiBold" FontSize="16"
+                                   Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
                     <ToggleSwitch x:Name="AutoStartToggle" Toggled="AutoStartToggle_OnToggled" />
                     <ToggleSwitch x:Name="MissedResumeToggle" Toggled="MissedResumeToggle_OnToggled" />
                 </StackPanel>
@@ -69,8 +84,13 @@
             <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
                 <StackPanel Spacing="10">
-                    <TextBlock x:Name="UpdatesSectionHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE895;" FontSize="16" Foreground="{StaticResource SamtGoldBrush}"
+                                  VerticalAlignment="Center" />
+                        <TextBlock x:Name="UpdatesSectionHeader" FontWeight="SemiBold" FontSize="16"
+                                   Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
                     <ToggleSwitch x:Name="AutoUpdateToggle" Toggled="AutoUpdateToggle_OnToggled" />
                     <Button x:Name="CheckUpdatesButton" HorizontalAlignment="Stretch"
                             Click="CheckUpdatesButton_OnClick" />
@@ -79,14 +99,58 @@
                 </StackPanel>
             </Border>
 
+            <!-- Appearance: global window transparency -->
+            <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE793;" FontSize="16" Foreground="{StaticResource SamtGoldBrush}"
+                                  VerticalAlignment="Center" />
+                        <TextBlock x:Name="AppearanceSectionHeader" FontWeight="SemiBold" FontSize="16"
+                                   Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock x:Name="AppearanceSectionHint" FontSize="12" Opacity="0.7" TextWrapping="Wrap" />
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Slider
+                            x:Name="WindowOpacitySlider"
+                            Grid.Column="0"
+                            Minimum="30"
+                            Maximum="100"
+                            StepFrequency="1"
+                            TickFrequency="10"
+                            IsThumbToolTipEnabled="False"
+                            ValueChanged="WindowOpacitySlider_OnValueChanged" />
+                        <TextBlock
+                            x:Name="WindowOpacityValueText"
+                            Grid.Column="1"
+                            MinWidth="48"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource LatinDigitsTextBlock}"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource SamtGoldBrush}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
             <!-- Adhkar reminders: type + default time / post-prayer delay -->
             <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
                 <StackPanel Spacing="12">
-                    <TextBlock x:Name="AdhkarSectionHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE8D7;" FontSize="16" Foreground="{StaticResource SamtGoldBrush}"
+                                  VerticalAlignment="Center" />
+                        <TextBlock x:Name="AdhkarSectionHeader" FontWeight="SemiBold" FontSize="16"
+                                   Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
                     <TextBlock x:Name="AdhkarSectionHint" FontSize="12" Opacity="0.7" TextWrapping="Wrap" />
                     <ToggleSwitch x:Name="AdhkarMasterToggle" Toggled="AdhkarMasterToggle_OnToggled" />
+                    <ToggleSwitch x:Name="AdhkarAutoAdvanceToggle" Toggled="AdhkarAutoAdvanceToggle_OnToggled" />
 
                     <!-- Morning -->
                     <Grid ColumnSpacing="10" RowSpacing="6">
@@ -172,8 +236,13 @@
             <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
                 <StackPanel Spacing="12">
-                    <TextBlock x:Name="AboutSectionHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{StaticResource SamtGoldBrush}"
+                                  VerticalAlignment="Center" />
+                        <TextBlock x:Name="AboutSectionHeader" FontWeight="SemiBold" FontSize="16"
+                                   Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="16">
                         <Image x:Name="PublisherLogo" Width="72" Height="72" Stretch="Uniform"
                                VerticalAlignment="Center" />

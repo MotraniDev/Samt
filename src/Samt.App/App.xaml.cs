@@ -165,6 +165,29 @@ public partial class App : Application
             };
             _adhkarReminders.Start();
 
+            // First interactive launch: setup wizard (never on --autostart tray start).
+            if (!_startMinimized && !State.Settings.SetupWizardCompleted)
+            {
+                try
+                {
+                    var wizard = new SetupWizardWindow();
+                    wizard.Activate();
+                    LaunchLog.Write("Setup wizard shown");
+                }
+                catch (Exception ex)
+                {
+                    LaunchLog.Write($"Setup wizard failed: {ex.Message}");
+                    try
+                    {
+                        await State.UpdateAsync(s => s.With(setupWizardCompleted: true));
+                    }
+                    catch
+                    {
+                        // non-fatal
+                    }
+                }
+            }
+
             if (State.Settings.AutoCheckUpdates)
             {
                 _ = Task.Run(async () =>

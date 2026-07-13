@@ -15,6 +15,7 @@ public sealed partial class AdhkarReaderWindow : Window
     private readonly AdhkarReadingSession _session = new();
     private int _index;
     private Microsoft.UI.Windowing.AppWindow? _appWindow;
+    private CancellationTokenSource? _autoAdvanceCts;
 
     public AdhkarReaderWindow()
     {
@@ -37,16 +38,24 @@ public sealed partial class AdhkarReaderWindow : Window
         {
             _appWindow.Title = "Adhkar";
         }
+
+        ApplyShellOpacity(App.State?.Settings.WindowOpacity ?? 1.0);
+        Closed += (_, _) => CancelAutoAdvance();
     }
+
+    public void ApplyShellOpacity(double opacity)
+        => WindowChromeOpacity.Apply(this, opacity);
 
     public void ShowCollection(AdhkarCollectionKind kind, int startIndex = 0)
     {
+        CancelAutoAdvance();
         var collection = AdhkarCatalog.Get(kind);
         _session.Bind(collection, reset: true);
         _index = Math.Clamp(startIndex, 0, Math.Max(0, collection.Items.Count - 1));
         ApplyLanguageChrome();
         RebuildPathDots();
         ShowItem();
+        ApplyShellOpacity(App.State?.Settings.WindowOpacity ?? 1.0);
 
         try
         {
@@ -151,6 +160,7 @@ public sealed partial class AdhkarReaderWindow : Window
     {
         if (sender is Button { Tag: int idx })
         {
+            CancelAutoAdvance();
             _index = idx;
             ShowItem();
             RebuildPathDots();
@@ -219,12 +229,7 @@ public sealed partial class AdhkarReaderWindow : Window
 
         _session.Increment(item);
         ShowItem();
-
-        // Auto-advance when item fully counted (optional UX like azkar.me).
-        if (_session.IsItemComplete(item) && _index < collection.Items.Count - 1)
-        {
-            // stay on item so user sees checkmark; next tap on Next moves on
-        }
+        ScheduleAutoAdvanceIfNeeded();
     }
 
     private void ReadingCard_OnTapped(object sender, TappedRoutedEventArgs e)
@@ -248,10 +253,12 @@ public sealed partial class AdhkarReaderWindow : Window
 
         _session.MarkComplete(collection.Items[_index]);
         ShowItem();
+        ScheduleAutoAdvanceIfNeeded();
     }
 
     private void ResetProgressButton_OnClick(object sender, RoutedEventArgs e)
     {
+        CancelAutoAdvance();
         _session.Reset();
         ShowItem();
     }
@@ -263,6 +270,7 @@ public sealed partial class AdhkarReaderWindow : Window
             return;
         }
 
+        CancelAutoAdvance();
         _index--;
         ShowItem();
     }
@@ -275,8 +283,97 @@ public sealed partial class AdhkarReaderWindow : Window
             return;
         }
 
+        CancelAutoAdvance();
         _index++;
         ShowItem();
+    }
+
+    private void ScheduleAutoAdvanceIfNeeded()
+    {
+        CancelAutoAdvance();
+        var collection = _session.Collection;
+        if (collection is null || collection.Items.Count == 0)
+        {
+            return;
+        }
+
+        var item = collection.Items[_index];
+        var enabled = App.State?.Settings.AdhkarAutoAdvanceEnabled ?? true;
+        if (!AdhkarAutoAdvance.ShouldAdvance(enabled, _session.IsItemComplete(item), _index, collection.Items.Count))
+        {
+            return;
+        }
+
+        _autoAdvanceCts = new CancellationTokenSource();
+        var token = _autoAdvanceCts.Token;
+        // Brief hold so the checkmark is visible; skip delay when reduce-motion style is forced.
+        var delayMs = 400;
+        _ = AdvanceAfterDelayAsync(delayMs, token);
+    }
+
+    private async Task AdvanceAfterDelayAsync(int delayMs, CancellationToken token)
+    {
+        try
+        {
+            if (delayMs > 0)
+            {
+                await Task.Delay(delayMs, token).ConfigureAwait(true);
+            }
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            void MoveNext()
+            {
+                if (token.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                var collection = _session.Collection;
+                if (collection is null || _index >= collection.Items.Count - 1)
+                {
+                    return;
+                }
+
+                _index++;
+                ShowItem();
+            }
+
+            if (DispatcherQueue.HasThreadAccess)
+            {
+                MoveNext();
+            }
+            else
+            {
+                _ = DispatcherQueue.TryEnqueue(MoveNext);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // user navigated away
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Adhkar auto-advance: {ex.Message}");
+        }
+    }
+
+    private void CancelAutoAdvance()
+    {
+        try
+        {
+            _autoAdvanceCts?.Cancel();
+        }
+        catch
+        {
+            // ignore
+        }
+
+        _autoAdvanceCts?.Dispose();
+        _autoAdvanceCts = null;
     }
 
     private void MinButton_OnClick(object sender, RoutedEventArgs e)

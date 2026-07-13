@@ -121,6 +121,7 @@ public sealed class AdhkarReminderService : IDisposable
                     }
 
                     _reader.ShowCollection(kind);
+                    ApplyReaderOpacity(_state.Settings.WindowOpacity);
                 }
                 catch (Exception ex)
                 {
@@ -141,6 +142,24 @@ public sealed class AdhkarReminderService : IDisposable
         catch (Exception ex)
         {
             LaunchLog.Write($"Adhkar OpenReader failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>Apply global shell opacity to the open Adhkar reader (if any).</summary>
+    public void ApplyReaderOpacity(double opacity)
+    {
+        try
+        {
+            if (_reader is null)
+            {
+                return;
+            }
+
+            _reader.ApplyShellOpacity(opacity);
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Adhkar ApplyReaderOpacity failed: {ex.Message}");
         }
     }
 

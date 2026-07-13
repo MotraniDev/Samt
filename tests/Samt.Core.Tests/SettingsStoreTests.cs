@@ -99,6 +99,53 @@ public class SettingsStoreTests
     }
 
     [Fact]
+    public void CreateDefault_Phase8Fields()
+    {
+        var settings = SettingsJson.CreateDefault();
+        Assert.True(settings.AdhkarAutoAdvanceEnabled);
+        Assert.Equal(1.0, settings.WindowOpacity);
+        Assert.False(settings.SetupWizardCompleted);
+
+        var updated = settings.With(
+            adhkarAutoAdvanceEnabled: false,
+            windowOpacity: 0.55,
+            setupWizardCompleted: true);
+        var roundTrip = SettingsJson.Deserialize(SettingsJson.Serialize(updated));
+        Assert.False(roundTrip.AdhkarAutoAdvanceEnabled);
+        Assert.Equal(0.55, roundTrip.WindowOpacity, 3);
+        Assert.True(roundTrip.SetupWizardCompleted);
+    }
+
+    [Fact]
+    public void Normalize_ClampsWindowOpacity()
+    {
+        var settings = SettingsJson.CreateDefault().With(windowOpacity: 0.05);
+        var normalized = SettingsJson.Normalize(settings);
+        Assert.Equal(0.30, normalized.WindowOpacity, 3);
+
+        var high = SettingsJson.Normalize(SettingsJson.CreateDefault().With(windowOpacity: 1.5));
+        Assert.Equal(1.0, high.WindowOpacity, 3);
+    }
+
+    [Fact]
+    public void LegacyJson_WithoutPhase8Fields_SkipsWizardAndKeepsOpaque()
+    {
+        // Existing installs: missing SetupWizardCompleted must not force the wizard.
+        var legacy = """
+            {
+              "schemaVersion": 1,
+              "language": "ar",
+              "theme": "system",
+              "locations": []
+            }
+            """;
+        var loaded = SettingsJson.Deserialize(legacy);
+        Assert.True(loaded.SetupWizardCompleted);
+        Assert.True(loaded.AdhkarAutoAdvanceEnabled);
+        Assert.Equal(1.0, loaded.WindowOpacity, 3);
+    }
+
+    [Fact]
     public void CreateDefault_UsesPhase4NotificationChannels()
     {
         var settings = SettingsJson.CreateDefault();

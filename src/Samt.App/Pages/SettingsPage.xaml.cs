@@ -3,11 +3,13 @@ using System.Globalization;
 using System.Reflection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 using Samt.Core.Formatting;
 using Samt.Core.Storage;
+using Samt_App.Helpers;
 using Samt_App.Services;
 using Windows.System;
 
@@ -47,6 +49,8 @@ public sealed partial class SettingsPage : Page
         ThemeSectionHeader.Text = loc.Get("SettingsThemeSection");
         AppOptionsHeader.Text = loc.Get("AppOptions");
         UpdatesSectionHeader.Text = loc.Get("SettingsUpdatesSection");
+        AppearanceSectionHeader.Text = loc.Get("SettingsAppearanceSection");
+        AppearanceSectionHint.Text = loc.Get("SettingsAppearanceHint");
         AdhkarSectionHeader.Text = loc.Get("SettingsAdhkarSection");
         AdhkarSectionHint.Text = loc.Get("AdhkarSettingsHint");
         AboutSectionHeader.Text = loc.Get("SettingsAboutSection");
@@ -63,6 +67,9 @@ public sealed partial class SettingsPage : Page
         AdhkarMasterToggle.Header = loc.Get("AdhkarRemindersMaster");
         AdhkarMasterToggle.OffContent = loc.Get("ToggleOff");
         AdhkarMasterToggle.OnContent = loc.Get("ToggleOn");
+        AdhkarAutoAdvanceToggle.Header = loc.Get("AdhkarAutoAdvance");
+        AdhkarAutoAdvanceToggle.OffContent = loc.Get("ToggleOff");
+        AdhkarAutoAdvanceToggle.OnContent = loc.Get("ToggleOn");
         AdhkarMorningToggle.Header = loc.Get("AdhkarMorningToggle");
         AdhkarMorningToggle.OffContent = loc.Get("ToggleOff");
         AdhkarMorningToggle.OnContent = loc.Get("ToggleOn");
@@ -97,6 +104,8 @@ public sealed partial class SettingsPage : Page
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(ThemeBox, loc.Get("Theme"));
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(CheckUpdatesButton, loc.Get("CheckForUpdates"));
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(GitHubButton, loc.Get("OpenGitHub"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(WindowOpacitySlider, loc.Get("SettingsWindowOpacity"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(AdhkarAutoAdvanceToggle, loc.Get("AdhkarAutoAdvance"));
     }
 
     private void SyncControlsFromSettings()
@@ -111,6 +120,7 @@ public sealed partial class SettingsPage : Page
             MissedResumeToggle.IsOn = settings.ShowMissedAlertOnResume;
             AutoUpdateToggle.IsOn = settings.AutoCheckUpdates;
             AdhkarMasterToggle.IsOn = settings.AdhkarRemindersEnabled;
+            AdhkarAutoAdvanceToggle.IsOn = settings.AdhkarAutoAdvanceEnabled;
             AdhkarMorningToggle.IsOn = settings.AdhkarMorningEnabled;
             AdhkarEveningToggle.IsOn = settings.AdhkarEveningEnabled;
             AdhkarAfterToggle.IsOn = settings.AdhkarAfterPrayerEnabled;
@@ -119,6 +129,9 @@ public sealed partial class SettingsPage : Page
             AdhkarEveningTimeBox.Text = LatinDigits.EnsureLatin(settings.AdhkarEveningTime);
             AdhkarSleepTimeBox.Text = LatinDigits.EnsureLatin(settings.AdhkarSleepTime);
             AdhkarAfterDelayBox.Text = LatinDigits.Number(settings.AdhkarAfterPrayerDelayMinutes);
+            var opacityPct = (int)Math.Round(WindowChromeOpacity.Clamp(settings.WindowOpacity) * 100);
+            WindowOpacitySlider.Value = opacityPct;
+            WindowOpacityValueText.Text = LatinDigits.Number(opacityPct) + "%";
             UpdateStatusText.Text = string.Empty;
         }
         finally
@@ -242,6 +255,43 @@ public sealed partial class SettingsPage : Page
         }
 
         await App.State.UpdateAsync(s => s.With(adhkarRemindersEnabled: AdhkarMasterToggle.IsOn));
+    }
+
+    private async void AdhkarAutoAdvanceToggle_OnToggled(object sender, RoutedEventArgs e)
+    {
+        if (_suppress || !IsLoaded)
+        {
+            return;
+        }
+
+        await App.State.UpdateAsync(s => s.With(adhkarAutoAdvanceEnabled: AdhkarAutoAdvanceToggle.IsOn));
+    }
+
+    private async void WindowOpacitySlider_OnValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (_suppress)
+        {
+            return;
+        }
+
+        var pct = (int)Math.Round(Math.Clamp(e.NewValue, 30, 100));
+        WindowOpacityValueText.Text = LatinDigits.Number(pct) + "%";
+        var opacity = WindowChromeOpacity.Clamp(pct / 100.0);
+
+        // Live preview on open shell windows.
+        if (App.MainWindow is not null)
+        {
+            WindowChromeOpacity.Apply(App.MainWindow, opacity);
+        }
+
+        App.AdhkarReminders?.ApplyReaderOpacity(opacity);
+
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        await App.State.UpdateAsync(s => s.With(windowOpacity: opacity));
     }
 
     private async void AdhkarCollectionToggle_OnToggled(object sender, RoutedEventArgs e)

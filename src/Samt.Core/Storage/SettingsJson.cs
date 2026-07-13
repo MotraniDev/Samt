@@ -34,6 +34,9 @@ public static class SettingsJson
             AdhkarEveningTime = "17:00",
             AdhkarSleepTime = "22:00",
             AdhkarAfterPrayerDelayMinutes = 0,
+            AdhkarAutoAdvanceEnabled = true,
+            WindowOpacity = 1.0,
+            SetupWizardCompleted = false,
             Locations =
             [
                 kennadsa,
@@ -134,6 +137,9 @@ public static class SettingsJson
             AdhkarEveningTime = NormalizeClockTime(settings.AdhkarEveningTime, "17:00"),
             AdhkarSleepTime = NormalizeClockTime(settings.AdhkarSleepTime, "22:00"),
             AdhkarAfterPrayerDelayMinutes = Math.Clamp(settings.AdhkarAfterPrayerDelayMinutes, 0, 180),
+            AdhkarAutoAdvanceEnabled = settings.AdhkarAutoAdvanceEnabled,
+            WindowOpacity = Math.Clamp(settings.WindowOpacity, 0.30, 1.0),
+            SetupWizardCompleted = settings.SetupWizardCompleted,
             HijriDayOffset = HijriConverter.ClampDayOffset(settings.HijriDayOffset),
             Locations = locations,
             NotificationRules = settings.NotificationRules is { Count: > 0 }
