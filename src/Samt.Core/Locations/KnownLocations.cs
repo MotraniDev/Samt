@@ -8,6 +8,9 @@ public static class KnownLocations
     /// <summary>Windows timezone id for Algeria (UTC+1, no DST).</summary>
     public const string AlgeriaTimeZoneId = "W. Central Africa Standard Time";
 
+    /// <summary>ISO-style country code for Algeria seeds (calendar country default).</summary>
+    public const string AlgeriaCountryCode = "DZ";
+
     public static LocationProfile Kennadsa { get; } = new()
     {
         Id = Guid.Parse("a1111111-1111-4111-8111-111111111111"),
@@ -15,7 +18,8 @@ public static class KnownLocations
         Latitude = 31.5569,
         Longitude = -2.4181,
         TimeZoneId = AlgeriaTimeZoneId,
-        Source = LocationSource.CitySeed
+        Source = LocationSource.CitySeed,
+        CountryCode = AlgeriaCountryCode
     };
 
     public static LocationProfile Algiers { get; } = new()
@@ -25,7 +29,8 @@ public static class KnownLocations
         Latitude = 36.7538,
         Longitude = 3.0588,
         TimeZoneId = AlgeriaTimeZoneId,
-        Source = LocationSource.CitySeed
+        Source = LocationSource.CitySeed,
+        CountryCode = AlgeriaCountryCode
     };
 
     public static LocationProfile Oran { get; } = new()
@@ -35,7 +40,8 @@ public static class KnownLocations
         Latitude = 35.6969,
         Longitude = -0.6331,
         TimeZoneId = AlgeriaTimeZoneId,
-        Source = LocationSource.CitySeed
+        Source = LocationSource.CitySeed,
+        CountryCode = AlgeriaCountryCode
     };
 
     public static LocationProfile Bechar { get; } = new()
@@ -45,7 +51,8 @@ public static class KnownLocations
         Latitude = 31.6167,
         Longitude = -2.2167,
         TimeZoneId = AlgeriaTimeZoneId,
-        Source = LocationSource.CitySeed
+        Source = LocationSource.CitySeed,
+        CountryCode = AlgeriaCountryCode
     };
 
     public static IReadOnlyList<LocationProfile> AlgeriaSeeds { get; } =

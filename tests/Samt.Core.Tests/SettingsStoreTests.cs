@@ -128,6 +128,147 @@ public class SettingsStoreTests
     }
 
     [Fact]
+    public void CreateDefault_Phase9CalendarFields_AndAlgeriaSeedsHaveDz()
+    {
+        var settings = SettingsJson.CreateDefault();
+
+        Assert.Null(settings.CalendarCountryOverride);
+        Assert.False(settings.SpecialDayRemindersEnabled);
+        Assert.False(settings.SpecialDayIslamicSetEnabled);
+        Assert.False(settings.SpecialDayCountrySetEnabled);
+        Assert.Equal("09:00", settings.SpecialDayReminderTime);
+        Assert.Empty(settings.SpecialDayMutedIds);
+
+        Assert.All(settings.Locations, loc => Assert.Equal(KnownLocations.AlgeriaCountryCode, loc.CountryCode));
+        Assert.Equal("DZ", KnownLocations.Kennadsa.CountryCode);
+        Assert.Equal("DZ", KnownLocations.Algiers.CountryCode);
+        Assert.Equal("DZ", KnownLocations.Oran.CountryCode);
+        Assert.Equal("DZ", KnownLocations.Bechar.CountryCode);
+    }
+
+    [Fact]
+    public void CreateDefault_Phase9Fields_RoundTripThroughJson()
+    {
+        var updated = SettingsJson.CreateDefault().With(
+            calendarCountryOverride: "dz",
+            specialDayRemindersEnabled: true,
+            specialDayIslamicSetEnabled: true,
+            specialDayCountrySetEnabled: true,
+            specialDayReminderTime: "8:30",
+            specialDayMutedIds: ["islamic.eid_fitr", "  dz.labour  ", "islamic.eid_fitr", ""]);
+
+        var roundTrip = SettingsJson.Deserialize(SettingsJson.Serialize(updated));
+
+        Assert.Equal("DZ", roundTrip.CalendarCountryOverride);
+        Assert.True(roundTrip.SpecialDayRemindersEnabled);
+        Assert.True(roundTrip.SpecialDayIslamicSetEnabled);
+        Assert.True(roundTrip.SpecialDayCountrySetEnabled);
+        Assert.Equal("08:30", roundTrip.SpecialDayReminderTime);
+        Assert.Equal(["islamic.eid_fitr", "dz.labour"], roundTrip.SpecialDayMutedIds);
+        Assert.All(roundTrip.Locations, loc => Assert.Equal("DZ", loc.CountryCode));
+    }
+
+    [Fact]
+    public async Task SaveAndLoad_RoundTripsCountryCodeAndSpecialDayPrefs()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "samt-tests-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new JsonSettingsStore(dir);
+            var custom = new LocationProfile
+            {
+                Id = Guid.NewGuid(),
+                DisplayName = "Paris",
+                Latitude = 48.8566,
+                Longitude = 2.3522,
+                TimeZoneId = "Romance Standard Time",
+                Source = LocationSource.Manual,
+                CountryCode = "fr"
+            };
+
+            var settings = SettingsJson.CreateDefault().With(
+                locations: SettingsJson.CreateDefault().Locations.Append(custom).ToList(),
+                activeLocationId: custom.Id,
+                calendarCountryOverride: "DZ",
+                specialDayRemindersEnabled: true,
+                specialDayIslamicSetEnabled: true,
+                specialDayCountrySetEnabled: false,
+                specialDayReminderTime: "09:15",
+                specialDayMutedIds: ["islamic.mawlid"]);
+
+            await store.SaveAsync(settings);
+            var loaded = await store.LoadAsync();
+
+            var paris = Assert.Single(loaded.Locations, l => l.Id == custom.Id);
+            Assert.Equal("FR", paris.CountryCode);
+            Assert.Equal("DZ", loaded.CalendarCountryOverride);
+            Assert.True(loaded.SpecialDayRemindersEnabled);
+            Assert.True(loaded.SpecialDayIslamicSetEnabled);
+            Assert.False(loaded.SpecialDayCountrySetEnabled);
+            Assert.Equal("09:15", loaded.SpecialDayReminderTime);
+            Assert.Equal(["islamic.mawlid"], loaded.SpecialDayMutedIds);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void With_ClearCalendarCountryOverride()
+    {
+        var withOverride = SettingsJson.CreateDefault().With(calendarCountryOverride: "DZ");
+        Assert.Equal("DZ", withOverride.CalendarCountryOverride);
+
+        var cleared = withOverride.With(
+            calendarCountryOverride: null,
+            replaceCalendarCountryOverride: true);
+        Assert.Null(cleared.CalendarCountryOverride);
+    }
+
+    [Fact]
+    public void LegacyJson_WithoutPhase9Fields_DefaultsRemindersOff()
+    {
+        var legacy = """
+            {
+              "schemaVersion": 1,
+              "language": "ar",
+              "theme": "system",
+              "locations": [
+                {
+                  "id": "a1111111-1111-4111-8111-111111111111",
+                  "displayName": "القنادسة / Kennadsa",
+                  "latitude": 31.5569,
+                  "longitude": -2.4181,
+                  "timeZoneId": "W. Central Africa Standard Time",
+                  "source": "CitySeed"
+                }
+              ]
+            }
+            """;
+        var loaded = SettingsJson.Deserialize(legacy);
+
+        Assert.Null(loaded.CalendarCountryOverride);
+        Assert.False(loaded.SpecialDayRemindersEnabled);
+        Assert.False(loaded.SpecialDayIslamicSetEnabled);
+        Assert.False(loaded.SpecialDayCountrySetEnabled);
+        Assert.Equal("09:00", loaded.SpecialDayReminderTime);
+        Assert.Empty(loaded.SpecialDayMutedIds);
+        Assert.Null(loaded.Locations[0].CountryCode);
+    }
+
+    [Fact]
+    public void NormalizeCountryCode_TrimsAndUppercases()
+    {
+        Assert.Equal("DZ", SettingsJson.NormalizeCountryCode(" dz "));
+        Assert.Null(SettingsJson.NormalizeCountryCode(null));
+        Assert.Null(SettingsJson.NormalizeCountryCode("  "));
+    }
+
+    [Fact]
     public void LegacyJson_WithoutPhase8Fields_SkipsWizardAndKeepsOpaque()
     {
         // Existing installs: missing SetupWizardCompleted must not force the wizard.

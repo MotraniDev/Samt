@@ -129,6 +129,32 @@ public sealed class AppSettings
     public bool SetupWizardCompleted { get; init; } = true;
 
     public int HijriDayOffset { get; init; }
+
+    /// <summary>
+    /// When non-empty, forces the calendar country package (ISO-style code).
+    /// Null/empty follows active location <see cref="LocationProfile.CountryCode"/> then product default.
+    /// </summary>
+    public string? CalendarCountryOverride { get; init; }
+
+    /// <summary>Master switch for special-day morning toasts (off by default).</summary>
+    public bool SpecialDayRemindersEnabled { get; init; }
+
+    /// <summary>When true (and master on), fire reminders for Islamic-observance special days.</summary>
+    public bool SpecialDayIslamicSetEnabled { get; init; }
+
+    /// <summary>When true (and master on), fire reminders for country-package special days.</summary>
+    public bool SpecialDayCountrySetEnabled { get; init; }
+
+    /// <summary>
+    /// Local clock time for special-day reminders (HH:mm, Latin digits) in the active location timezone.
+    /// </summary>
+    public string SpecialDayReminderTime { get; init; } = "09:00";
+
+    /// <summary>
+    /// Catalog definition ids muted for reminders (e.g. <c>islamic.eid_fitr</c>), not civil dates.
+    /// </summary>
+    public IReadOnlyList<string> SpecialDayMutedIds { get; init; } = [];
+
     public IReadOnlyList<LocationProfile> Locations { get; init; } = [];
     public IReadOnlyList<NotificationRule> NotificationRules { get; init; } = [];
     public AudioProfile DefaultAudio { get; init; } = new();
@@ -234,6 +260,13 @@ public sealed class AppSettings
         double? windowOpacity = null,
         bool? setupWizardCompleted = null,
         int? hijriDayOffset = null,
+        string? calendarCountryOverride = null,
+        bool replaceCalendarCountryOverride = false,
+        bool? specialDayRemindersEnabled = null,
+        bool? specialDayIslamicSetEnabled = null,
+        bool? specialDayCountrySetEnabled = null,
+        string? specialDayReminderTime = null,
+        IReadOnlyList<string>? specialDayMutedIds = null,
         IReadOnlyList<NotificationRule>? notificationRules = null,
         AudioProfile? defaultAudio = null,
         OverlayProfile? defaultOverlay = null,
@@ -265,6 +298,14 @@ public sealed class AppSettings
             WindowOpacity = windowOpacity ?? WindowOpacity,
             SetupWizardCompleted = setupWizardCompleted ?? SetupWizardCompleted,
             HijriDayOffset = hijriDayOffset ?? HijriDayOffset,
+            CalendarCountryOverride = replaceCalendarCountryOverride
+                ? calendarCountryOverride
+                : calendarCountryOverride ?? CalendarCountryOverride,
+            SpecialDayRemindersEnabled = specialDayRemindersEnabled ?? SpecialDayRemindersEnabled,
+            SpecialDayIslamicSetEnabled = specialDayIslamicSetEnabled ?? SpecialDayIslamicSetEnabled,
+            SpecialDayCountrySetEnabled = specialDayCountrySetEnabled ?? SpecialDayCountrySetEnabled,
+            SpecialDayReminderTime = specialDayReminderTime ?? SpecialDayReminderTime,
+            SpecialDayMutedIds = specialDayMutedIds ?? SpecialDayMutedIds,
             Locations = locations ?? Locations,
             NotificationRules = notificationRules ?? NotificationRules,
             DefaultAudio = defaultAudio ?? DefaultAudio,

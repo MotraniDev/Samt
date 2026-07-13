@@ -37,6 +37,13 @@ public static class SettingsJson
             AdhkarAutoAdvanceEnabled = true,
             WindowOpacity = 1.0,
             SetupWizardCompleted = false,
+            HijriDayOffset = 0,
+            CalendarCountryOverride = null,
+            SpecialDayRemindersEnabled = false,
+            SpecialDayIslamicSetEnabled = false,
+            SpecialDayCountrySetEnabled = false,
+            SpecialDayReminderTime = "09:00",
+            SpecialDayMutedIds = [],
             Locations =
             [
                 kennadsa,
@@ -104,7 +111,7 @@ public static class SettingsJson
     public static AppSettings Normalize(AppSettings settings)
     {
         var locations = settings.Locations is { Count: > 0 }
-            ? settings.Locations.ToList()
+            ? settings.Locations.Select(NormalizeLocation).ToList()
             : CreateDefault().Locations.ToList();
 
         var activeId = settings.ActiveLocationId;
@@ -141,6 +148,12 @@ public static class SettingsJson
             WindowOpacity = Math.Clamp(settings.WindowOpacity, 0.30, 1.0),
             SetupWizardCompleted = settings.SetupWizardCompleted,
             HijriDayOffset = HijriConverter.ClampDayOffset(settings.HijriDayOffset),
+            CalendarCountryOverride = NormalizeCountryCode(settings.CalendarCountryOverride),
+            SpecialDayRemindersEnabled = settings.SpecialDayRemindersEnabled,
+            SpecialDayIslamicSetEnabled = settings.SpecialDayIslamicSetEnabled,
+            SpecialDayCountrySetEnabled = settings.SpecialDayCountrySetEnabled,
+            SpecialDayReminderTime = NormalizeClockTime(settings.SpecialDayReminderTime, "09:00"),
+            SpecialDayMutedIds = NormalizeSpecialDayMutedIds(settings.SpecialDayMutedIds),
             Locations = locations,
             NotificationRules = settings.NotificationRules is { Count: > 0 }
                 ? UpgradeLegacyDefaultRules(settings.NotificationRules)
@@ -156,6 +169,59 @@ public static class SettingsJson
             UserSounds = NormalizeUserSounds(settings.UserSounds),
             MinuteAdjustments = NormalizeMinuteAdjustments(settings.MinuteAdjustments)
         };
+    }
+
+    /// <summary>ISO-style country code: trim + uppercase; empty becomes null.</summary>
+    public static string? NormalizeCountryCode(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return null;
+        }
+
+        return code.Trim().ToUpperInvariant();
+    }
+
+    private static LocationProfile NormalizeLocation(LocationProfile location)
+        => new()
+        {
+            Id = location.Id,
+            DisplayName = location.DisplayName,
+            Latitude = location.Latitude,
+            Longitude = location.Longitude,
+            TimeZoneId = location.TimeZoneId,
+            Source = location.Source,
+            CountryCode = NormalizeCountryCode(location.CountryCode),
+            FridayTimeMode = location.FridayTimeMode,
+            FixedFridayLocalTime = location.FixedFridayLocalTime,
+            SuppressDhuhrNotificationsOnFriday = location.SuppressDhuhrNotificationsOnFriday,
+            AltitudeMeters = location.AltitudeMeters
+        };
+
+    private static IReadOnlyList<string> NormalizeSpecialDayMutedIds(IReadOnlyList<string>? ids)
+    {
+        if (ids is null || ids.Count == 0)
+        {
+            return [];
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<string>();
+        foreach (var raw in ids)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                continue;
+            }
+
+            var id = raw.Trim();
+            if (seen.Add(id))
+            {
+                result.Add(id);
+            }
+        }
+
+        return result;
     }
 
     /// <summary>Normalize HH:mm (or parseable) clock strings; always Latin digits via invariant format.</summary>

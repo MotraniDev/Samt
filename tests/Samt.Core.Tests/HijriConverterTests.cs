@@ -69,4 +69,25 @@ public class HijriConverterTests
 
         Assert.True(found);
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(-1)]
+    [InlineData(3)]
+    public void ToGregorian_RoundTrips_FromGregorian(int dayOffset)
+    {
+        var civil = new DateOnly(2025, 6, 15);
+        var hijri = HijriConverter.FromGregorian(civil, dayOffset);
+        var back = HijriConverter.ToGregorian(hijri, dayOffset);
+
+        Assert.Equal(civil, back);
+    }
+
+    [Fact]
+    public void GetDaysInMonth_IsBetween29And30()
+    {
+        var days = HijriConverter.GetDaysInMonth(1446, 9);
+        Assert.InRange(days, 29, 30);
+    }
 }

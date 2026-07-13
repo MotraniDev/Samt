@@ -1,0 +1,3 @@
+# Special-day reminders are not prayer NotificationRules
+
+Special-day reminders (Hijri calendar observances and country holidays) are planned and delivered on a **sibling path** to prayer `NotificationPlanner` / `NotificationRule`. They are toast-only, clock-time-based on a civil day, and must not become new `NotificationEventKind` values or `PrayerEvent` targets. Reusing the prayer rule model would force awkward “fake prayers,” couple holiday catalogs to adhan channels, and blur missed-adhan behavior with calendar summaries. The host may still share infrastructure (dispatcher, toast service, missed-on-resume *style*) without sharing the domain model.

@@ -28,6 +28,25 @@ public static class HijriConverter
             cal.GetDayOfMonth(dt));
     }
 
+    /// <summary>
+    /// Convert a tabular Hijri date to the civil Gregorian date that <see cref="FromGregorian"/>
+    /// would map to this Hijri day under the same <paramref name="dayOffset"/>.
+    /// </summary>
+    public static DateOnly ToGregorian(HijriDate hijri, int dayOffset = 0)
+    {
+        var cal = new HijriCalendar();
+        var dt = cal.ToDateTime(hijri.Year, hijri.Month, hijri.Day, 0, 0, 0, 0);
+        // Inverse of FromGregorian: civil = HijriInstant − offset days.
+        return DateOnly.FromDateTime(dt.AddDays(-dayOffset));
+    }
+
+    /// <summary>Days in the given tabular Hijri month (29 or 30).</summary>
+    public static int GetDaysInMonth(int hijriYear, int hijriMonth)
+    {
+        var cal = new HijriCalendar();
+        return cal.GetDaysInMonth(hijriYear, hijriMonth);
+    }
+
     /// <summary>True when the adjusted Hijri month is Ramadan (9).</summary>
     public static bool IsRamadan(DateOnly gregorianDate, int dayOffset = 0)
         => FromGregorian(gregorianDate, dayOffset).IsRamadan;

@@ -21,6 +21,12 @@ public sealed class LocationProfile
 
     public LocationSource Source { get; init; } = LocationSource.Manual;
 
+    /// <summary>
+    /// Optional ISO 3166-1 alpha-2 style country code (e.g. <c>DZ</c>) for calendar country defaulting.
+    /// Null/empty means unknown; calendar resolution falls through to product default.
+    /// </summary>
+    public string? CountryCode { get; init; }
+
     public FridayTimeMode FridayTimeMode { get; init; } = FridayTimeMode.FollowDhuhr;
 
     /// <summary>Local clock time for Jumu'ah when <see cref="FridayTimeMode"/> is <see cref="FridayTimeMode.FixedTime"/>.</summary>
