@@ -5,120 +5,246 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Adhkar">
 
-    <Grid Background="{StaticResource SamtNavyDeepBrush}" Padding="20">
+    <Grid Background="{StaticResource SamtNavyDeepBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid>
-            <TextBlock
-                x:Name="TitleText"
-                FontFamily="{StaticResource SamtDisplayFont}"
-                FontSize="22"
-                Foreground="{StaticResource SamtGoldBrush}"
-                HorizontalAlignment="Center"
-                TextWrapping="Wrap" />
-            <Button
-                x:Name="CloseButton"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                Padding="8,4"
-                Click="CloseButton_OnClick"
-                Background="Transparent"
-                BorderThickness="0">
-                <FontIcon Glyph="&#xE711;" FontSize="14" Foreground="{StaticResource SamtIvoryMutedBrush}" />
-            </Button>
-        </Grid>
-
-        <Border
-            Grid.Row="1"
-            Margin="0,16"
-            Padding="20"
-            CornerRadius="16"
-            Background="#22000000"
-            BorderBrush="{StaticResource SamtHairlineBrush}"
-            BorderThickness="1">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel Spacing="16" VerticalAlignment="Center">
-                    <TextBlock
-                        x:Name="ArabicText"
-                        FontFamily="{StaticResource SamtNaskhFont}"
-                        FontSize="28"
-                        LineHeight="44"
-                        Foreground="{StaticResource SamtIvoryBrush}"
-                        TextAlignment="Center"
-                        TextWrapping="WrapWholeWords"
-                        HorizontalAlignment="Stretch" />
-                    <TextBlock
-                        x:Name="RepeatText"
-                        FontFamily="{StaticResource SamtUiFont}"
-                        FontSize="14"
-                        Foreground="{StaticResource SamtGoldSoftBrush}"
-                        HorizontalAlignment="Center"
-                        Style="{StaticResource LatinDigitsTextBlock}"
-                        Visibility="Collapsed" />
-                    <TextBlock
-                        x:Name="TranslationText"
-                        FontFamily="{StaticResource SamtUiFont}"
-                        FontSize="15"
-                        LineHeight="24"
-                        Opacity="0.85"
-                        Foreground="{StaticResource SamtIvoryMutedBrush}"
-                        TextAlignment="Center"
-                        TextWrapping="Wrap"
-                        HorizontalAlignment="Stretch" />
-                </StackPanel>
-            </ScrollViewer>
-        </Border>
-
-        <TextBlock
-            x:Name="ProgressText"
-            Grid.Row="2"
-            HorizontalAlignment="Center"
-            Margin="0,0,0,12"
-            Opacity="0.7"
-            Foreground="{StaticResource SamtIvoryMutedBrush}"
-            Style="{StaticResource LatinDigitsTextBlock}"
-            FontSize="13" />
-
-        <Grid Grid.Row="3" ColumnSpacing="12">
+        <!-- Custom title bar -->
+        <Grid x:Name="TitleBarRoot" Height="40" Background="#18000000">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Button
-                x:Name="PrevButton"
-                HorizontalAlignment="Stretch"
-                Click="PrevButton_OnClick"
-                FontFamily="{StaticResource SamtUiFont}">
-                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                    <FontIcon x:Name="PrevIcon" Glyph="&#xE76B;" FontSize="14" />
-                    <TextBlock x:Name="PrevLabel" VerticalAlignment="Center" />
+            <Border x:Name="TitleBarDrag" Background="Transparent" VerticalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="14,0,8,0">
+                    <TextBlock
+                        x:Name="TitleText"
+                        FontFamily="{StaticResource SamtDisplayFont}"
+                        FontSize="15"
+                        Foreground="{StaticResource SamtGoldBrush}"
+                        VerticalAlignment="Center"
+                        TextTrimming="CharacterEllipsis" />
+                    <TextBlock
+                        x:Name="SourceBadge"
+                        FontSize="10"
+                        Opacity="0.55"
+                        Foreground="{StaticResource SamtIvoryMutedBrush}"
+                        VerticalAlignment="Center" />
                 </StackPanel>
-            </Button>
-            <Button
-                x:Name="PlayButton"
+            </Border>
+            <StackPanel
+                x:Name="CaptionButtons"
                 Grid.Column="1"
-                MinWidth="120"
-                IsEnabled="False"
-                FontFamily="{StaticResource SamtUiFont}">
-                <TextBlock x:Name="PlayLabel" />
-            </Button>
-            <Button
-                x:Name="NextButton"
-                Grid.Column="2"
-                HorizontalAlignment="Stretch"
-                Click="NextButton_OnClick"
-                FontFamily="{StaticResource SamtUiFont}">
-                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                    <TextBlock x:Name="NextLabel" VerticalAlignment="Center" />
-                    <FontIcon x:Name="NextIcon" Glyph="&#xE76C;" FontSize="14" />
-                </StackPanel>
-            </Button>
+                Orientation="Horizontal"
+                Spacing="0"
+                VerticalAlignment="Stretch">
+                <Button x:Name="MinButton" Click="MinButton_OnClick">
+                    <FontIcon Glyph="&#xE921;" FontSize="12" Foreground="{StaticResource SamtIvoryMutedBrush}" />
+                </Button>
+                <Button x:Name="MaxButton" Click="MaxButton_OnClick">
+                    <FontIcon x:Name="MaxIcon" Glyph="&#xE922;" FontSize="12" Foreground="{StaticResource SamtIvoryMutedBrush}" />
+                </Button>
+                <Button x:Name="CloseCaptionButton" Click="CloseCaptionButton_OnClick">
+                    <FontIcon Glyph="&#xE8BB;" FontSize="12" Foreground="{StaticResource SamtIvoryBrush}" />
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1" Padding="16,8,16,16" RowSpacing="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Collection progress -->
+            <StackPanel Spacing="6">
+                <Grid>
+                    <TextBlock
+                        x:Name="SetProgressLabel"
+                        FontSize="12"
+                        Opacity="0.75"
+                        Foreground="{StaticResource SamtIvoryMutedBrush}"
+                        Style="{StaticResource LatinDigitsTextBlock}" />
+                    <Button
+                        x:Name="ResetProgressButton"
+                        HorizontalAlignment="Right"
+                        Padding="8,2"
+                        FontSize="11"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="ResetProgressButton_OnClick"
+                        Foreground="{StaticResource SamtGoldSoftBrush}" />
+                </Grid>
+                <ProgressBar
+                    x:Name="SetProgressBar"
+                    Minimum="0"
+                    Maximum="1"
+                    Height="6"
+                    Foreground="{StaticResource SamtGoldBrush}" />
+            </StackPanel>
+
+            <!-- Path dots -->
+            <ScrollViewer
+                Grid.Row="1"
+                HorizontalScrollBarVisibility="Auto"
+                VerticalScrollBarVisibility="Disabled"
+                HorizontalScrollMode="Enabled">
+                <ItemsControl x:Name="PathDots" Margin="0,4">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="6" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Main card — tap to count -->
+            <Border
+                x:Name="ReadingCard"
+                Grid.Row="2"
+                Padding="18"
+                CornerRadius="16"
+                Background="#22000000"
+                BorderBrush="{StaticResource SamtHairlineBrush}"
+                BorderThickness="1"
+                Tapped="ReadingCard_OnTapped"
+                PointerPressed="ReadingCard_OnPointerPressed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="14" VerticalAlignment="Center">
+                        <Grid>
+                            <FontIcon
+                                x:Name="CompleteCheck"
+                                Glyph="&#xE73E;"
+                                FontSize="22"
+                                Foreground="{StaticResource SamtGoldBrush}"
+                                HorizontalAlignment="Left"
+                                Visibility="Collapsed" />
+                            <TextBlock
+                                x:Name="ReferenceText"
+                                FontSize="11"
+                                Opacity="0.6"
+                                HorizontalAlignment="Center"
+                                Foreground="{StaticResource SamtGoldSoftBrush}"
+                                TextWrapping="Wrap" />
+                        </Grid>
+                        <TextBlock
+                            x:Name="ArabicText"
+                            FontFamily="{StaticResource SamtNaskhFont}"
+                            FontSize="26"
+                            LineHeight="42"
+                            Foreground="{StaticResource SamtIvoryBrush}"
+                            TextAlignment="Center"
+                            TextWrapping="WrapWholeWords"
+                            HorizontalAlignment="Stretch"
+                            IsTextSelectionEnabled="True" />
+                        <TextBlock
+                            x:Name="BenefitText"
+                            FontFamily="{StaticResource SamtUiFont}"
+                            FontSize="13"
+                            Opacity="0.75"
+                            Foreground="{StaticResource SamtIvoryMutedBrush}"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="TranslationText"
+                            FontFamily="{StaticResource SamtUiFont}"
+                            FontSize="14"
+                            Opacity="0.8"
+                            Foreground="{StaticResource SamtIvoryMutedBrush}"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="TapHint"
+                            FontSize="11"
+                            Opacity="0.45"
+                            HorizontalAlignment="Center"
+                            Foreground="{StaticResource SamtIvoryMutedBrush}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Counter + mark complete -->
+            <Grid Grid.Row="3" ColumnSpacing="10" Margin="0,4,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button
+                    x:Name="CountButton"
+                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Click="CountButton_OnClick"
+                    FontFamily="{StaticResource SamtUiFont}">
+                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                        <FontIcon Glyph="&#xE8FB;" FontSize="14" />
+                        <TextBlock x:Name="CountLabel" Style="{StaticResource LatinDigitsTextBlock}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Border
+                    Grid.Column="1"
+                    MinWidth="88"
+                    Padding="12,8"
+                    CornerRadius="12"
+                    Background="#33000000"
+                    BorderBrush="{StaticResource SamtGoldSoftBrush}"
+                    BorderThickness="1"
+                    VerticalAlignment="Stretch">
+                    <TextBlock
+                        x:Name="CountDisplay"
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource SamtGoldBrush}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center" />
+                </Border>
+                <Button
+                    x:Name="MarkDoneButton"
+                    Grid.Column="2"
+                    HorizontalAlignment="Stretch"
+                    Click="MarkDoneButton_OnClick"
+                    FontFamily="{StaticResource SamtUiFont}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                        <FontIcon Glyph="&#xE73E;" FontSize="14" />
+                        <TextBlock x:Name="MarkDoneLabel" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- Nav -->
+            <Grid Grid.Row="4" ColumnSpacing="12" Margin="0,4,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button
+                    x:Name="PrevButton"
+                    HorizontalAlignment="Stretch"
+                    Click="PrevButton_OnClick"
+                    FontFamily="{StaticResource SamtUiFont}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                        <FontIcon x:Name="PrevIcon" Glyph="&#xE76B;" FontSize="14" />
+                        <TextBlock x:Name="PrevLabel" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    x:Name="NextButton"
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    Click="NextButton_OnClick"
+                    FontFamily="{StaticResource SamtUiFont}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                        <TextBlock x:Name="NextLabel" VerticalAlignment="Center" />
+                        <FontIcon x:Name="NextIcon" Glyph="&#xE76C;" FontSize="14" />
+                    </StackPanel>
+                </Button>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

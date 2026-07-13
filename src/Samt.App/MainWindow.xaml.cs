@@ -13,7 +13,17 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        // Do NOT set ExtendsContentIntoTitleBar without SetTitleBar — can yield an invisible window.
+
+        CustomWindowChrome.StyleCaptionButton(TitleMinButton);
+        CustomWindowChrome.StyleCaptionButton(TitleMaxButton);
+        CustomWindowChrome.StyleCaptionButton(TitleCloseButton, isClose: true);
+        CustomWindowChrome.Apply(
+            this,
+            TitleBarDrag,
+            TitleMinButton,
+            TitleMaxButton,
+            TitleCloseButton,
+            allowMaximize: true);
 
         App.Localization.LanguageChanged += (_, _) => ApplyChromeLabels();
 

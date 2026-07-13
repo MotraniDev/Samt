@@ -19,16 +19,18 @@ public sealed class AdhkarViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public ObservableCollection<AdhkarSectionVm> Sections { get; } = [];
+    public ObservableCollection<AdhkarGroupVm> Groups { get; } = [];
 
     public string Disclaimer => _localization.Get("AdhkarDisclaimer");
     public string Subtitle => _localization.Get("AdhkarSubtitle");
+    public string SourceLine => _localization.Get("Adhkar.Source.AzkarMe");
 
     public void RefreshLabels()
     {
         Rebuild();
         OnPropertyChanged(nameof(Disclaimer));
         OnPropertyChanged(nameof(Subtitle));
+        OnPropertyChanged(nameof(SourceLine));
     }
 
     public void OpenReader(AdhkarCollectionKind kind)
@@ -36,34 +38,50 @@ public sealed class AdhkarViewModel : INotifyPropertyChanged
 
     private void Rebuild()
     {
-        Sections.Clear();
-        foreach (var collection in AdhkarCatalog.All)
-        {
-            var items = collection.Items.Select(i =>
-            {
-                var translation = i.TranslationKey is null
-                    ? string.Empty
-                    : _localization.Get(i.TranslationKey);
-                var repeat = i.RepeatCount is { } n and > 1
-                    ? LatinDigits.EnsureLatin($"× {n}")
-                    : null;
-                return new AdhkarItemVm(i.ArabicText, translation, repeat);
-            }).ToList();
+        Groups.Clear();
+        var openLabel = _localization.Get("AdhkarOpenReader");
 
-            Sections.Add(new AdhkarSectionVm(
-                collection.Kind,
-                _localization.Get(collection.TitleKey),
-                items));
+        foreach (var group in Enum.GetValues<AdhkarLibraryGroup>())
+        {
+            var sections = AdhkarCatalog.ByGroup(group)
+                .Select(c => new AdhkarSectionVm(
+                    c.Kind,
+                    _localization.Get(c.TitleKey),
+                    c.IconHint,
+                    LatinDigits.EnsureLatin(
+                        string.Format(_localization.Get("AdhkarItemCountFormat"), c.Items.Count)),
+                    openLabel))
+                .ToList();
+
+            if (sections.Count == 0)
+            {
+                continue;
+            }
+
+            Groups.Add(new AdhkarGroupVm(
+                _localization.Get(GroupTitleKey(group)),
+                sections));
         }
     }
+
+    private static string GroupTitleKey(AdhkarLibraryGroup group) => group switch
+    {
+        AdhkarLibraryGroup.Daily => "Adhkar.Group.Daily",
+        AdhkarLibraryGroup.PrayerRelated => "Adhkar.Group.Prayer",
+        AdhkarLibraryGroup.LifeSituations => "Adhkar.Group.Life",
+        AdhkarLibraryGroup.PraiseAndDuas => "Adhkar.Group.Praise",
+        _ => "NavAdhkar"
+    };
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
+public sealed record AdhkarGroupVm(string Title, IReadOnlyList<AdhkarSectionVm> Sections);
+
 public sealed record AdhkarSectionVm(
     AdhkarCollectionKind Kind,
     string Title,
-    IReadOnlyList<AdhkarItemVm> Items);
-
-public sealed record AdhkarItemVm(string ArabicText, string Translation, string? RepeatBadge);
+    string Icon,
+    string CountLabel,
+    string OpenLabel);

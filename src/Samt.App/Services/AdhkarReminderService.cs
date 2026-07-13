@@ -10,16 +10,18 @@ using Samt_App.Overlay;
 namespace Samt_App.Services;
 
 /// <summary>
-/// Schedule-linked Adhkar prompts. After-prayer is queued until the Adhan overlay is dismissed.
+/// Schedule-linked Adhkar prompts. After-prayer can wait for Adhan overlay dismiss
+/// and/or a user-defined delay after the Adhan.
 /// </summary>
 public sealed class AdhkarReminderService : IDisposable
 {
     private readonly AppState _state;
     private readonly IClock _clock;
     private readonly IPrayerEngine _engine;
-    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(30) };
+    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(15) };
     private AdhkarReaderWindow? _reader;
     private AdhkarCollectionKind? _queuedAfterPrayer;
+    private DateTimeOffset? _scheduledAfterPrayerUtc;
     private DateOnly _lastMorning;
     private DateOnly _lastEvening;
     private DateOnly _lastSleep;
@@ -42,7 +44,7 @@ public sealed class AdhkarReminderService : IDisposable
 
     public void Stop() => _timer.Stop();
 
-    /// <summary>Called when Adhan overlay fully dismisses so queued After-prayer can open.</summary>
+    /// <summary>Called when Adhan overlay fully dismisses so queued After-prayer can open (delay 0).</summary>
     public void OnAdhanOverlayDismissed()
     {
         if (_queuedAfterPrayer is { } kind)
@@ -52,7 +54,10 @@ public sealed class AdhkarReminderService : IDisposable
         }
     }
 
-    /// <summary>Queue After-prayer until overlay dismiss, or open immediately if no overlay.</summary>
+    /// <summary>
+    /// After each prayer Adhan: open After-prayer immediately, after overlay dismiss,
+    /// or after a configured delay from this moment.
+    /// </summary>
     public void NotifyPrayerStartCompleted(PrayerEvent prayer, bool overlayWasShown)
     {
         if (!_state.Settings.AdhkarRemindersEnabled || !_state.Settings.AdhkarAfterPrayerEnabled)
@@ -72,6 +77,17 @@ public sealed class AdhkarReminderService : IDisposable
             return;
         }
 
+        var delayMinutes = Math.Clamp(_state.Settings.AdhkarAfterPrayerDelayMinutes, 0, 180);
+        if (delayMinutes > 0)
+        {
+            // User-defined period after Adhan — open when the timer elapses.
+            _queuedAfterPrayer = null;
+            _scheduledAfterPrayerUtc = _clock.UtcNow.AddMinutes(delayMinutes);
+            return;
+        }
+
+        // Delay 0: after Adhan, wait for overlay if it was shown.
+        _scheduledAfterPrayerUtc = null;
         if (overlayWasShown)
         {
             _queuedAfterPrayer = AdhkarCollectionKind.AfterPrayer;
@@ -97,12 +113,19 @@ public sealed class AdhkarReminderService : IDisposable
             {
                 try
                 {
-                    _reader ??= new AdhkarReaderWindow();
+                    // WinUI windows cannot be re-shown after Close(); always recreate.
+                    if (_reader is null)
+                    {
+                        _reader = new AdhkarReaderWindow();
+                        _reader.Closed += Reader_OnClosed;
+                    }
+
                     _reader.ShowCollection(kind);
                 }
                 catch (Exception ex)
                 {
                     LaunchLog.Write($"Adhkar reader open failed: {ex.Message}");
+                    _reader = null;
                 }
             }
 
@@ -118,6 +141,14 @@ public sealed class AdhkarReminderService : IDisposable
         catch (Exception ex)
         {
             LaunchLog.Write($"Adhkar OpenReader failed: {ex.Message}");
+        }
+    }
+
+    private void Reader_OnClosed(object sender, WindowEventArgs args)
+    {
+        if (ReferenceEquals(sender, _reader))
+        {
+            _reader = null;
         }
     }
 
@@ -141,6 +172,15 @@ public sealed class AdhkarReminderService : IDisposable
             return;
         }
 
+        // Delayed after-prayer (minutes after Adhan).
+        if (_scheduledAfterPrayerUtc is { } scheduled
+            && settings.AdhkarAfterPrayerEnabled
+            && _clock.UtcNow >= scheduled)
+        {
+            _scheduledAfterPrayerUtc = null;
+            OpenReader(AdhkarCollectionKind.AfterPrayer);
+        }
+
         var location = settings.GetActiveLocation();
         if (location is null)
         {
@@ -159,48 +199,47 @@ public sealed class AdhkarReminderService : IDisposable
 
         var localNow = TimeZoneInfo.ConvertTimeFromUtc(_clock.UtcNow.UtcDateTime, tz);
         var today = DateOnly.FromDateTime(localNow);
-        var profile = settings.GetActiveCalculationProfile();
-        var schedule = _engine.Calculate(today, location, profile);
-        var nowOffset = new DateTimeOffset(localNow, tz.GetUtcOffset(localNow));
+        var nowT = TimeOnly.FromDateTime(localNow);
 
-        // Morning: after Fajr until Sunrise
-        if (settings.AdhkarMorningEnabled && _lastMorning != today)
+        // Morning / Evening / Sleep: user-configured local clock times (2-minute fire window).
+        TryFireClock(settings.AdhkarMorningEnabled, settings.AdhkarMorningTime, ref _lastMorning, today, nowT,
+            AdhkarCollectionKind.Morning);
+        TryFireClock(settings.AdhkarEveningEnabled, settings.AdhkarEveningTime, ref _lastEvening, today, nowT,
+            AdhkarCollectionKind.Evening);
+        TryFireClock(settings.AdhkarSleepEnabled, settings.AdhkarSleepTime, ref _lastSleep, today, nowT,
+            AdhkarCollectionKind.Sleep);
+    }
+
+    private void TryFireClock(
+        bool enabled,
+        string? timeText,
+        ref DateOnly lastFired,
+        DateOnly today,
+        TimeOnly nowT,
+        AdhkarCollectionKind kind)
+    {
+        if (!enabled || lastFired == today)
         {
-            var fajr = schedule[PrayerEvent.Fajr];
-            var sunrise = schedule[PrayerEvent.Sunrise];
-            if (fajr is { } f && sunrise is { } s && nowOffset >= f && nowOffset < s)
-            {
-                _lastMorning = today;
-                OpenReader(AdhkarCollectionKind.Morning);
-            }
+            return;
         }
 
-        // Evening: after Asr until Maghrib
-        if (settings.AdhkarEveningEnabled && _lastEvening != today)
+        if (!TimeOnly.TryParse(timeText, out var at))
         {
-            var asr = schedule[PrayerEvent.Asr];
-            var maghrib = schedule[PrayerEvent.Maghrib];
-            if (asr is { } a && maghrib is { } m && nowOffset >= a && nowOffset < m)
-            {
-                _lastEvening = today;
-                OpenReader(AdhkarCollectionKind.Evening);
-            }
+            return;
         }
 
-        // Sleep: fixed local clock (2-minute fire window)
-        if (settings.AdhkarSleepEnabled && _lastSleep != today)
+        var end = at.AddMinutes(2);
+        var inWindow = end > at
+            ? nowT >= at && nowT < end
+            : nowT >= at || nowT < end; // crosses midnight (rare)
+
+        if (!inWindow)
         {
-            if (TimeOnly.TryParse(settings.AdhkarSleepTime, out var sleepAt))
-            {
-                var nowT = TimeOnly.FromDateTime(localNow);
-                var sleepEnd = sleepAt.AddMinutes(2);
-                if (nowT >= sleepAt && nowT < sleepEnd)
-                {
-                    _lastSleep = today;
-                    OpenReader(AdhkarCollectionKind.Sleep);
-                }
-            }
+            return;
         }
+
+        lastFired = today;
+        OpenReader(kind);
     }
 
     public void Dispose()
@@ -212,5 +251,16 @@ public sealed class AdhkarReminderService : IDisposable
 
         _disposed = true;
         _timer.Stop();
+        try
+        {
+            if (_reader is not null)
+            {
+                _reader.Closed -= Reader_OnClosed;
+            }
+        }
+        catch
+        {
+            // ignore
+        }
     }
 }

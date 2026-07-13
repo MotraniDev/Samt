@@ -1,10 +1,15 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
+using Samt.Core.Formatting;
+using Samt.Core.Storage;
 using Samt_App.Services;
+using Windows.System;
 
 namespace Samt_App.Pages;
 
@@ -43,6 +48,7 @@ public sealed partial class SettingsPage : Page
         AppOptionsHeader.Text = loc.Get("AppOptions");
         UpdatesSectionHeader.Text = loc.Get("SettingsUpdatesSection");
         AdhkarSectionHeader.Text = loc.Get("SettingsAdhkarSection");
+        AdhkarSectionHint.Text = loc.Get("AdhkarSettingsHint");
         AboutSectionHeader.Text = loc.Get("SettingsAboutSection");
         CommunitySectionHeader.Text = loc.Get("SettingsCommunitySection");
         AutoStartToggle.Header = loc.Get("AutoStartEnabled");
@@ -69,6 +75,12 @@ public sealed partial class SettingsPage : Page
         AdhkarSleepToggle.Header = loc.Get("AdhkarSleepToggle");
         AdhkarSleepToggle.OffContent = loc.Get("ToggleOff");
         AdhkarSleepToggle.OnContent = loc.Get("ToggleOn");
+        AdhkarMorningTimeLabel.Text = loc.Get("AdhkarDefaultTime");
+        AdhkarEveningTimeLabel.Text = loc.Get("AdhkarDefaultTime");
+        AdhkarSleepTimeLabel.Text = loc.Get("AdhkarDefaultTime");
+        AdhkarAfterDelayLabel.Text = loc.Get("AdhkarAfterPrayerDelay");
+        AdhkarAfterPrayerHint.Text = loc.Get("AdhkarAfterPrayerHint");
+        AdhkarAfterDelayUnit.Text = loc.Get("AdhkarMinutesUnit");
         CheckUpdatesButton.Content = loc.Get("CheckForUpdates");
         GitHubButtonLabel.Text = loc.Get("OpenGitHub");
         PublisherText.Text = $"{loc.Get("PublisherLabel")}: MotraniSoft";
@@ -103,6 +115,10 @@ public sealed partial class SettingsPage : Page
             AdhkarEveningToggle.IsOn = settings.AdhkarEveningEnabled;
             AdhkarAfterToggle.IsOn = settings.AdhkarAfterPrayerEnabled;
             AdhkarSleepToggle.IsOn = settings.AdhkarSleepEnabled;
+            AdhkarMorningTimeBox.Text = LatinDigits.EnsureLatin(settings.AdhkarMorningTime);
+            AdhkarEveningTimeBox.Text = LatinDigits.EnsureLatin(settings.AdhkarEveningTime);
+            AdhkarSleepTimeBox.Text = LatinDigits.EnsureLatin(settings.AdhkarSleepTime);
+            AdhkarAfterDelayBox.Text = LatinDigits.Number(settings.AdhkarAfterPrayerDelayMinutes);
             UpdateStatusText.Text = string.Empty;
         }
         finally
@@ -235,11 +251,75 @@ public sealed partial class SettingsPage : Page
             return;
         }
 
+        await SaveAdhkarSettingsAsync();
+    }
+
+    private async void AdhkarTimeBox_OnLostFocus(object sender, RoutedEventArgs e)
+    {
+        if (_suppress || !IsLoaded)
+        {
+            return;
+        }
+
+        await SaveAdhkarSettingsAsync();
+    }
+
+    private async void AdhkarTimeBox_OnKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Enter || _suppress || !IsLoaded)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        await SaveAdhkarSettingsAsync();
+    }
+
+    private async Task SaveAdhkarSettingsAsync()
+    {
+        var morning = SettingsJson.NormalizeClockTime(AdhkarMorningTimeBox.Text, "06:00");
+        var evening = SettingsJson.NormalizeClockTime(AdhkarEveningTimeBox.Text, "17:00");
+        var sleep = SettingsJson.NormalizeClockTime(AdhkarSleepTimeBox.Text, "22:00");
+        var delay = ParseDelayMinutes(AdhkarAfterDelayBox.Text);
+
+        _suppress = true;
+        try
+        {
+            AdhkarMorningTimeBox.Text = LatinDigits.EnsureLatin(morning);
+            AdhkarEveningTimeBox.Text = LatinDigits.EnsureLatin(evening);
+            AdhkarSleepTimeBox.Text = LatinDigits.EnsureLatin(sleep);
+            AdhkarAfterDelayBox.Text = LatinDigits.Number(delay);
+        }
+        finally
+        {
+            _suppress = false;
+        }
+
         await App.State.UpdateAsync(s => s.With(
             adhkarMorningEnabled: AdhkarMorningToggle.IsOn,
             adhkarEveningEnabled: AdhkarEveningToggle.IsOn,
             adhkarAfterPrayerEnabled: AdhkarAfterToggle.IsOn,
-            adhkarSleepEnabled: AdhkarSleepToggle.IsOn));
+            adhkarSleepEnabled: AdhkarSleepToggle.IsOn,
+            adhkarMorningTime: morning,
+            adhkarEveningTime: evening,
+            adhkarSleepTime: sleep,
+            adhkarAfterPrayerDelayMinutes: delay));
+    }
+
+    private static int ParseDelayMinutes(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return 0;
+        }
+
+        var raw = LatinDigits.EnsureLatin(text.Trim());
+        if (int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
+        {
+            return Math.Clamp(n, 0, 180);
+        }
+
+        return 0;
     }
 
     private async void CheckUpdatesButton_OnClick(object sender, RoutedEventArgs e)

@@ -9,22 +9,25 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     FontFamily="{StaticResource SamtUiFont}">
 
-    <ScrollViewer Padding="28,24">
-        <Grid ColumnSpacing="20" MaxWidth="960">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="1.2*" />
-            </Grid.ColumnDefinitions>
-
+    <ScrollViewer
+        Padding="20,16"
+        HorizontalScrollMode="Disabled"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto"
+        ZoomMode="Disabled">
+        <!-- Always stack list + editor so small windows stay usable; wide max keeps two-column feel less needed. -->
+        <StackPanel MaxWidth="960" HorizontalAlignment="Stretch" Spacing="16">
             <StackPanel Spacing="12">
-                <TextBlock x:Name="ListHeader" Style="{StaticResource SamtPageTitle}" FontSize="26" />
+                <TextBlock x:Name="ListHeader" Style="{StaticResource SamtPageTitle}" FontSize="26" TextWrapping="Wrap" />
                 <ListView
                     x:Name="LocationList"
                     FontFamily="{StaticResource SamtUiFont}"
                     ItemsSource="{x:Bind ViewModel.Locations, Mode=OneWay}"
                     SelectedItem="{x:Bind ViewModel.SelectedLocation, Mode=TwoWay}"
                     DisplayMemberPath="DisplayName"
-                    Height="320" />
+                    MinHeight="100"
+                    MaxHeight="280"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button x:Name="ActivateButton" Click="ActivateButton_OnClick" />
                     <Button x:Name="NewButton" Click="NewButton_OnClick" />
@@ -32,13 +35,17 @@
                 </StackPanel>
             </StackPanel>
 
-            <Border Grid.Column="1" Padding="18" CornerRadius="16"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1">
+            <Border
+                Padding="16"
+                CornerRadius="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{StaticResource SamtHairlineBrush}"
+                BorderThickness="1"
+                HorizontalAlignment="Stretch">
                 <StackPanel Spacing="12">
-                    <TextBlock x:Name="EditorHeader" Style="{StaticResource SamtPageTitle}" FontSize="22" />
+                    <TextBlock x:Name="EditorHeader" Style="{StaticResource SamtPageTitle}" FontSize="22" TextWrapping="Wrap" />
 
-                    <TextBlock x:Name="PlaceSearchLabel" Opacity="0.75" />
+                    <TextBlock x:Name="PlaceSearchLabel" Opacity="0.75" TextWrapping="Wrap" />
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -56,11 +63,13 @@
                     </Grid>
                     <ListView
                         x:Name="PlaceResultsList"
-                        Height="100"
+                        MinHeight="0"
+                        MaxHeight="160"
                         ItemsSource="{x:Bind ViewModel.PlaceResults, Mode=OneWay}"
                         SelectedItem="{x:Bind ViewModel.SelectedPlaceResult, Mode=TwoWay}"
                         DoubleTapped="PlaceResultsList_OnDoubleTapped"
-                        SelectionChanged="PlaceResultsList_OnSelectionChanged">
+                        SelectionChanged="PlaceResultsList_OnSelectionChanged"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Spacing="2" Padding="4,6">
@@ -94,8 +103,8 @@
                         HorizontalAlignment="Stretch"
                         ItemsSource="{x:Bind ViewModel.TimeZoneIds}"
                         SelectedItem="{x:Bind ViewModel.TimeZoneId, Mode=TwoWay}" />
-                    <TextBlock x:Name="FridaySectionLabel" Style="{StaticResource SamtSectionLabel}" Margin="0,8,0,0" />
-                    <TextBlock x:Name="FridayModeLabel" Opacity="0.75" />
+                    <TextBlock x:Name="FridaySectionLabel" Style="{StaticResource SamtSectionLabel}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                    <TextBlock x:Name="FridayModeLabel" Opacity="0.75" TextWrapping="Wrap" />
                     <ComboBox
                         x:Name="FridayModeBox"
                         HorizontalAlignment="Stretch"
@@ -103,7 +112,7 @@
                         <ComboBoxItem x:Name="FridayFollowDhuhrItem" />
                         <ComboBoxItem x:Name="FridayFixedTimeItem" />
                     </ComboBox>
-                    <TextBlock x:Name="FixedFridayLabel" Opacity="0.75" />
+                    <TextBlock x:Name="FixedFridayLabel" Opacity="0.75" TextWrapping="Wrap" />
                     <TextBox
                         Style="{StaticResource LatinDigitsTextBox}"
                         Text="{x:Bind ViewModel.FixedFridayTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -124,6 +133,6 @@
                     <TextBlock x:Name="PrivacyNote" FontSize="12" Opacity="0.65" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
-        </Grid>
+        </StackPanel>
     </ScrollViewer>
 </Page>

@@ -9,35 +9,54 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     FontFamily="{StaticResource SamtUiFont}">
 
-    <ScrollViewer Padding="28,24">
-        <StackPanel MaxWidth="720" Spacing="16">
-            <TextBlock x:Name="TitleText" Style="{StaticResource SamtPageTitle}" />
+    <ScrollViewer
+        Padding="20,16"
+        HorizontalScrollMode="Disabled"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto"
+        ZoomMode="Disabled">
+        <StackPanel MaxWidth="720" HorizontalAlignment="Stretch" Spacing="16">
+            <TextBlock x:Name="TitleText" Style="{StaticResource SamtPageTitle}" TextWrapping="Wrap" />
             <TextBlock x:Name="PriorityNote" Text="{x:Bind ViewModel.PriorityNote, Mode=OneWay}"
                        Style="{StaticResource SamtBody}"
                        TextWrapping="Wrap" Opacity="0.8" />
 
             <!-- Adhan time -->
-            <Border Padding="18" CornerRadius="16"
+            <Border Padding="16" CornerRadius="16"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1">
                 <StackPanel Spacing="10">
-                    <TextBlock x:Name="StartSection" Style="{StaticResource SamtSectionLabel}" />
+                    <TextBlock x:Name="StartSection" Style="{StaticResource SamtSectionLabel}" TextWrapping="Wrap" />
                     <CheckBox x:Name="StartEnabledCheck"
                               IsChecked="{x:Bind ViewModel.StartEnabled, Mode=TwoWay}" />
-                    <TextBlock x:Name="StartChannelsLabel" Opacity="0.75" />
-                    <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock x:Name="StartChannelsLabel" Opacity="0.75" TextWrapping="Wrap" />
+                    <Grid ColumnSpacing="8" RowSpacing="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="80" />
+                            <ColumnDefinition Width="*" MinWidth="80" />
+                            <ColumnDefinition Width="*" MinWidth="80" />
+                        </Grid.ColumnDefinitions>
                         <CheckBox x:Name="StartToastCheck" IsChecked="{x:Bind ViewModel.StartToast, Mode=TwoWay}" />
-                        <CheckBox x:Name="StartOverlayCheck" IsChecked="{x:Bind ViewModel.StartOverlay, Mode=TwoWay}" />
-                        <CheckBox x:Name="StartAudioCheck" IsChecked="{x:Bind ViewModel.StartAudio, Mode=TwoWay}" />
-                    </StackPanel>
-                    <TextBlock x:Name="StartPrayersLabel" Opacity="0.75" />
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <CheckBox Grid.Column="1" x:Name="StartOverlayCheck" IsChecked="{x:Bind ViewModel.StartOverlay, Mode=TwoWay}" />
+                        <CheckBox Grid.Column="2" x:Name="StartAudioCheck" IsChecked="{x:Bind ViewModel.StartAudio, Mode=TwoWay}" />
+                    </Grid>
+                    <TextBlock x:Name="StartPrayersLabel" Opacity="0.75" TextWrapping="Wrap" />
+                    <Grid ColumnSpacing="8" RowSpacing="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="72" />
+                            <ColumnDefinition Width="*" MinWidth="72" />
+                            <ColumnDefinition Width="*" MinWidth="72" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <CheckBox x:Name="StartFajrCheck" IsChecked="{x:Bind ViewModel.StartFajr, Mode=TwoWay}" />
-                        <CheckBox x:Name="StartDhuhrCheck" IsChecked="{x:Bind ViewModel.StartDhuhr, Mode=TwoWay}" />
-                        <CheckBox x:Name="StartAsrCheck" IsChecked="{x:Bind ViewModel.StartAsr, Mode=TwoWay}" />
-                        <CheckBox x:Name="StartMaghribCheck" IsChecked="{x:Bind ViewModel.StartMaghrib, Mode=TwoWay}" />
-                        <CheckBox x:Name="StartIshaCheck" IsChecked="{x:Bind ViewModel.StartIsha, Mode=TwoWay}" />
-                    </StackPanel>
+                        <CheckBox Grid.Column="1" x:Name="StartDhuhrCheck" IsChecked="{x:Bind ViewModel.StartDhuhr, Mode=TwoWay}" />
+                        <CheckBox Grid.Column="2" x:Name="StartAsrCheck" IsChecked="{x:Bind ViewModel.StartAsr, Mode=TwoWay}" />
+                        <CheckBox Grid.Row="1" x:Name="StartMaghribCheck" IsChecked="{x:Bind ViewModel.StartMaghrib, Mode=TwoWay}" />
+                        <CheckBox Grid.Row="1" Grid.Column="1" x:Name="StartIshaCheck" IsChecked="{x:Bind ViewModel.StartIsha, Mode=TwoWay}" />
+                    </Grid>
                 </StackPanel>
             </Border>
 
@@ -56,21 +75,26 @@
                         HorizontalAlignment="Left"
                         Text="{x:Bind ViewModel.GeneralBeforeMinutes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         PlaceholderText="15" />
-                    <TextBlock x:Name="BeforeChannelsLabel" Opacity="0.75" />
-                    <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock x:Name="BeforeChannelsLabel" Opacity="0.75" TextWrapping="Wrap" />
+                    <Grid ColumnSpacing="8" RowSpacing="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="80" />
+                            <ColumnDefinition Width="*" MinWidth="80" />
+                            <ColumnDefinition Width="*" MinWidth="80" />
+                        </Grid.ColumnDefinitions>
                         <CheckBox x:Name="BeforeToastCheck" IsChecked="{x:Bind ViewModel.BeforeToast, Mode=TwoWay}" />
-                        <CheckBox x:Name="BeforeOverlayCheck" IsChecked="{x:Bind ViewModel.BeforeOverlay, Mode=TwoWay}" />
-                        <CheckBox x:Name="BeforeAudioCheck" IsChecked="{x:Bind ViewModel.BeforeAudio, Mode=TwoWay}" />
-                    </StackPanel>
+                        <CheckBox Grid.Column="1" x:Name="BeforeOverlayCheck" IsChecked="{x:Bind ViewModel.BeforeOverlay, Mode=TwoWay}" />
+                        <CheckBox Grid.Column="2" x:Name="BeforeAudioCheck" IsChecked="{x:Bind ViewModel.BeforeAudio, Mode=TwoWay}" />
+                    </Grid>
                     <TextBlock x:Name="BeforeAudioHint" FontSize="12" Opacity="0.65" TextWrapping="Wrap" />
                     <TextBlock x:Name="ExceptionsLabel" Opacity="0.75" Margin="0,8,0,0" />
                     <TextBlock x:Name="ExceptionsHint" FontSize="12" Opacity="0.65" TextWrapping="Wrap" />
 
-                    <Grid ColumnSpacing="12" RowSpacing="8">
+                    <Grid ColumnSpacing="8" RowSpacing="8">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" MinWidth="80" />
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="88" MinWidth="64" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />

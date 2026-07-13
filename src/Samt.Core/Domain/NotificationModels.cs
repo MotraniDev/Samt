@@ -95,8 +95,20 @@ public sealed class AppSettings
     public bool AdhkarAfterPrayerEnabled { get; init; } = true;
     public bool AdhkarSleepEnabled { get; init; } = true;
 
-    /// <summary>Local clock time for Sleep Adhkar prompt (HH:mm).</summary>
+    /// <summary>Local clock time for Morning Adhkar prompt (HH:mm, Latin digits).</summary>
+    public string AdhkarMorningTime { get; init; } = "06:00";
+
+    /// <summary>Local clock time for Evening Adhkar prompt (HH:mm, Latin digits).</summary>
+    public string AdhkarEveningTime { get; init; } = "17:00";
+
+    /// <summary>Local clock time for Sleep Adhkar prompt (HH:mm, Latin digits).</summary>
     public string AdhkarSleepTime { get; init; } = "22:00";
+
+    /// <summary>
+    /// Minutes after each Adhan before Post-Prayer Adhkar open.
+    /// 0 = immediately after Adhan (or after overlay dismiss when an overlay was shown).
+    /// </summary>
+    public int AdhkarAfterPrayerDelayMinutes { get; init; }
 
     public int HijriDayOffset { get; init; }
     public IReadOnlyList<LocationProfile> Locations { get; init; } = [];
@@ -196,7 +208,10 @@ public sealed class AppSettings
         bool? adhkarEveningEnabled = null,
         bool? adhkarAfterPrayerEnabled = null,
         bool? adhkarSleepEnabled = null,
+        string? adhkarMorningTime = null,
+        string? adhkarEveningTime = null,
         string? adhkarSleepTime = null,
+        int? adhkarAfterPrayerDelayMinutes = null,
         int? hijriDayOffset = null,
         IReadOnlyList<NotificationRule>? notificationRules = null,
         AudioProfile? defaultAudio = null,
@@ -221,7 +236,10 @@ public sealed class AppSettings
             AdhkarEveningEnabled = adhkarEveningEnabled ?? AdhkarEveningEnabled,
             AdhkarAfterPrayerEnabled = adhkarAfterPrayerEnabled ?? AdhkarAfterPrayerEnabled,
             AdhkarSleepEnabled = adhkarSleepEnabled ?? AdhkarSleepEnabled,
+            AdhkarMorningTime = adhkarMorningTime ?? AdhkarMorningTime,
+            AdhkarEveningTime = adhkarEveningTime ?? AdhkarEveningTime,
             AdhkarSleepTime = adhkarSleepTime ?? AdhkarSleepTime,
+            AdhkarAfterPrayerDelayMinutes = adhkarAfterPrayerDelayMinutes ?? AdhkarAfterPrayerDelayMinutes,
             HijriDayOffset = hijriDayOffset ?? HijriDayOffset,
             Locations = locations ?? Locations,
             NotificationRules = notificationRules ?? NotificationRules,

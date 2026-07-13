@@ -9,17 +9,22 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     FontFamily="{StaticResource SamtUiFont}">
 
-    <ScrollViewer Padding="28,24" VerticalScrollBarVisibility="Auto">
-        <StackPanel MaxWidth="720" Spacing="20">
-            <TextBlock x:Name="TitleText" Style="{StaticResource SamtPageTitle}" FontSize="26" />
+    <ScrollViewer
+        Padding="20,16"
+        HorizontalScrollMode="Disabled"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto"
+        ZoomMode="Disabled">
+        <StackPanel MaxWidth="720" HorizontalAlignment="Stretch" Spacing="16">
+            <TextBlock x:Name="TitleText" Style="{StaticResource SamtPageTitle}" FontSize="26" TextWrapping="Wrap" />
 
             <!-- Language -->
             <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
                 <StackPanel Spacing="10">
                     <TextBlock x:Name="LanguageSectionHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" />
-                    <ComboBox x:Name="LanguageBox" HorizontalAlignment="Stretch" MinWidth="200"
+                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
+                    <ComboBox x:Name="LanguageBox" HorizontalAlignment="Stretch" MinWidth="120"
                               FontFamily="{StaticResource SamtUiFont}"
                               SelectionChanged="LanguageBox_OnSelectionChanged">
                         <ComboBoxItem Content="العربية" Tag="ar" />
@@ -35,8 +40,8 @@
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
                 <StackPanel Spacing="10">
                     <TextBlock x:Name="ThemeSectionHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" />
-                    <ComboBox x:Name="ThemeBox" HorizontalAlignment="Stretch" MinWidth="200"
+                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
+                    <ComboBox x:Name="ThemeBox" HorizontalAlignment="Stretch" MinWidth="120"
                               FontFamily="{StaticResource SamtUiFont}"
                               SelectionChanged="ThemeBox_OnSelectionChanged">
                         <ComboBoxItem x:Name="ThemeSystemItem" Tag="system" />
@@ -49,12 +54,12 @@
                 </StackPanel>
             </Border>
 
-            <!-- App options (moved from Diagnostics) -->
+            <!-- App options -->
             <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
                 <StackPanel Spacing="10">
                     <TextBlock x:Name="AppOptionsHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" />
+                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
                     <ToggleSwitch x:Name="AutoStartToggle" Toggled="AutoStartToggle_OnToggled" />
                     <ToggleSwitch x:Name="MissedResumeToggle" Toggled="MissedResumeToggle_OnToggled" />
                 </StackPanel>
@@ -65,7 +70,7 @@
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
                 <StackPanel Spacing="10">
                     <TextBlock x:Name="UpdatesSectionHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" />
+                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
                     <ToggleSwitch x:Name="AutoUpdateToggle" Toggled="AutoUpdateToggle_OnToggled" />
                     <Button x:Name="CheckUpdatesButton" HorizontalAlignment="Stretch"
                             Click="CheckUpdatesButton_OnClick" />
@@ -74,17 +79,92 @@
                 </StackPanel>
             </Border>
 
-            <!-- Adhkar reminders -->
+            <!-- Adhkar reminders: type + default time / post-prayer delay -->
             <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
-                <StackPanel Spacing="10">
+                <StackPanel Spacing="12">
                     <TextBlock x:Name="AdhkarSectionHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" />
+                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
+                    <TextBlock x:Name="AdhkarSectionHint" FontSize="12" Opacity="0.7" TextWrapping="Wrap" />
                     <ToggleSwitch x:Name="AdhkarMasterToggle" Toggled="AdhkarMasterToggle_OnToggled" />
-                    <ToggleSwitch x:Name="AdhkarMorningToggle" Toggled="AdhkarCollectionToggle_OnToggled" />
-                    <ToggleSwitch x:Name="AdhkarEveningToggle" Toggled="AdhkarCollectionToggle_OnToggled" />
-                    <ToggleSwitch x:Name="AdhkarAfterToggle" Toggled="AdhkarCollectionToggle_OnToggled" />
-                    <ToggleSwitch x:Name="AdhkarSleepToggle" Toggled="AdhkarCollectionToggle_OnToggled" />
+
+                    <!-- Morning -->
+                    <Grid ColumnSpacing="10" RowSpacing="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="120" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ToggleSwitch x:Name="AdhkarMorningToggle" Grid.Column="0"
+                                      Toggled="AdhkarCollectionToggle_OnToggled" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <TextBlock x:Name="AdhkarMorningTimeLabel" Opacity="0.75" VerticalAlignment="Center" />
+                            <TextBox
+                                x:Name="AdhkarMorningTimeBox"
+                                Style="{StaticResource LatinDigitsTextBox}"
+                                Width="72"
+                                PlaceholderText="06:00"
+                                LostFocus="AdhkarTimeBox_OnLostFocus"
+                                KeyDown="AdhkarTimeBox_OnKeyDown" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Evening -->
+                    <Grid ColumnSpacing="10" RowSpacing="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="120" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ToggleSwitch x:Name="AdhkarEveningToggle" Grid.Column="0"
+                                      Toggled="AdhkarCollectionToggle_OnToggled" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <TextBlock x:Name="AdhkarEveningTimeLabel" Opacity="0.75" VerticalAlignment="Center" />
+                            <TextBox
+                                x:Name="AdhkarEveningTimeBox"
+                                Style="{StaticResource LatinDigitsTextBox}"
+                                Width="72"
+                                PlaceholderText="17:00"
+                                LostFocus="AdhkarTimeBox_OnLostFocus"
+                                KeyDown="AdhkarTimeBox_OnKeyDown" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- After prayer -->
+                    <StackPanel Spacing="6">
+                        <ToggleSwitch x:Name="AdhkarAfterToggle" Toggled="AdhkarCollectionToggle_OnToggled" />
+                        <TextBlock x:Name="AdhkarAfterPrayerHint" FontSize="12" Opacity="0.65" TextWrapping="Wrap" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock x:Name="AdhkarAfterDelayLabel" Opacity="0.75" VerticalAlignment="Center" />
+                            <TextBox
+                                x:Name="AdhkarAfterDelayBox"
+                                Style="{StaticResource LatinDigitsTextBox}"
+                                Width="72"
+                                PlaceholderText="0"
+                                LostFocus="AdhkarTimeBox_OnLostFocus"
+                                KeyDown="AdhkarTimeBox_OnKeyDown" />
+                            <TextBlock x:Name="AdhkarAfterDelayUnit" Opacity="0.6" VerticalAlignment="Center"
+                                       Language="en-US" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Sleep -->
+                    <Grid ColumnSpacing="10" RowSpacing="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="120" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ToggleSwitch x:Name="AdhkarSleepToggle" Grid.Column="0"
+                                      Toggled="AdhkarCollectionToggle_OnToggled" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <TextBlock x:Name="AdhkarSleepTimeLabel" Opacity="0.75" VerticalAlignment="Center" />
+                            <TextBox
+                                x:Name="AdhkarSleepTimeBox"
+                                Style="{StaticResource LatinDigitsTextBox}"
+                                Width="72"
+                                PlaceholderText="22:00"
+                                LostFocus="AdhkarTimeBox_OnLostFocus"
+                                KeyDown="AdhkarTimeBox_OnKeyDown" />
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
             </Border>
 
@@ -93,19 +173,19 @@
                     BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
                 <StackPanel Spacing="12">
                     <TextBlock x:Name="AboutSectionHeader" FontWeight="SemiBold" FontSize="16"
-                               Foreground="{StaticResource SamtGoldBrush}" />
+                               Foreground="{StaticResource SamtGoldBrush}" TextWrapping="Wrap" />
                     <StackPanel Orientation="Horizontal" Spacing="16">
                         <Image x:Name="PublisherLogo" Width="72" Height="72" Stretch="Uniform"
                                VerticalAlignment="Center" />
                         <StackPanel Spacing="4" VerticalAlignment="Center">
                             <TextBlock FontFamily="{StaticResource SamtDisplayFont}" FontSize="22"
                                        Foreground="{StaticResource SamtGoldBrush}" Text="سَمت / SAMT" />
-                            <TextBlock x:Name="PublisherText" Opacity="0.8" FontSize="13" />
+                            <TextBlock x:Name="PublisherText" Opacity="0.8" FontSize="13" TextWrapping="Wrap" />
                             <TextBlock x:Name="VersionText" Style="{StaticResource LatinDigitsTextBlock}"
                                        Opacity="0.7" FontSize="12" />
                         </StackPanel>
                     </StackPanel>
-                    <TextBlock x:Name="CommunitySectionHeader" FontWeight="SemiBold" Margin="0,8,0,0" />
+                    <TextBlock x:Name="CommunitySectionHeader" FontWeight="SemiBold" Margin="0,8,0,0" TextWrapping="Wrap" />
                     <Button x:Name="GitHubButton" HorizontalAlignment="Stretch" Click="GitHubButton_OnClick">
                         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
                             <FontIcon Glyph="&#xE8A7;" FontSize="14" />

@@ -27,8 +27,9 @@ public sealed partial class AdhkarPage : Page
     private void ApplyLanguageUi()
     {
         FlowDirection = App.Localization.FlowDirection;
-        TitleText.Text = App.Localization.Get("NavAdhkar");
+        TitleText.Text = App.Localization.Get("AdhkarLibraryTitle");
         SubtitleText.Text = App.Localization.Get("AdhkarSubtitle");
+        SourceText.Text = App.Localization.Get("Adhkar.Source.AzkarMe");
         ViewModel.RefreshLabels();
         Bindings.Update();
     }

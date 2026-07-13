@@ -73,6 +73,32 @@ public class SettingsStoreTests
     }
 
     [Fact]
+    public void NormalizeClockTime_ParsesAndFallsBack()
+    {
+        Assert.Equal("06:30", SettingsJson.NormalizeClockTime("6:30", "06:00"));
+        Assert.Equal("22:00", SettingsJson.NormalizeClockTime("22:00", "06:00"));
+        Assert.Equal("06:00", SettingsJson.NormalizeClockTime("not-a-time", "06:00"));
+        Assert.Equal("17:00", SettingsJson.NormalizeClockTime(null, "17:00"));
+    }
+
+    [Fact]
+    public void CreateDefault_AdhkarTimesAndAfterPrayerDelay()
+    {
+        var settings = SettingsJson.CreateDefault();
+        Assert.Equal("06:00", settings.AdhkarMorningTime);
+        Assert.Equal("17:00", settings.AdhkarEveningTime);
+        Assert.Equal("22:00", settings.AdhkarSleepTime);
+        Assert.Equal(0, settings.AdhkarAfterPrayerDelayMinutes);
+
+        var updated = settings.With(
+            adhkarMorningTime: "5:15",
+            adhkarAfterPrayerDelayMinutes: 10);
+        var roundTrip = SettingsJson.Deserialize(SettingsJson.Serialize(updated));
+        Assert.Equal("05:15", roundTrip.AdhkarMorningTime);
+        Assert.Equal(10, roundTrip.AdhkarAfterPrayerDelayMinutes);
+    }
+
+    [Fact]
     public void CreateDefault_UsesPhase4NotificationChannels()
     {
         var settings = SettingsJson.CreateDefault();

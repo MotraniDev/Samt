@@ -30,7 +30,10 @@ public static class SettingsJson
             AdhkarEveningEnabled = true,
             AdhkarAfterPrayerEnabled = true,
             AdhkarSleepEnabled = true,
+            AdhkarMorningTime = "06:00",
+            AdhkarEveningTime = "17:00",
             AdhkarSleepTime = "22:00",
+            AdhkarAfterPrayerDelayMinutes = 0,
             Locations =
             [
                 kennadsa,
@@ -127,9 +130,10 @@ public static class SettingsJson
             AdhkarEveningEnabled = settings.AdhkarEveningEnabled,
             AdhkarAfterPrayerEnabled = settings.AdhkarAfterPrayerEnabled,
             AdhkarSleepEnabled = settings.AdhkarSleepEnabled,
-            AdhkarSleepTime = string.IsNullOrWhiteSpace(settings.AdhkarSleepTime)
-                ? "22:00"
-                : settings.AdhkarSleepTime.Trim(),
+            AdhkarMorningTime = NormalizeClockTime(settings.AdhkarMorningTime, "06:00"),
+            AdhkarEveningTime = NormalizeClockTime(settings.AdhkarEveningTime, "17:00"),
+            AdhkarSleepTime = NormalizeClockTime(settings.AdhkarSleepTime, "22:00"),
+            AdhkarAfterPrayerDelayMinutes = Math.Clamp(settings.AdhkarAfterPrayerDelayMinutes, 0, 180),
             HijriDayOffset = HijriConverter.ClampDayOffset(settings.HijriDayOffset),
             Locations = locations,
             NotificationRules = settings.NotificationRules is { Count: > 0 }
@@ -146,6 +150,24 @@ public static class SettingsJson
             UserSounds = NormalizeUserSounds(settings.UserSounds),
             MinuteAdjustments = NormalizeMinuteAdjustments(settings.MinuteAdjustments)
         };
+    }
+
+    /// <summary>Normalize HH:mm (or parseable) clock strings; always Latin digits via invariant format.</summary>
+    public static string NormalizeClockTime(string? value, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return fallback;
+        }
+
+        var trimmed = value.Trim();
+        if (TimeOnly.TryParse(trimmed, System.Globalization.CultureInfo.InvariantCulture, out var t)
+            || TimeOnly.TryParse(trimmed, out t))
+        {
+            return t.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        return fallback;
     }
 
     private static IReadOnlyDictionary<string, int> NormalizeMinuteAdjustments(

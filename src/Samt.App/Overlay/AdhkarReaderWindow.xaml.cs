@@ -1,38 +1,75 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Samt.Core.Adhkar;
 using Samt.Core.Formatting;
+using Samt_App.Helpers;
+using Windows.Graphics;
 using WinRT.Interop;
 
 namespace Samt_App.Overlay;
 
 public sealed partial class AdhkarReaderWindow : Window
 {
-    private AdhkarCollection? _collection;
+    private readonly AdhkarReadingSession _session = new();
     private int _index;
+    private Microsoft.UI.Windowing.AppWindow? _appWindow;
 
     public AdhkarReaderWindow()
     {
         InitializeComponent();
-        try
+        CustomWindowChrome.StyleCaptionButton(MinButton);
+        CustomWindowChrome.StyleCaptionButton(MaxButton);
+        CustomWindowChrome.StyleCaptionButton(CloseCaptionButton, isClose: true);
+
+        // Caption buttons wired in code-behind (avoid double-subscribe from Apply).
+        _appWindow = CustomWindowChrome.Apply(
+            this,
+            TitleBarDrag,
+            minimizeButton: null,
+            maximizeButton: null,
+            closeButton: null,
+            new SizeInt32(520, 720),
+            allowMaximize: true);
+
+        if (_appWindow is not null)
         {
-            var hwnd = WindowNative.GetWindowHandle(this);
-            var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
-            appWindow.Resize(new Windows.Graphics.SizeInt32(480, 640));
-            appWindow.Title = "Adhkar";
-        }
-        catch
-        {
-            // non-fatal
+            _appWindow.Title = "Adhkar";
         }
     }
 
     public void ShowCollection(AdhkarCollectionKind kind, int startIndex = 0)
     {
-        _collection = AdhkarCatalog.Get(kind);
-        _index = Math.Clamp(startIndex, 0, Math.Max(0, _collection.Items.Count - 1));
+        var collection = AdhkarCatalog.Get(kind);
+        _session.Bind(collection, reset: true);
+        _index = Math.Clamp(startIndex, 0, Math.Max(0, collection.Items.Count - 1));
         ApplyLanguageChrome();
+        RebuildPathDots();
         ShowItem();
+
+        try
+        {
+            if (_appWindow is null)
+            {
+                var hwnd = WindowNative.GetWindowHandle(this);
+                var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+                _appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
+            }
+
+            if (_appWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter
+                && presenter.State == Microsoft.UI.Windowing.OverlappedPresenterState.Minimized)
+            {
+                presenter.Restore();
+            }
+
+            _appWindow.Show();
+        }
+        catch
+        {
+            // non-fatal
+        }
+
         Activate();
     }
 
@@ -44,11 +81,16 @@ public sealed partial class AdhkarReaderWindow : Window
             root.FlowDirection = loc.FlowDirection;
         }
 
-        TitleText.Text = _collection is null ? loc.Get("NavAdhkar") : loc.Get(_collection.TitleKey);
+        var collection = _session.Collection;
+        TitleText.Text = collection is null ? loc.Get("NavAdhkar") : loc.Get(collection.TitleKey);
+        SourceBadge.Text = loc.Get("Adhkar.Source.AzkarMe");
         PrevLabel.Text = loc.Get("AdhkarPrev");
         NextLabel.Text = loc.Get("AdhkarNext");
-        PlayLabel.Text = loc.Get("AdhkarPlay");
-        // Swap chevrons for RTL so "previous" points toward start edge.
+        MarkDoneLabel.Text = loc.Get("AdhkarMarkDone");
+        ResetProgressButton.Content = loc.Get("AdhkarResetProgress");
+        TapHint.Text = loc.Get("AdhkarTapToCount");
+        CountLabel.Text = loc.Get("AdhkarCount");
+
         if (loc.IsRightToLeft)
         {
             PrevIcon.Glyph = "\uE76C";
@@ -61,40 +103,157 @@ public sealed partial class AdhkarReaderWindow : Window
         }
     }
 
-    private void ShowItem()
+    private void RebuildPathDots()
     {
-        if (_collection is null || _collection.Items.Count == 0)
+        PathDots.Items.Clear();
+        var collection = _session.Collection;
+        if (collection is null)
         {
-            ArabicText.Text = string.Empty;
-            TranslationText.Text = string.Empty;
-            ProgressText.Text = string.Empty;
             return;
         }
 
-        var item = _collection.Items[_index];
+        for (var i = 0; i < collection.Items.Count; i++)
+        {
+            var idx = i;
+            var item = collection.Items[i];
+            var done = _session.IsItemComplete(item);
+            var current = i == _index;
+            var btn = new Button
+            {
+                Width = 22,
+                Height = 22,
+                Padding = new Thickness(0),
+                CornerRadius = new CornerRadius(11),
+                Tag = idx,
+                Background = current
+                    ? (Brush)Application.Current.Resources["SamtGoldBrush"]
+                    : done
+                        ? new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(0x66, 0xC9, 0xA2, 0x27))
+                        : new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(0x33, 0xFF, 0xFF, 0xFF)),
+                BorderThickness = new Thickness(0),
+                Content = new TextBlock
+                {
+                    Text = done ? "✓" : LatinDigits.Number(i + 1),
+                    FontSize = 9,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Foreground = current
+                        ? new SolidColorBrush(Microsoft.UI.Colors.Black)
+                        : (Brush)Application.Current.Resources["SamtIvoryBrush"]
+                }
+            };
+            btn.Click += PathDot_OnClick;
+            PathDots.Items.Add(btn);
+        }
+    }
+
+    private void PathDot_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: int idx })
+        {
+            _index = idx;
+            ShowItem();
+            RebuildPathDots();
+        }
+    }
+
+    private void ShowItem()
+    {
+        var collection = _session.Collection;
+        if (collection is null || collection.Items.Count == 0)
+        {
+            ArabicText.Text = string.Empty;
+            TranslationText.Text = string.Empty;
+            BenefitText.Text = string.Empty;
+            ReferenceText.Text = string.Empty;
+            CountDisplay.Text = string.Empty;
+            SetProgressLabel.Text = string.Empty;
+            SetProgressBar.Value = 0;
+            CompleteCheck.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var item = collection.Items[_index];
         ArabicText.Text = item.ArabicText;
+        ReferenceText.Text = item.Reference ?? string.Empty;
+        BenefitText.Text = item.BenefitText ?? string.Empty;
         TranslationText.Text = item.TranslationKey is null
             ? string.Empty
             : App.Localization.Get(item.TranslationKey);
 
-        if (item.RepeatCount is { } n and > 1)
-        {
-            RepeatText.Visibility = Visibility.Visible;
-            RepeatText.Text = LatinDigits.EnsureLatin($"× {n}");
-        }
-        else
-        {
-            RepeatText.Visibility = Visibility.Collapsed;
-        }
+        var count = _session.GetCount(item.Id);
+        var target = _session.GetTarget(item);
+        CountDisplay.Text = LatinDigits.EnsureLatin($"{count} / {target}");
+        var done = _session.IsItemComplete(item);
+        CompleteCheck.Visibility = done ? Visibility.Visible : Visibility.Collapsed;
+        CountButton.IsEnabled = !done;
+        MarkDoneButton.IsEnabled = !done;
 
-        ProgressText.Text = LatinDigits.EnsureLatin(
+        SetProgressBar.Value = _session.ItemProgress;
+        SetProgressLabel.Text = LatinDigits.EnsureLatin(
             string.Format(
-                App.Localization.Get("AdhkarProgressFormat"),
-                _index + 1,
-                _collection.Items.Count));
+                App.Localization.Get("AdhkarSetProgressFormat"),
+                _session.CompletedItemCount,
+                collection.Items.Count,
+                _session.CompletedRepetitions,
+                _session.TotalRepetitions));
 
         PrevButton.IsEnabled = _index > 0;
-        NextButton.IsEnabled = _index < _collection.Items.Count - 1;
+        NextButton.IsEnabled = _index < collection.Items.Count - 1;
+        RebuildPathDots();
+    }
+
+    private void IncrementCount()
+    {
+        var collection = _session.Collection;
+        if (collection is null || collection.Items.Count == 0)
+        {
+            return;
+        }
+
+        var item = collection.Items[_index];
+        if (_session.IsItemComplete(item))
+        {
+            return;
+        }
+
+        _session.Increment(item);
+        ShowItem();
+
+        // Auto-advance when item fully counted (optional UX like azkar.me).
+        if (_session.IsItemComplete(item) && _index < collection.Items.Count - 1)
+        {
+            // stay on item so user sees checkmark; next tap on Next moves on
+        }
+    }
+
+    private void ReadingCard_OnTapped(object sender, TappedRoutedEventArgs e)
+        => IncrementCount();
+
+    private void ReadingCard_OnPointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        // Visual feedback only; count via Tapped to avoid double-fire.
+    }
+
+    private void CountButton_OnClick(object sender, RoutedEventArgs e)
+        => IncrementCount();
+
+    private void MarkDoneButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        var collection = _session.Collection;
+        if (collection is null || collection.Items.Count == 0)
+        {
+            return;
+        }
+
+        _session.MarkComplete(collection.Items[_index]);
+        ShowItem();
+    }
+
+    private void ResetProgressButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        _session.Reset();
+        ShowItem();
     }
 
     private void PrevButton_OnClick(object sender, RoutedEventArgs e)
@@ -110,7 +269,8 @@ public sealed partial class AdhkarReaderWindow : Window
 
     private void NextButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (_collection is null || _index >= _collection.Items.Count - 1)
+        var collection = _session.Collection;
+        if (collection is null || _index >= collection.Items.Count - 1)
         {
             return;
         }
@@ -119,6 +279,31 @@ public sealed partial class AdhkarReaderWindow : Window
         ShowItem();
     }
 
-    private void CloseButton_OnClick(object sender, RoutedEventArgs e)
+    private void MinButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (_appWindow?.Presenter is Microsoft.UI.Windowing.OverlappedPresenter p)
+        {
+            p.Minimize();
+        }
+    }
+
+    private void MaxButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (_appWindow?.Presenter is not Microsoft.UI.Windowing.OverlappedPresenter p)
+        {
+            return;
+        }
+
+        if (p.State == Microsoft.UI.Windowing.OverlappedPresenterState.Maximized)
+        {
+            p.Restore();
+        }
+        else
+        {
+            p.Maximize();
+        }
+    }
+
+    private void CloseCaptionButton_OnClick(object sender, RoutedEventArgs e)
         => Close();
 }
