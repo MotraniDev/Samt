@@ -23,7 +23,9 @@ public sealed partial class MainWindow : Window
             TitleMinButton,
             TitleMaxButton,
             TitleCloseButton,
-            allowMaximize: true);
+            allowMaximize: true,
+            // Never Window.Close() here — that kills the desktop window permanently.
+            onCloseClick: App.RequestHideToTray);
 
         App.Localization.LanguageChanged += (_, _) => ApplyChromeLabels();
         if (App.State is not null)

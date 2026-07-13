@@ -12,6 +12,8 @@ namespace Samt_App;
 public partial class App : Application
 {
     private Window? _window;
+    private Microsoft.UI.Windowing.AppWindow? _mainAppWindow;
+    private Microsoft.UI.Dispatching.DispatcherQueue? _uiDispatcher;
     private NotificationHost? _notificationHost;
     private ToastNotificationService? _toasts;
     private TrayIconService? _tray;
@@ -21,6 +23,7 @@ public partial class App : Application
     private SingleInstanceService? _singleInstance;
     private bool _exitRequested;
     private bool _startMinimized;
+    private int _showInFlight;
 
     public App()
     {
@@ -117,17 +120,8 @@ public partial class App : Application
             _tray.Initialize();
             _tray.OpenRequested += (_, _) => ShowMainWindow();
             _tray.ExitRequested += (_, _) => RequestExitCore("tray");
-            // Localized tray labels when language is already known.
-            try
-            {
-                _tray.UpdateMenuLabels(
-                    Localization.Get("TrayOpen"),
-                    Localization.Get("TrayExit"));
-            }
-            catch
-            {
-                // keys may be missing on first run — defaults already set
-            }
+            Localization.LanguageChanged += (_, _) => RefreshTrayMenuLabels();
+            RefreshTrayMenuLabels();
 
             _toasts = new ToastNotificationService();
             _toasts.Initialize(_tray);
@@ -137,13 +131,18 @@ public partial class App : Application
 
             _window = new MainWindow();
             MainWindow = _window;
+            _uiDispatcher = _window.DispatcherQueue;
+            _mainAppWindow = WindowActivation.TryGetAppWindow(_window);
             ApplyThemeFromSettings();
             WireCloseToTray(_window);
-            WindowActivation.ShowDockedRight(_window);
+            WindowActivation.ShowDockedRight(_window, cachedAppWindow: _mainAppWindow);
             if (_window is MainWindow mainAtLaunch)
             {
                 mainAtLaunch.CollapseNavigationPane();
             }
+
+            // Labels after MainWindow exists (language already applied).
+            RefreshTrayMenuLabels();
 
             if (_startMinimized)
             {
@@ -233,18 +232,147 @@ public partial class App : Application
         }
     }
 
-    public static void ShowMainWindow()
+    /// <summary>Close caption / user hide — keep process alive in tray (never destroy MainWindow).</summary>
+    public static void RequestHideToTray()
     {
-        if (MainWindow is null)
+        if (IsExitRequested)
         {
             return;
         }
 
-        // Dock right + vertical center, compact size, nav collapsed (same as first launch).
-        WindowActivation.ShowDockedRight(MainWindow);
-        if (MainWindow is Samt_App.MainWindow main)
+        if (Current is App app)
         {
-            main.CollapseNavigationPane();
+            app.HideMainWindowToTray();
+        }
+    }
+
+    public static void ShowMainWindow()
+    {
+        if (Current is not App app)
+        {
+            return;
+        }
+
+        app.ShowMainWindowCore();
+    }
+
+    private void ShowMainWindowCore()
+    {
+        // Coalesce double-click + left-click storms from the tray.
+        if (Interlocked.CompareExchange(ref _showInFlight, 1, 0) != 0)
+        {
+            LaunchLog.Write("ShowMainWindow: coalesced (already in flight)");
+            return;
+        }
+
+        void DoShow()
+        {
+            try
+            {
+                LaunchLog.Write("ShowMainWindow begin");
+                EnsureMainWindowAlive();
+                var window = _window ?? MainWindow;
+                if (window is null)
+                {
+                    LaunchLog.Write("ShowMainWindow: no main window after ensure");
+                    return;
+                }
+
+                var appWindow = _mainAppWindow ?? WindowActivation.TryGetAppWindow(window);
+                _mainAppWindow = appWindow;
+                WindowActivation.ShowDockedRight(window, cachedAppWindow: appWindow);
+                if (window is MainWindow main)
+                {
+                    main.CollapseNavigationPane();
+                }
+
+                LaunchLog.Write("ShowMainWindow done");
+            }
+            catch (Exception ex)
+            {
+                LaunchLog.Write($"ShowMainWindow failed: {ex}");
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _showInFlight, 0);
+            }
+        }
+
+        try
+        {
+            // Always use the UI dispatcher captured at launch (survives Hide; recreate uses it too).
+            var dq = _uiDispatcher ?? _window?.DispatcherQueue ?? MainWindow?.DispatcherQueue;
+            if (dq is null)
+            {
+                DoShow();
+                return;
+            }
+
+            if (dq.HasThreadAccess)
+            {
+                DoShow();
+                return;
+            }
+
+            if (!dq.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, DoShow))
+            {
+                LaunchLog.Write("ShowMainWindow: TryEnqueue failed — invoking inline");
+                DoShow();
+            }
+        }
+        catch
+        {
+            Interlocked.Exchange(ref _showInFlight, 0);
+            throw;
+        }
+    }
+
+    private bool IsMainWindowAlive()
+    {
+        if (_window is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            var hwnd = WindowActivation.TryGetHwnd(_window);
+            return hwnd != IntPtr.Zero;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// If the shell window was destroyed (Close instead of Hide), create a fresh MainWindow.
+    /// WinUI cannot re-show a closed Desktop Window object.
+    /// </summary>
+    private void EnsureMainWindowAlive()
+    {
+        if (IsMainWindowAlive())
+        {
+            return;
+        }
+
+        LaunchLog.Write("MainWindow missing or closed — recreating shell");
+        try
+        {
+            _window = new MainWindow();
+            MainWindow = _window;
+            _uiDispatcher ??= _window.DispatcherQueue;
+            _mainAppWindow = WindowActivation.TryGetAppWindow(_window);
+            ApplyThemeFromSettings();
+            WireCloseToTray(_window);
+            if (_window is MainWindow main)
+            {
+                main.CollapseNavigationPane();
+            }
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"EnsureMainWindowAlive failed: {ex}");
         }
     }
 
@@ -271,19 +399,44 @@ public partial class App : Application
     {
         try
         {
-            if (_window is null)
+            if (_exitRequested || IsExitRequested)
             {
                 return;
             }
 
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
-            var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
-            appWindow.Hide();
+            if (_window is null || !IsMainWindowAlive())
+            {
+                LaunchLog.Write("HideMainWindowToTray: window already gone");
+                return;
+            }
+
+            var window = _window;
+            var dq = window.DispatcherQueue;
+            void Hide()
+            {
+                try
+                {
+                    WindowActivation.HideToTray(window, _mainAppWindow);
+                    LaunchLog.Write("Window hidden to tray (still alive)");
+                }
+                catch (Exception ex)
+                {
+                    LaunchLog.Write($"HideMainWindowToTray failed: {ex.Message}");
+                }
+            }
+
+            if (dq is null || dq.HasThreadAccess)
+            {
+                Hide();
+            }
+            else if (!dq.TryEnqueue(Hide))
+            {
+                Hide();
+            }
         }
         catch (Exception ex)
         {
-            LaunchLog.Write($"HideMainWindowToTray failed: {ex.Message}");
+            LaunchLog.Write($"HideMainWindowToTray schedule failed: {ex.Message}");
         }
     }
 
@@ -455,9 +608,16 @@ public partial class App : Application
     {
         try
         {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-            var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
+            var appWindow = _mainAppWindow ?? WindowActivation.TryGetAppWindow(window);
+            if (appWindow is null)
+            {
+                LaunchLog.Write("Close-to-tray wire failed: no AppWindow");
+                return;
+            }
+
+            _mainAppWindow = appWindow;
+
+            // System chrome / Alt+F4: cancel destroy, hide to tray instead.
             appWindow.Closing += (_, e) =>
             {
                 if (_exitRequested || IsExitRequested)
@@ -466,8 +626,25 @@ public partial class App : Application
                 }
 
                 e.Cancel = true;
-                appWindow.Hide();
-                LaunchLog.Write("Window hidden to tray");
+                LaunchLog.Write("AppWindow.Closing canceled → hide to tray");
+                HideMainWindowToTray();
+            };
+
+            // Diagnostics if something still destroys the shell.
+            window.Closed += (_, _) =>
+            {
+                if (_exitRequested || IsExitRequested)
+                {
+                    return;
+                }
+
+                LaunchLog.Write("WARNING: MainWindow.Closed fired while not exiting (shell destroyed)");
+                if (ReferenceEquals(_window, window))
+                {
+                    _window = null;
+                    MainWindow = null;
+                    _mainAppWindow = null;
+                }
             };
         }
         catch (Exception ex)

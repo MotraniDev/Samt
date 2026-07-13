@@ -32,24 +32,49 @@ public sealed class TrayIconService : IDisposable
 
             var openItem = new MenuFlyoutItem
             {
-                Text = "فتح / Open",
+                // Placeholder until App.RefreshTrayMenuLabels applies current language.
+                Text = "Open",
+                Tag = "open",
                 Icon = new FontIcon { Glyph = "\uE8A7" }
             };
             openItem.Click += (_, _) =>
             {
                 LaunchLog.Write("Tray menu: Open");
-                OpenRequested?.Invoke(this, EventArgs.Empty);
+                // Raise on thread pool so SecondWindow menu can dismiss without waiting
+                // for main-window Activate (avoids tray menu hang).
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    try
+                    {
+                        OpenRequested?.Invoke(this, EventArgs.Empty);
+                    }
+                    catch (Exception ex)
+                    {
+                        LaunchLog.Write($"Tray OpenRequested: {ex.Message}");
+                    }
+                });
             };
 
             var exitItem = new MenuFlyoutItem
             {
-                Text = "خروج / Exit",
+                Text = "Exit",
+                Tag = "exit",
                 Icon = new FontIcon { Glyph = "\uE7E8" }
             };
             exitItem.Click += (_, _) =>
             {
                 LaunchLog.Write("Tray menu: Exit");
-                ExitRequested?.Invoke(this, EventArgs.Empty);
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    try
+                    {
+                        ExitRequested?.Invoke(this, EventArgs.Empty);
+                    }
+                    catch (Exception ex)
+                    {
+                        LaunchLog.Write($"Tray ExitRequested: {ex.Message}");
+                    }
+                });
             };
 
             menu.Items.Add(openItem);
@@ -61,14 +86,34 @@ public sealed class TrayIconService : IDisposable
             _icon.LeftClickCommand = new RelayCommand(() =>
             {
                 LaunchLog.Write("Tray left-click: Open");
-                OpenRequested?.Invoke(this, EventArgs.Empty);
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    try
+                    {
+                        OpenRequested?.Invoke(this, EventArgs.Empty);
+                    }
+                    catch (Exception ex)
+                    {
+                        LaunchLog.Write($"Tray left-click OpenRequested: {ex.Message}");
+                    }
+                });
             });
 
             // Double-click → open (some shells)
             _icon.DoubleClickCommand = new RelayCommand(() =>
             {
                 LaunchLog.Write("Tray double-click: Open");
-                OpenRequested?.Invoke(this, EventArgs.Empty);
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    try
+                    {
+                        OpenRequested?.Invoke(this, EventArgs.Empty);
+                    }
+                    catch (Exception ex)
+                    {
+                        LaunchLog.Write($"Tray double-click OpenRequested: {ex.Message}");
+                    }
+                });
             });
 
             _icon.ForceCreate();
@@ -92,16 +137,20 @@ public sealed class TrayIconService : IDisposable
         {
             foreach (var item in menu.Items.OfType<MenuFlyoutItem>())
             {
-                // Match by icon glyph we set at init.
-                if (item.Icon is FontIcon { Glyph: "\uE8A7" })
+                var tag = item.Tag as string;
+                if (string.Equals(tag, "open", StringComparison.OrdinalIgnoreCase)
+                    || item.Icon is FontIcon { Glyph: "\uE8A7" })
                 {
                     item.Text = openLabel;
                 }
-                else if (item.Icon is FontIcon { Glyph: "\uE7E8" })
+                else if (string.Equals(tag, "exit", StringComparison.OrdinalIgnoreCase)
+                         || item.Icon is FontIcon { Glyph: "\uE7E8" })
                 {
                     item.Text = exitLabel;
                 }
             }
+
+            LaunchLog.Write($"Tray menu labels: open='{openLabel}' exit='{exitLabel}'");
         }
         catch (Exception ex)
         {

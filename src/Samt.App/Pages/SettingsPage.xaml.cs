@@ -275,7 +275,11 @@ public sealed partial class SettingsPage : Page
         }
 
         var pct = (int)Math.Round(Math.Clamp(e.NewValue, 30, 100));
-        WindowOpacityValueText.Text = LatinDigits.Number(pct) + "%";
+        if (WindowOpacityValueText is not null)
+        {
+            WindowOpacityValueText.Text = LatinDigits.Number(pct) + "%";
+        }
+
         var opacity = WindowChromeOpacity.Clamp(pct / 100.0);
 
         // Live preview on open shell windows.

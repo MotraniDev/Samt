@@ -39,7 +39,22 @@ internal static class WindowChromeOpacity
 
         try
         {
-            var alpha = (byte)Math.Clamp((int)Math.Round(Clamp(opacity) * 255), 1, 255);
+            var clamped = Clamp(opacity);
+            // Full opacity: keep solid window when possible. Permanent WS_EX_LAYERED + alpha
+            // on the main shell has been flaky after AppWindow.Hide() / tray restore.
+            if (clamped >= 0.999)
+            {
+                var exFull = GetWindowLong(hwnd, GwlExStyle);
+                if ((exFull & WsExLayered) != 0)
+                {
+                    SetLayeredWindowAttributes(hwnd, 0, 255, LwaAlpha);
+                    SetWindowLong(hwnd, GwlExStyle, exFull & ~WsExLayered);
+                }
+
+                return;
+            }
+
+            var alpha = (byte)Math.Clamp((int)Math.Round(clamped * 255), 1, 255);
             var ex = GetWindowLong(hwnd, GwlExStyle);
             if ((ex & WsExLayered) == 0)
             {

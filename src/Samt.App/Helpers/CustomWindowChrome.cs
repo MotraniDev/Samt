@@ -26,7 +26,8 @@ internal static class CustomWindowChrome
         Button? maximizeButton = null,
         Button? closeButton = null,
         SizeInt32? initialSize = null,
-        bool allowMaximize = true)
+        bool allowMaximize = true,
+        Action? onCloseClick = null)
     {
         try
         {
@@ -75,7 +76,20 @@ internal static class CustomWindowChrome
 
             if (closeButton is not null)
             {
-                closeButton.Click += (_, _) => window.Close();
+                // Main shell passes onCloseClick → hide to tray. Calling window.Close()
+                // permanently destroys the WinUI Window (tray Open then fails with
+                // "Window object has already been closed").
+                closeButton.Click += (_, _) =>
+                {
+                    if (onCloseClick is not null)
+                    {
+                        onCloseClick();
+                    }
+                    else
+                    {
+                        window.Close();
+                    }
+                };
             }
 
             appWindow.Changed += (_, args) =>
