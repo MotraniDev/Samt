@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Samt_App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Samt_App"
+    Title="سَمت / SAMT">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid>
+        <NavigationView
+            x:Name="NavView"
+            IsBackButtonVisible="Collapsed"
+            IsSettingsVisible="False"
+            PaneDisplayMode="Left"
+            OpenPaneLength="220"
+            SelectionChanged="NavView_OnSelectionChanged"
+            Loaded="NavView_OnLoaded">
+            <NavigationView.MenuItems>
+                <NavigationViewItem x:Name="NavToday" Tag="today" IsSelected="True">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE80F;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="NavLocations" Tag="locations">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE707;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="NavDiagnostics" Tag="diagnostics">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE9D9;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <NavigationView.PaneFooter>
+                <StackPanel Padding="12" Spacing="8">
+                    <ComboBox x:Name="LanguageBox" HorizontalAlignment="Stretch"
+                              SelectionChanged="LanguageBox_OnSelectionChanged">
+                        <ComboBoxItem Content="العربية" Tag="ar" />
+                        <ComboBoxItem Content="English" Tag="en-US" />
+                    </ComboBox>
+                    <ComboBox x:Name="ThemeBox" HorizontalAlignment="Stretch"
+                              SelectionChanged="ThemeBox_OnSelectionChanged">
+                        <ComboBoxItem x:Name="ThemeSystemItem" Tag="System" />
+                        <ComboBoxItem x:Name="ThemeLightItem" Tag="Light" />
+                        <ComboBoxItem x:Name="ThemeDarkItem" Tag="Dark" />
+                    </ComboBox>
+                </StackPanel>
+            </NavigationView.PaneFooter>
+
+            <Frame x:Name="ContentFrame" />
+        </NavigationView>
+    </Grid>
+</Window>

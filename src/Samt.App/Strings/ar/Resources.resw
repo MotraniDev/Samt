@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppDisplayName" xml:space="preserve"><value>سَمت</value></data>
+  <data name="AppTagline" xml:space="preserve"><value>مواقيت الصلاة والأذان</value></data>
+  <data name="NavToday" xml:space="preserve"><value>اليوم</value></data>
+  <data name="NavLocations" xml:space="preserve"><value>المواقع</value></data>
+  <data name="NavDiagnostics" xml:space="preserve"><value>التشخيص</value></data>
+  <data name="Language" xml:space="preserve"><value>اللغة</value></data>
+  <data name="Theme" xml:space="preserve"><value>المظهر</value></data>
+  <data name="ThemeSystem" xml:space="preserve"><value>تلقائي</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>فاتح</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>داكن</value></data>
+  <data name="Location" xml:space="preserve"><value>الموقع</value></data>
+  <data name="Method" xml:space="preserve"><value>طريقة الحساب</value></data>
+  <data name="Date" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="Recalculate" xml:space="preserve"><value>إعادة الحساب</value></data>
+  <data name="Latitude" xml:space="preserve"><value>خط العرض</value></data>
+  <data name="Longitude" xml:space="preserve"><value>خط الطول</value></data>
+  <data name="TimeZone" xml:space="preserve"><value>المنطقة الزمنية</value></data>
+  <data name="Inputs" xml:space="preserve"><value>المدخلات</value></data>
+  <data name="Results" xml:space="preserve"><value>نتائج اليوم</value></data>
+  <data name="Disclaimer" xml:space="preserve"><value>هذه تقديرات فلكية محلية وليست مصدراً رسمياً. تحقق من جدول مسجدك. الأرقام تُعرض بالأرقام اللاتينية (0-9).</value></data>
+  <data name="Prayer.Imsak" xml:space="preserve"><value>الإمساك</value></data>
+  <data name="Prayer.Fajr" xml:space="preserve"><value>الفجر</value></data>
+  <data name="Prayer.Sunrise" xml:space="preserve"><value>الشروق</value></data>
+  <data name="Prayer.Dhuhr" xml:space="preserve"><value>الظهر</value></data>
+  <data name="Prayer.Asr" xml:space="preserve"><value>العصر</value></data>
+  <data name="Prayer.Maghrib" xml:space="preserve"><value>المغرب</value></data>
+  <data name="Prayer.Isha" xml:space="preserve"><value>العشاء</value></data>
+  <data name="Prayer.Midnight" xml:space="preserve"><value>منتصف الليل</value></data>
+  <data name="Prayer.Jumuah" xml:space="preserve"><value>الجمعة</value></data>
+  <data name="AsrMadhab" xml:space="preserve"><value>مذهب العصر</value></data>
+  <data name="AsrStandard" xml:space="preserve"><value>الجمهور</value></data>
+  <data name="AsrHanafi" xml:space="preserve"><value>الحنفي</value></data>
+  <data name="PhaseBanner" xml:space="preserve"><value>المرحلة 0–2: الهيكل، المحرك، المواقع، اليوم</value></data>
+  <data name="NextPrayer" xml:space="preserve"><value>الصلاة التالية</value></data>
+  <data name="DayComplete" xml:space="preserve"><value>انتهت صلوات اليوم</value></data>
+  <data name="CalcStatusFormat" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="SavedLocations" xml:space="preserve"><value>المواقع المحفوظة</value></data>
+  <data name="LocationEditor" xml:space="preserve"><value>تحرير الموقع</value></data>
+  <data name="LocationName" xml:space="preserve"><value>الاسم</value></data>
+  <data name="UseLocation" xml:space="preserve"><value>تفعيل</value></data>
+  <data name="NewLocation" xml:space="preserve"><value>جديد</value></data>
+  <data name="DeleteLocation" xml:space="preserve"><value>حذف</value></data>
+  <data name="SaveLocation" xml:space="preserve"><value>حفظ</value></data>
+  <data name="UseGps" xml:space="preserve"><value>تحديد موقعي</value></data>
+  <data name="LocationPrivacyNote" xml:space="preserve"><value>الموقع يبقى على جهازك فقط. يمكنك رفض الإذن وإدخال الإحداثيات يدوياً.</value></data>
+  <data name="SelectLocationFirst" xml:space="preserve"><value>اختر موقعاً أولاً.</value></data>
+  <data name="LocationActivated" xml:space="preserve"><value>تم تفعيل الموقع.</value></data>
+  <data name="NameRequired" xml:space="preserve"><value>الاسم مطلوب.</value></data>
+  <data name="InvalidTimeZone" xml:space="preserve"><value>المنطقة الزمنية غير صالحة.</value></data>
+  <data name="LocationSaved" xml:space="preserve"><value>تم حفظ الموقع.</value></data>
+  <data name="CannotDeleteLastLocation" xml:space="preserve"><value>لا يمكن حذف آخر موقع.</value></data>
+  <data name="LocationDeleted" xml:space="preserve"><value>تم حذف الموقع.</value></data>
+  <data name="EnterCoordinatesHint" xml:space="preserve"><value>أدخل الاسم والإحداثيات ثم احفظ.</value></data>
+  <data name="RequestingLocation" xml:space="preserve"><value>جاري طلب إذن الموقع…</value></data>
+  <data name="LocationDenied" xml:space="preserve"><value>رُفض إذن الموقع. استخدم الإدخال اليدوي.</value></data>
+  <data name="LocationFailed" xml:space="preserve"><value>تعذر الحصول على الموقع.</value></data>
+  <data name="LocationFromGps" xml:space="preserve"><value>تم الحفظ من GPS وتفعيله.</value></data>
+  <data name="GpsLocationName" xml:space="preserve"><value>موقعي (GPS)</value></data>
+  <data name="InvalidLatitude" xml:space="preserve"><value>خط العرض غير صالح (−90 إلى 90).</value></data>
+  <data name="InvalidLongitude" xml:space="preserve"><value>خط الطول غير صالح (−180 إلى 180).</value></data>
+</root>

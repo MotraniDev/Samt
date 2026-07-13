@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Samt.App (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Samt.App (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

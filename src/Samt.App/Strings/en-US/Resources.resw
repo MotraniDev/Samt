@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppDisplayName" xml:space="preserve"><value>SAMT</value></data>
+  <data name="AppTagline" xml:space="preserve"><value>Prayer times and adhan</value></data>
+  <data name="NavToday" xml:space="preserve"><value>Today</value></data>
+  <data name="NavLocations" xml:space="preserve"><value>Locations</value></data>
+  <data name="NavDiagnostics" xml:space="preserve"><value>Diagnostics</value></data>
+  <data name="Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Theme" xml:space="preserve"><value>Theme</value></data>
+  <data name="ThemeSystem" xml:space="preserve"><value>System</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Light</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Location" xml:space="preserve"><value>Location</value></data>
+  <data name="Method" xml:space="preserve"><value>Calculation method</value></data>
+  <data name="Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Recalculate" xml:space="preserve"><value>Recalculate</value></data>
+  <data name="Latitude" xml:space="preserve"><value>Latitude</value></data>
+  <data name="Longitude" xml:space="preserve"><value>Longitude</value></data>
+  <data name="TimeZone" xml:space="preserve"><value>Time zone</value></data>
+  <data name="Inputs" xml:space="preserve"><value>Inputs</value></data>
+  <data name="Results" xml:space="preserve"><value>Today's results</value></data>
+  <data name="Disclaimer" xml:space="preserve"><value>Local astronomical estimates — not an official source. Verify against your mosque timetable. Numbers use Latin digits (0-9).</value></data>
+  <data name="Prayer.Imsak" xml:space="preserve"><value>Imsak</value></data>
+  <data name="Prayer.Fajr" xml:space="preserve"><value>Fajr</value></data>
+  <data name="Prayer.Sunrise" xml:space="preserve"><value>Sunrise</value></data>
+  <data name="Prayer.Dhuhr" xml:space="preserve"><value>Dhuhr</value></data>
+  <data name="Prayer.Asr" xml:space="preserve"><value>Asr</value></data>
+  <data name="Prayer.Maghrib" xml:space="preserve"><value>Maghrib</value></data>
+  <data name="Prayer.Isha" xml:space="preserve"><value>Isha</value></data>
+  <data name="Prayer.Midnight" xml:space="preserve"><value>Midnight</value></data>
+  <data name="Prayer.Jumuah" xml:space="preserve"><value>Jumu'ah</value></data>
+  <data name="AsrMadhab" xml:space="preserve"><value>Asr madhab</value></data>
+  <data name="AsrStandard" xml:space="preserve"><value>Standard</value></data>
+  <data name="AsrHanafi" xml:space="preserve"><value>Hanafi</value></data>
+  <data name="PhaseBanner" xml:space="preserve"><value>Phase 0–2: shell, engine, locations, today</value></data>
+  <data name="NextPrayer" xml:space="preserve"><value>Next prayer</value></data>
+  <data name="DayComplete" xml:space="preserve"><value>Day's prayers complete</value></data>
+  <data name="CalcStatusFormat" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="SavedLocations" xml:space="preserve"><value>Saved locations</value></data>
+  <data name="LocationEditor" xml:space="preserve"><value>Edit location</value></data>
+  <data name="LocationName" xml:space="preserve"><value>Name</value></data>
+  <data name="UseLocation" xml:space="preserve"><value>Activate</value></data>
+  <data name="NewLocation" xml:space="preserve"><value>New</value></data>
+  <data name="DeleteLocation" xml:space="preserve"><value>Delete</value></data>
+  <data name="SaveLocation" xml:space="preserve"><value>Save</value></data>
+  <data name="UseGps" xml:space="preserve"><value>Use my location</value></data>
+  <data name="LocationPrivacyNote" xml:space="preserve"><value>Location stays on this device only. You can deny permission and enter coordinates manually.</value></data>
+  <data name="SelectLocationFirst" xml:space="preserve"><value>Select a location first.</value></data>
+  <data name="LocationActivated" xml:space="preserve"><value>Location activated.</value></data>
+  <data name="NameRequired" xml:space="preserve"><value>Name is required.</value></data>
+  <data name="InvalidTimeZone" xml:space="preserve"><value>Invalid time zone.</value></data>
+  <data name="LocationSaved" xml:space="preserve"><value>Location saved.</value></data>
+  <data name="CannotDeleteLastLocation" xml:space="preserve"><value>Cannot delete the last location.</value></data>
+  <data name="LocationDeleted" xml:space="preserve"><value>Location deleted.</value></data>
+  <data name="EnterCoordinatesHint" xml:space="preserve"><value>Enter a name and coordinates, then save.</value></data>
+  <data name="RequestingLocation" xml:space="preserve"><value>Requesting location permission…</value></data>
+  <data name="LocationDenied" xml:space="preserve"><value>Location permission denied. Use manual entry.</value></data>
+  <data name="LocationFailed" xml:space="preserve"><value>Could not get location.</value></data>
+  <data name="LocationFromGps" xml:space="preserve"><value>Saved and activated from GPS.</value></data>
+  <data name="GpsLocationName" xml:space="preserve"><value>My location (GPS)</value></data>
+  <data name="InvalidLatitude" xml:space="preserve"><value>Invalid latitude (−90 to 90).</value></data>
+  <data name="InvalidLongitude" xml:space="preserve"><value>Invalid longitude (−180 to 180).</value></data>
+</root>
