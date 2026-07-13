@@ -27,6 +27,12 @@ public sealed class PlannedNotification
 /// Builds today's notification fire list from a schedule and rules.
 /// Pure Core — no UI, no Windows APIs.
 /// </summary>
+/// <remarks>
+/// Priority: more specific <see cref="NotificationRule.TargetPrayers"/> wins
+/// (smaller non-empty count). Empty targets = least specific (all notifiable).
+/// A disabled specific rule cancels that prayer (no fall-back to general).
+/// On Friday with suppress-Dhuhr, Dhuhr targets remap to Jumu‘ah.
+/// </remarks>
 public sealed class NotificationPlanner
 {
     public IReadOnlyList<PlannedNotification> Plan(
@@ -38,19 +44,32 @@ public sealed class NotificationPlanner
         ArgumentNullException.ThrowIfNull(schedule);
         ArgumentNullException.ThrowIfNull(rules);
 
-        var results = new List<PlannedNotification>();
+        var ruleList = rules.ToList();
         var isFriday = schedule.Date.DayOfWeek == DayOfWeek.Friday;
+        var results = new List<PlannedNotification>();
 
-        foreach (var rule in rules.Where(r => r.Enabled))
+        foreach (var kind in new[] { NotificationEventKind.BeforePrayer, NotificationEventKind.PrayerStart })
         {
-            if (rule.Kind is not (NotificationEventKind.BeforePrayer or NotificationEventKind.PrayerStart))
+            foreach (var logicalPrayer in CandidatePrayers(ruleList, kind))
             {
-                continue;
-            }
+                var effectivePrayer = RemapFridayPrayer(
+                    logicalPrayer,
+                    schedule,
+                    isFriday,
+                    suppressDhuhrOnFriday);
 
-            foreach (var prayer in ResolveTargets(rule, schedule, isFriday, suppressDhuhrOnFriday))
-            {
-                if (!schedule.Times.TryGetValue(prayer, out var prayerTime))
+                if (effectivePrayer is null)
+                {
+                    continue;
+                }
+
+                if (!schedule.Times.TryGetValue(effectivePrayer.Value, out var prayerTime))
+                {
+                    continue;
+                }
+
+                var winner = SelectWinningRule(ruleList, kind, logicalPrayer);
+                if (winner is null || !winner.Enabled)
                 {
                     continue;
                 }
@@ -58,9 +77,9 @@ public sealed class NotificationPlanner
                 DateTimeOffset fireAt;
                 int? offset = null;
 
-                if (rule.Kind == NotificationEventKind.BeforePrayer)
+                if (kind == NotificationEventKind.BeforePrayer)
                 {
-                    var minutes = rule.OffsetMinutes ?? 0;
+                    var minutes = winner.OffsetMinutes ?? 0;
                     if (minutes <= 0)
                     {
                         continue;
@@ -81,48 +100,92 @@ public sealed class NotificationPlanner
 
                 results.Add(new PlannedNotification
                 {
-                    Id = $"{schedule.Date:yyyyMMdd}-{prayer}-{rule.Kind}-{offset ?? 0}",
+                    Id = $"{schedule.Date:yyyyMMdd}-{effectivePrayer}-{kind}-{offset ?? 0}",
                     FireAt = fireAt,
-                    Kind = rule.Kind == NotificationEventKind.BeforePrayer
+                    Kind = kind == NotificationEventKind.BeforePrayer
                         ? PlannedNotificationKind.BeforePrayer
                         : PlannedNotificationKind.PrayerStart,
-                    Prayer = prayer,
-                    Channels = rule.Channels,
+                    Prayer = effectivePrayer.Value,
+                    Channels = winner.Channels,
                     OffsetMinutes = offset
                 });
             }
         }
 
+        // Deduplicate: Friday remap or overlapping rules can produce same (kind, prayer).
         return results
+            .GroupBy(n => (n.Kind, n.Prayer))
+            .Select(g => g.OrderBy(n => n.FireAt).First())
             .OrderBy(n => n.FireAt)
             .ThenBy(n => n.Prayer)
             .ToList();
     }
 
-    private static IEnumerable<PrayerEvent> ResolveTargets(
-        NotificationRule rule,
+    private static IEnumerable<PrayerEvent> CandidatePrayers(
+        IReadOnlyList<NotificationRule> rules,
+        NotificationEventKind kind)
+    {
+        var set = new HashSet<PrayerEvent>();
+        foreach (var rule in rules.Where(r => r.Kind == kind))
+        {
+            foreach (var p in ExpandTargets(rule))
+            {
+                set.Add(p);
+            }
+        }
+
+        return set.OrderBy(p => p);
+    }
+
+    private static NotificationRule? SelectWinningRule(
+        IReadOnlyList<NotificationRule> rules,
+        NotificationEventKind kind,
+        PrayerEvent logicalPrayer)
+    {
+        var candidates = rules
+            .Where(r => r.Kind == kind)
+            .Where(r => ExpandTargets(r).Contains(logicalPrayer))
+            .Select(r => (Rule: r, Score: SpecificityScore(r)))
+            .OrderBy(x => x.Score)
+            .ThenBy(x => x.Rule.Id)
+            .ToList();
+
+        return candidates.Count == 0 ? null : candidates[0].Rule;
+    }
+
+    /// <summary>Lower score = more specific. Empty targets = least specific.</summary>
+    internal static int SpecificityScore(NotificationRule rule)
+        => rule.TargetPrayers.Count == 0 ? int.MaxValue : rule.TargetPrayers.Count;
+
+    private static IEnumerable<PrayerEvent> ExpandTargets(NotificationRule rule)
+        => rule.TargetPrayers.Count > 0
+            ? rule.TargetPrayers
+            : PrayerSchedule.NotifiablePrayers.Where(p => p != PrayerEvent.Jumuah);
+
+    private static PrayerEvent? RemapFridayPrayer(
+        PrayerEvent prayer,
         PrayerSchedule schedule,
         bool isFriday,
         bool suppressDhuhrOnFriday)
     {
-        IEnumerable<PrayerEvent> targets = rule.TargetPrayers.Count > 0
-            ? rule.TargetPrayers
-            : PrayerSchedule.NotifiablePrayers.Where(p => p != PrayerEvent.Jumuah);
-
-        foreach (var prayer in targets)
+        if (prayer == PrayerEvent.Jumuah)
         {
-            if (isFriday && suppressDhuhrOnFriday && prayer == PrayerEvent.Dhuhr
-                && schedule.Times.ContainsKey(PrayerEvent.Jumuah))
+            if (!isFriday || !schedule.Times.ContainsKey(PrayerEvent.Jumuah))
             {
-                continue;
+                return null;
             }
 
-            if (prayer == PrayerEvent.Jumuah && !isFriday)
-            {
-                continue;
-            }
-
-            yield return prayer;
+            return PrayerEvent.Jumuah;
         }
+
+        if (prayer == PrayerEvent.Dhuhr
+            && isFriday
+            && suppressDhuhrOnFriday
+            && schedule.Times.ContainsKey(PrayerEvent.Jumuah))
+        {
+            return PrayerEvent.Jumuah;
+        }
+
+        return prayer;
     }
 }

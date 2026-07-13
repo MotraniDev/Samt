@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Samt.Core.Domain;
 using Samt.Core.Locations;
+using Samt.Core.Notifications;
 
 namespace Samt.Core.Storage;
 
@@ -56,40 +57,19 @@ public static class SettingsJson
 
     /// <summary>
     /// Prayer-start: toast + overlay + audio.
-    /// Pre-alert (15 min): toast + top ribbon overlay (no audio).
+    /// Pre-alert: 15 min general, Fajr exception 30 min (Phase 5 defaults).
     /// </summary>
     public static IReadOnlyList<NotificationRule> CreateDefaultNotificationRules()
-    {
-        var five = new[]
-        {
-            PrayerEvent.Fajr,
-            PrayerEvent.Dhuhr,
-            PrayerEvent.Asr,
-            PrayerEvent.Maghrib,
-            PrayerEvent.Isha
-        };
-
-        return
-        [
-            new NotificationRule
+        => NotificationRulesComposer.Compose(
+            generalBeforeMinutes: 15,
+            beforeExceptions: new Dictionary<PrayerEvent, int?>
             {
-                Id = Guid.Parse("b1111111-1111-4111-8111-111111111111"),
-                Kind = NotificationEventKind.PrayerStart,
-                TargetPrayers = five,
-                Channels = NotificationChannel.All,
-                Enabled = true
+                [PrayerEvent.Fajr] = 30
             },
-            new NotificationRule
-            {
-                Id = Guid.Parse("b2222222-2222-4222-8222-222222222222"),
-                Kind = NotificationEventKind.BeforePrayer,
-                TargetPrayers = five,
-                OffsetMinutes = 15,
-                Channels = NotificationChannel.WindowsToast | NotificationChannel.Overlay,
-                Enabled = true
-            }
-        ];
-    }
+            beforeEnabledPrayers: new HashSet<PrayerEvent>(NotificationRulesComposer.FiveDaily),
+            startEnabledPrayers: new HashSet<PrayerEvent>(NotificationRulesComposer.FiveDaily),
+            beforeChannels: NotificationChannel.WindowsToast | NotificationChannel.Overlay,
+            startChannels: NotificationChannel.All);
 
     public static string Serialize(AppSettings settings)
         => JsonSerializer.Serialize(settings, Options);

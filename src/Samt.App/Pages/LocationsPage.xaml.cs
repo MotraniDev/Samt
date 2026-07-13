@@ -39,6 +39,12 @@ public sealed partial class LocationsPage : Page
         SaveButton.Content = App.Localization.Get("SaveLocation");
         GpsButton.Content = App.Localization.Get("UseGps");
         PrivacyNote.Text = App.Localization.Get("LocationPrivacyNote");
+        FridaySectionLabel.Text = App.Localization.Get("FridaySection");
+        FridayModeLabel.Text = App.Localization.Get("FridayTimeMode");
+        FridayFollowDhuhrItem.Content = App.Localization.Get("FridayFollowDhuhr");
+        FridayFixedTimeItem.Content = App.Localization.Get("FridayFixedTime");
+        FixedFridayLabel.Text = App.Localization.Get("FixedFridayTime");
+        SuppressDhuhrCheck.Content = App.Localization.Get("SuppressDhuhrOnFriday");
     }
 
     private async void ActivateButton_OnClick(object sender, RoutedEventArgs e)

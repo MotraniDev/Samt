@@ -53,6 +53,24 @@
                         HorizontalAlignment="Stretch"
                         ItemsSource="{x:Bind ViewModel.TimeZoneIds}"
                         SelectedItem="{x:Bind ViewModel.TimeZoneId, Mode=TwoWay}" />
+                    <TextBlock x:Name="FridaySectionLabel" Style="{StaticResource SamtSectionLabel}" Margin="0,8,0,0" />
+                    <TextBlock x:Name="FridayModeLabel" Opacity="0.75" />
+                    <ComboBox
+                        x:Name="FridayModeBox"
+                        HorizontalAlignment="Stretch"
+                        SelectedIndex="{x:Bind ViewModel.FridayModeIndex, Mode=TwoWay}">
+                        <ComboBoxItem x:Name="FridayFollowDhuhrItem" />
+                        <ComboBoxItem x:Name="FridayFixedTimeItem" />
+                    </ComboBox>
+                    <TextBlock x:Name="FixedFridayLabel" Opacity="0.75" />
+                    <TextBox
+                        Style="{StaticResource LatinDigitsTextBox}"
+                        Text="{x:Bind ViewModel.FixedFridayTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        PlaceholderText="13:30"
+                        IsEnabled="{x:Bind ViewModel.IsFixedFridayTime, Mode=OneWay}" />
+                    <CheckBox
+                        x:Name="SuppressDhuhrCheck"
+                        IsChecked="{x:Bind ViewModel.SuppressDhuhrOnFriday, Mode=TwoWay}" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button x:Name="SaveButton" Click="SaveButton_OnClick" Style="{StaticResource AccentButtonStyle}" />
                         <Button x:Name="GpsButton" Click="GpsButton_OnClick" />

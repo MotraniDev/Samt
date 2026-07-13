@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="Samt_App.Pages.AlertsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer Padding="24">
+        <StackPanel MaxWidth="720" Spacing="16">
+            <TextBlock x:Name="TitleText" Style="{StaticResource SamtPageTitle}" />
+            <TextBlock x:Name="PriorityNote" Text="{x:Bind ViewModel.PriorityNote, Mode=OneWay}"
+                       TextWrapping="Wrap" Opacity="0.8" />
+
+            <!-- Prayer start -->
+            <Border Padding="16" CornerRadius="12"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                <StackPanel Spacing="10">
+                    <TextBlock x:Name="StartSection" Style="{StaticResource SamtSectionLabel}" />
+                    <CheckBox x:Name="StartEnabledCheck"
+                              IsChecked="{x:Bind ViewModel.StartEnabled, Mode=TwoWay}" />
+                    <TextBlock x:Name="StartChannelsLabel" Opacity="0.75" />
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <CheckBox x:Name="StartToastCheck" IsChecked="{x:Bind ViewModel.StartToast, Mode=TwoWay}" />
+                        <CheckBox x:Name="StartOverlayCheck" IsChecked="{x:Bind ViewModel.StartOverlay, Mode=TwoWay}" />
+                        <CheckBox x:Name="StartAudioCheck" IsChecked="{x:Bind ViewModel.StartAudio, Mode=TwoWay}" />
+                    </StackPanel>
+                    <TextBlock x:Name="StartPrayersLabel" Opacity="0.75" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <CheckBox x:Name="StartFajrCheck" IsChecked="{x:Bind ViewModel.StartFajr, Mode=TwoWay}" />
+                        <CheckBox x:Name="StartDhuhrCheck" IsChecked="{x:Bind ViewModel.StartDhuhr, Mode=TwoWay}" />
+                        <CheckBox x:Name="StartAsrCheck" IsChecked="{x:Bind ViewModel.StartAsr, Mode=TwoWay}" />
+                        <CheckBox x:Name="StartMaghribCheck" IsChecked="{x:Bind ViewModel.StartMaghrib, Mode=TwoWay}" />
+                        <CheckBox x:Name="StartIshaCheck" IsChecked="{x:Bind ViewModel.StartIsha, Mode=TwoWay}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Pre-alert -->
+            <Border Padding="16" CornerRadius="12"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                <StackPanel Spacing="10">
+                    <TextBlock x:Name="BeforeSection" Style="{StaticResource SamtSectionLabel}" />
+                    <CheckBox x:Name="BeforeEnabledCheck"
+                              IsChecked="{x:Bind ViewModel.BeforeEnabled, Mode=TwoWay}" />
+                    <TextBlock x:Name="GeneralOffsetLabel" Opacity="0.75" />
+                    <TextBox
+                        Style="{StaticResource LatinDigitsTextBox}"
+                        Width="120"
+                        HorizontalAlignment="Left"
+                        Text="{x:Bind ViewModel.GeneralBeforeMinutes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        PlaceholderText="15" />
+                    <TextBlock x:Name="BeforeChannelsLabel" Opacity="0.75" />
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <CheckBox x:Name="BeforeToastCheck" IsChecked="{x:Bind ViewModel.BeforeToast, Mode=TwoWay}" />
+                        <CheckBox x:Name="BeforeOverlayCheck" IsChecked="{x:Bind ViewModel.BeforeOverlay, Mode=TwoWay}" />
+                    </StackPanel>
+                    <TextBlock x:Name="ExceptionsLabel" Opacity="0.75" Margin="0,8,0,0" />
+                    <TextBlock x:Name="ExceptionsHint" FontSize="12" Opacity="0.65" TextWrapping="Wrap" />
+
+                    <Grid ColumnSpacing="12" RowSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="100" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <CheckBox Grid.Row="0" Grid.Column="0" x:Name="BeforeFajrCheck"
+                                  IsChecked="{x:Bind ViewModel.BeforeFajr, Mode=TwoWay}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Opacity="0.6"
+                                   Text="min" Language="en-US" />
+                        <TextBox Grid.Row="0" Grid.Column="2"
+                                 Style="{StaticResource LatinDigitsTextBox}"
+                                 Text="{x:Bind ViewModel.FajrException, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 PlaceholderText="30" />
+
+                        <CheckBox Grid.Row="1" Grid.Column="0" x:Name="BeforeDhuhrCheck"
+                                  IsChecked="{x:Bind ViewModel.BeforeDhuhr, Mode=TwoWay}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Opacity="0.6"
+                                   Text="min" Language="en-US" />
+                        <TextBox Grid.Row="1" Grid.Column="2"
+                                 Style="{StaticResource LatinDigitsTextBox}"
+                                 Text="{x:Bind ViewModel.DhuhrException, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 PlaceholderText="" />
+
+                        <CheckBox Grid.Row="2" Grid.Column="0" x:Name="BeforeAsrCheck"
+                                  IsChecked="{x:Bind ViewModel.BeforeAsr, Mode=TwoWay}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Opacity="0.6"
+                                   Text="min" Language="en-US" />
+                        <TextBox Grid.Row="2" Grid.Column="2"
+                                 Style="{StaticResource LatinDigitsTextBox}"
+                                 Text="{x:Bind ViewModel.AsrException, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <CheckBox Grid.Row="3" Grid.Column="0" x:Name="BeforeMaghribCheck"
+                                  IsChecked="{x:Bind ViewModel.BeforeMaghrib, Mode=TwoWay}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" Opacity="0.6"
+                                   Text="min" Language="en-US" />
+                        <TextBox Grid.Row="3" Grid.Column="2"
+                                 Style="{StaticResource LatinDigitsTextBox}"
+                                 Text="{x:Bind ViewModel.MaghribException, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <CheckBox Grid.Row="4" Grid.Column="0" x:Name="BeforeIshaCheck"
+                                  IsChecked="{x:Bind ViewModel.BeforeIsha, Mode=TwoWay}" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" VerticalAlignment="Center" Opacity="0.6"
+                                   Text="min" Language="en-US" />
+                        <TextBox Grid.Row="4" Grid.Column="2"
+                                 Style="{StaticResource LatinDigitsTextBox}"
+                                 Text="{x:Bind ViewModel.IshaException, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Button x:Name="SaveButton" Click="SaveButton_OnClick" Style="{StaticResource AccentButtonStyle}"
+                    HorizontalAlignment="Left" />
+            <TextBlock Language="en-US" Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+                       TextWrapping="Wrap" Opacity="0.85" />
+            <TextBlock x:Name="FridayHint" FontSize="12" Opacity="0.65" TextWrapping="Wrap" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

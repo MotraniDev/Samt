@@ -115,7 +115,10 @@ public sealed class AppSettings
         IReadOnlyList<LocationProfile>? locations = null,
         bool? autoStartEnabled = null,
         bool? showMissedAlertOnResume = null,
-        int? hijriDayOffset = null)
+        int? hijriDayOffset = null,
+        IReadOnlyList<NotificationRule>? notificationRules = null,
+        AudioProfile? defaultAudio = null,
+        OverlayProfile? defaultOverlay = null)
         => new()
         {
             SchemaVersion = CurrentSchemaVersion,
@@ -128,8 +131,8 @@ public sealed class AppSettings
             ShowMissedAlertOnResume = showMissedAlertOnResume ?? ShowMissedAlertOnResume,
             HijriDayOffset = hijriDayOffset ?? HijriDayOffset,
             Locations = locations ?? Locations,
-            NotificationRules = NotificationRules,
-            DefaultAudio = DefaultAudio,
-            DefaultOverlay = DefaultOverlay
+            NotificationRules = notificationRules ?? NotificationRules,
+            DefaultAudio = defaultAudio ?? DefaultAudio,
+            DefaultOverlay = defaultOverlay ?? DefaultOverlay
         };
 }

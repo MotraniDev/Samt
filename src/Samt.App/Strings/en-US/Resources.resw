@@ -8,6 +8,7 @@
   <data name="AppTagline" xml:space="preserve"><value>Prayer times and adhan</value></data>
   <data name="NavToday" xml:space="preserve"><value>Today</value></data>
   <data name="NavLocations" xml:space="preserve"><value>Locations</value></data>
+  <data name="NavAlerts" xml:space="preserve"><value>Alerts</value></data>
   <data name="NavDiagnostics" xml:space="preserve"><value>Diagnostics</value></data>
   <data name="NavDesignLab" xml:space="preserve"><value>Design lab</value></data>
   <data name="Language" xml:space="preserve"><value>Language</value></data>
@@ -65,4 +66,13 @@
   <data name="GpsLocationName" xml:space="preserve"><value>My location (GPS)</value></data>
   <data name="InvalidLatitude" xml:space="preserve"><value>Invalid latitude (−90 to 90).</value></data>
   <data name="InvalidLongitude" xml:space="preserve"><value>Invalid longitude (−180 to 180).</value></data>
+  <data name="InvalidFridayTime" xml:space="preserve"><value>Invalid Friday time. Use HH:mm (e.g. 13:30).</value></data>
+  <data name="FridaySection" xml:space="preserve"><value>Friday</value></data>
+  <data name="FridayTimeMode" xml:space="preserve"><value>Jumu'ah time</value></data>
+  <data name="FridayFollowDhuhr" xml:space="preserve"><value>Follow calculated Dhuhr</value></data>
+  <data name="FridayFixedTime" xml:space="preserve"><value>Fixed local time</value></data>
+  <data name="FixedFridayTime" xml:space="preserve"><value>Fixed time (local)</value></data>
+  <data name="SuppressDhuhrOnFriday" xml:space="preserve"><value>Suppress Dhuhr alert on Friday (use Jumu'ah instead)</value></data>
+  <data name="SaveAlerts" xml:space="preserve"><value>Save alerts</value></data>
+  <data name="AlertsSaved" xml:space="preserve"><value>Notification rules saved.</value></data>
 </root>

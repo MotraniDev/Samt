@@ -32,4 +32,4 @@ Cloud sync, Store listing, mosque search, full adhkar suite, claiming official t
 
 ## Phases
 
-0–4 done (shell, engine, today, locations, settings, tray, toast, overlay, adhan audio). Polish / settings UI for rules optional next.
+0–5 done (shell, engine, today, locations, tray, toast, overlay, adhan, advanced rules + Alerts UI + Friday). Phase 6 (qibla, Hijri, Ramadan, adhkar) optional next.

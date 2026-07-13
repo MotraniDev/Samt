@@ -63,6 +63,7 @@ public sealed partial class MainWindow : Window
         var pageType = tag switch
         {
             "locations" => typeof(LocationsPage),
+            "alerts" => typeof(AlertsPage),
             "diagnostics" => typeof(DiagnosticsPage),
             "designlab" => typeof(DesignLabPage),
             _ => typeof(TodayPage)
@@ -94,6 +95,7 @@ public sealed partial class MainWindow : Window
 
         NavToday.Content = loc.Get("NavToday");
         NavLocations.Content = loc.Get("NavLocations");
+        NavAlerts.Content = loc.Get("NavAlerts");
         NavDiagnostics.Content = loc.Get("NavDiagnostics");
         NavDesignLab.Content = loc.Get("NavDesignLab");
         ThemeSystemItem.Content = loc.Get("ThemeSystem");

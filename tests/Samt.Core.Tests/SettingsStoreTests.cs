@@ -1,5 +1,6 @@
 using Samt.Core.Domain;
 using Samt.Core.Locations;
+using Samt.Core.Notifications;
 using Samt.Core.Storage;
 
 namespace Samt.Core.Tests;
@@ -76,10 +77,17 @@ public class SettingsStoreTests
     {
         var settings = SettingsJson.CreateDefault();
         var start = Assert.Single(settings.NotificationRules, r => r.Kind == NotificationEventKind.PrayerStart);
-        var before = Assert.Single(settings.NotificationRules, r => r.Kind == NotificationEventKind.BeforePrayer);
+        var generalBefore = Assert.Single(
+            settings.NotificationRules,
+            r => r.Kind == NotificationEventKind.BeforePrayer && r.Id == NotificationRulesComposer.BeforeGeneralRuleId);
+        var fajrException = Assert.Single(
+            settings.NotificationRules,
+            r => r.Id == NotificationRulesComposer.BeforeExceptionId(PrayerEvent.Fajr));
 
         Assert.Equal(NotificationChannel.All, start.Channels);
-        Assert.Equal(NotificationChannel.WindowsToast | NotificationChannel.Overlay, before.Channels);
+        Assert.Equal(NotificationChannel.WindowsToast | NotificationChannel.Overlay, generalBefore.Channels);
+        Assert.Equal(15, generalBefore.OffsetMinutes);
+        Assert.Equal(30, fajrException.OffsetMinutes);
         Assert.Equal(AudioSource.WindowsDefault, settings.DefaultAudio.Source);
         Assert.True(settings.DefaultOverlay.Enabled);
         Assert.Equal(OverlayEdge.Bottom, settings.DefaultOverlay.EntryEdge);

@@ -25,6 +25,9 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
     private bool _isBusy;
     private bool _suppressReload;
     private bool _isUpdatingSelection;
+    private int _fridayModeIndex; // 0 = FollowDhuhr, 1 = FixedTime
+    private string _fixedFridayTime = "13:00";
+    private bool _suppressDhuhrOnFriday = true;
 
     public LocationsViewModel(AppState appState, LocalizationService localization)
     {
@@ -64,10 +67,7 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
                 _isUpdatingSelection = true;
                 try
                 {
-                    Name = value.DisplayName;
-                    Latitude = LatinDigits.Number(value.Latitude, "0.######");
-                    Longitude = LatinDigits.Number(value.Longitude, "0.######");
-                    TimeZoneId = value.TimeZoneId;
+                    LoadEditorFields(value);
                 }
                 finally
                 {
@@ -84,10 +84,7 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
                 OnPropertyChanged();
                 if (value is not null)
                 {
-                    Name = value.DisplayName;
-                    Latitude = LatinDigits.Number(value.Latitude, "0.######");
-                    Longitude = LatinDigits.Number(value.Longitude, "0.######");
-                    TimeZoneId = value.TimeZoneId;
+                    LoadEditorFields(value);
                 }
             }
             finally
@@ -191,6 +188,57 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>0 = follow Dhuhr, 1 = fixed local clock time.</summary>
+    public int FridayModeIndex
+    {
+        get => _fridayModeIndex;
+        set
+        {
+            var next = value is 0 or 1 ? value : 0;
+            if (_fridayModeIndex == next)
+            {
+                return;
+            }
+
+            _fridayModeIndex = next;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsFixedFridayTime));
+        }
+    }
+
+    public bool IsFixedFridayTime => FridayModeIndex == 1;
+
+    public string FixedFridayTime
+    {
+        get => _fixedFridayTime;
+        set
+        {
+            var next = LatinDigits.EnsureLatin(value ?? string.Empty);
+            if (_fixedFridayTime == next)
+            {
+                return;
+            }
+
+            _fixedFridayTime = next;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool SuppressDhuhrOnFriday
+    {
+        get => _suppressDhuhrOnFriday;
+        set
+        {
+            if (_suppressDhuhrOnFriday == value)
+            {
+                return;
+            }
+
+            _suppressDhuhrOnFriday = value;
+            OnPropertyChanged();
+        }
+    }
+
     public async Task UseAsActiveAsync()
     {
         if (_selected is null)
@@ -228,6 +276,12 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
             var list = _appState.Settings.Locations.ToList();
             LocationProfile profile;
 
+            if (!TryParseFridayFields(out var fridayMode, out var fixedFriday, out var fridayError))
+            {
+                StatusMessage = fridayError;
+                return;
+            }
+
             if (_selected is not null && list.Any(l => l.Id == _selected.Id))
             {
                 profile = new LocationProfile
@@ -238,9 +292,9 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
                     Longitude = lon,
                     TimeZoneId = TimeZoneId,
                     Source = LocationSource.Manual,
-                    FridayTimeMode = _selected.FridayTimeMode,
-                    FixedFridayLocalTime = _selected.FixedFridayLocalTime,
-                    SuppressDhuhrNotificationsOnFriday = _selected.SuppressDhuhrNotificationsOnFriday,
+                    FridayTimeMode = fridayMode,
+                    FixedFridayLocalTime = fixedFriday,
+                    SuppressDhuhrNotificationsOnFriday = SuppressDhuhrOnFriday,
                     AltitudeMeters = _selected.AltitudeMeters
                 };
                 var index = list.FindIndex(l => l.Id == profile.Id);
@@ -255,7 +309,10 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
                     Latitude = lat,
                     Longitude = lon,
                     TimeZoneId = TimeZoneId,
-                    Source = LocationSource.Manual
+                    Source = LocationSource.Manual,
+                    FridayTimeMode = fridayMode,
+                    FixedFridayLocalTime = fixedFriday,
+                    SuppressDhuhrNotificationsOnFriday = SuppressDhuhrOnFriday
                 };
                 list.Add(profile);
             }
@@ -316,7 +373,49 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         Latitude = string.Empty;
         Longitude = string.Empty;
         TimeZoneId = KnownLocations.AlgeriaTimeZoneId;
+        FridayModeIndex = 0;
+        FixedFridayTime = "13:00";
+        SuppressDhuhrOnFriday = true;
         StatusMessage = _localization.Get("EnterCoordinatesHint");
+    }
+
+    private void LoadEditorFields(LocationProfile value)
+    {
+        Name = value.DisplayName;
+        Latitude = LatinDigits.Number(value.Latitude, "0.######");
+        Longitude = LatinDigits.Number(value.Longitude, "0.######");
+        TimeZoneId = value.TimeZoneId;
+        FridayModeIndex = value.FridayTimeMode == FridayTimeMode.FixedTime ? 1 : 0;
+        FixedFridayTime = value.FixedFridayLocalTime is { } t
+            ? LatinDigits.Time(t)
+            : "13:00";
+        SuppressDhuhrOnFriday = value.SuppressDhuhrNotificationsOnFriday;
+    }
+
+    private bool TryParseFridayFields(
+        out FridayTimeMode mode,
+        out TimeOnly? fixedTime,
+        out string error)
+    {
+        mode = FridayModeIndex == 1 ? FridayTimeMode.FixedTime : FridayTimeMode.FollowDhuhr;
+        fixedTime = null;
+        error = string.Empty;
+
+        if (mode != FridayTimeMode.FixedTime)
+        {
+            return true;
+        }
+
+        var text = LatinDigits.EnsureLatin(FixedFridayTime).Trim();
+        if (!TimeOnly.TryParse(text, CultureInfo.InvariantCulture, out var parsed)
+            && !TimeOnly.TryParseExact(text, ["H:mm", "HH:mm", "H:mm:ss", "HH:mm:ss"], CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed))
+        {
+            error = _localization.Get("InvalidFridayTime");
+            return false;
+        }
+
+        fixedTime = parsed;
+        return true;
     }
 
     public async Task DetectGpsAsync()
