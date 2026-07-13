@@ -8,6 +8,30 @@ Short guide for the personal v1 install (folder publish, not Microsoft Store).
 - x64 (or matching published RID)
 - No separate .NET install when using **self-contained** release output
 
+## Install (Setup.exe — recommended)
+
+From a clone (requires [Inno Setup 6](https://jrsoftware.org/isinfo.php); `winget install JRSoftware.InnoSetup`):
+
+```powershell
+.\scripts\installer.ps1 -Platform x64 -Open
+```
+
+Or after a normal release:
+
+```powershell
+.\scripts\release.ps1 -Platform x64 -Installer
+```
+
+Output:
+
+```text
+artifacts\installer\SAMT-Setup-<version>-x64.exe
+```
+
+- Installs to `%LocalAppData%\Programs\SAMT` (per-user; no admin by default)
+- Start Menu shortcut; optional Desktop + Start with Windows
+- Uninstall from Windows **Apps & features** or Start Menu
+
 ## Install (from release zip)
 
 1. Run `.\scripts\release.ps1 -Platform x64` from a clone (or unpack a pre-built zip).

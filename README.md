@@ -30,6 +30,8 @@ From the repo root:
 | `.\scripts\test.ps1` | Run unit tests |
 | `.\scripts\run.ps1` | Build (unless `-NoBuild`) and launch the app |
 | `.\scripts\release.ps1` | Release publish → `artifacts/release/` + zip |
+| `.\scripts\release.ps1 -Installer` | Publish + Windows **Setup.exe** (needs Inno Setup 6) |
+| `.\scripts\installer.ps1` | Build Setup.exe only (publishes first unless `-SkipPublish`) |
 | `.\scripts\clean.ps1` | Remove `bin`/`obj` (add `-Artifacts` for release output) |
 
 Examples:
@@ -43,6 +45,10 @@ Examples:
 
 # Personal release (x64, self-contained)
 .\scripts\release.ps1 -Platform x64 -Open
+
+# Release + Windows installer (Setup.exe)
+.\scripts\installer.ps1 -Platform x64 -Open
+# or: .\scripts\release.ps1 -Installer
 
 # Tests only
 .\scripts\test.ps1 -Configuration Release
