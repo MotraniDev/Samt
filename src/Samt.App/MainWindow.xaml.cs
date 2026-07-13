@@ -68,9 +68,19 @@ public sealed partial class MainWindow : Window
             _ => typeof(TodayPage)
         };
 
-        if (ContentFrame.CurrentSourcePageType != pageType)
+        if (ContentFrame.CurrentSourcePageType == pageType)
+        {
+            return;
+        }
+
+        try
         {
             ContentFrame.Navigate(pageType);
+            LaunchLog.Write($"Navigated to {pageType.Name}");
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Navigate to {pageType.Name} failed: {ex}");
         }
     }
 

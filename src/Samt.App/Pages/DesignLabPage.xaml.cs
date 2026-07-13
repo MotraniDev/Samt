@@ -23,6 +23,8 @@ public sealed partial class DesignLabPage : Page
     public DesignLabPage()
     {
         InitializeComponent();
+        // Set slider ranges in code (Maximum first). XAML Minimum before Maximum (or culture parse) throws.
+        ConfigureSliders();
         Loaded += (_, _) =>
         {
             FlowDirection = App.Localization.FlowDirection;
@@ -32,6 +34,22 @@ public sealed partial class DesignLabPage : Page
             // Park off-stage until Play.
             ResetTransformOffStage();
         };
+    }
+
+    private void ConfigureSliders()
+    {
+        OpacitySlider.Maximum = 100;
+        OpacitySlider.Minimum = 30;
+        OpacitySlider.StepFrequency = 1;
+        OpacitySlider.Value = 92;
+
+        DurationSlider.Maximum = 900;
+        DurationSlider.Minimum = 150;
+        DurationSlider.StepFrequency = 10;
+        DurationSlider.Value = 320;
+
+        OpacityValueText.Text = LatinDigits.Number(92) + "%";
+        DurationValueText.Text = LatinDigits.Number(320) + "ms";
     }
 
     private void VariantButton_OnClick(object sender, RoutedEventArgs e)

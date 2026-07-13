@@ -112,13 +112,11 @@
                         <ColumnDefinition Width="56" />
                     </Grid.ColumnDefinitions>
                     <TextBlock VerticalAlignment="Center" Text="Opacity" Opacity="0.75" />
+                    <!-- Numeric range set in code-behind: XAML Min/Max order + culture parsing crash LoadComponent. -->
                     <Slider
                         x:Name="OpacitySlider"
                         Grid.Column="1"
-                        Minimum="30"
-                        Maximum="100"
-                        Value="92"
-                        StepFrequency="1"
+                        Language="en-US"
                         ValueChanged="OpacitySlider_OnValueChanged" />
                     <TextBlock
                         x:Name="OpacityValueText"
@@ -138,10 +136,7 @@
                     <Slider
                         x:Name="DurationSlider"
                         Grid.Column="1"
-                        Minimum="150"
-                        Maximum="900"
-                        Value="320"
-                        StepFrequency="10"
+                        Language="en-US"
                         ValueChanged="DurationSlider_OnValueChanged" />
                     <TextBlock
                         x:Name="DurationValueText"

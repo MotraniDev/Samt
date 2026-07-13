@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Dispatching;
 using Samt.Core.Domain;
 using Samt.Core.Formatting;
 using Samt.Core.Locations;
@@ -50,6 +51,32 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
                 return;
             }
 
+            // Same instance — ignore (ListView re-entrancy).
+            if (ReferenceEquals(_selected, value))
+            {
+                return;
+            }
+
+            // Same id, new instance (reload after save) — swap reference; refresh fields once.
+            if (_selected is not null && value is not null && _selected.Id == value.Id)
+            {
+                _selected = value;
+                _isUpdatingSelection = true;
+                try
+                {
+                    Name = value.DisplayName;
+                    Latitude = LatinDigits.Number(value.Latitude, "0.######");
+                    Longitude = LatinDigits.Number(value.Longitude, "0.######");
+                    TimeZoneId = value.TimeZoneId;
+                }
+                finally
+                {
+                    _isUpdatingSelection = false;
+                }
+
+                return;
+            }
+
             _isUpdatingSelection = true;
             try
             {
@@ -73,37 +100,95 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
     public string Name
     {
         get => _name;
-        set { _name = value; OnPropertyChanged(); }
+        set
+        {
+            if (_name == value)
+            {
+                return;
+            }
+
+            _name = value;
+            OnPropertyChanged();
+        }
     }
 
     public string Latitude
     {
         get => _latitude;
-        set { _latitude = LatinDigits.EnsureLatin(value); OnPropertyChanged(); }
+        set
+        {
+            var next = LatinDigits.EnsureLatin(value);
+            if (_latitude == next)
+            {
+                return;
+            }
+
+            _latitude = next;
+            OnPropertyChanged();
+        }
     }
 
     public string Longitude
     {
         get => _longitude;
-        set { _longitude = LatinDigits.EnsureLatin(value); OnPropertyChanged(); }
+        set
+        {
+            var next = LatinDigits.EnsureLatin(value);
+            if (_longitude == next)
+            {
+                return;
+            }
+
+            _longitude = next;
+            OnPropertyChanged();
+        }
     }
 
     public string TimeZoneId
     {
         get => _timeZoneId;
-        set { _timeZoneId = value ?? KnownLocations.AlgeriaTimeZoneId; OnPropertyChanged(); }
+        set
+        {
+            var next = value ?? KnownLocations.AlgeriaTimeZoneId;
+            if (_timeZoneId == next)
+            {
+                return;
+            }
+
+            _timeZoneId = next;
+            OnPropertyChanged();
+        }
     }
 
     public string StatusMessage
     {
         get => _statusMessage;
-        private set { _statusMessage = LatinDigits.EnsureLatin(value ?? string.Empty); OnPropertyChanged(); }
+        private set
+        {
+            var next = LatinDigits.EnsureLatin(value ?? string.Empty);
+            if (_statusMessage == next)
+            {
+                return;
+            }
+
+            _statusMessage = next;
+            OnPropertyChanged();
+        }
     }
 
     public bool IsBusy
     {
         get => _isBusy;
-        private set { _isBusy = value; OnPropertyChanged(); }
+        private set
+        {
+            if (_isBusy == value)
+            {
+                return;
+            }
+
+            _isBusy = value;
+            OnPropertyChanged();
+        }
     }
 
     public async Task UseAsActiveAsync()
@@ -281,13 +366,16 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         _suppressReload = true;
         try
         {
-            await _appState.UpdateAsync(mutate).ConfigureAwait(true);
+            await _appState.UpdateAsync(mutate).ConfigureAwait(false);
         }
         finally
         {
-            _suppressReload = false;
-            // One controlled reload after save completes.
-            ReloadList();
+            await RunOnUiAsync(() =>
+            {
+                _suppressReload = false;
+                // One controlled reload after save completes.
+                ReloadList();
+            }).ConfigureAwait(false);
         }
     }
 
@@ -298,14 +386,23 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
             return;
         }
 
-        try
+        // AppState already raises on UI, but be defensive if another caller fires the event.
+        _ = RunOnUiAsync(() =>
         {
-            ReloadList();
-        }
-        catch (Exception ex)
-        {
-            LaunchLog.Write($"Locations ReloadList failed: {ex}");
-        }
+            if (_suppressReload)
+            {
+                return;
+            }
+
+            try
+            {
+                ReloadList();
+            }
+            catch (Exception ex)
+            {
+                LaunchLog.Write($"Locations ReloadList failed: {ex}");
+            }
+        });
     }
 
     private void ReloadList()
@@ -313,15 +410,53 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         var snapshot = _appState.Settings.Locations.ToList();
         var selectedId = _selected?.Id ?? _appState.Settings.ActiveLocationId;
 
-        // Replace items without ObservableCollection.Clear during binding churn when possible.
-        Locations.Clear();
-        foreach (var location in snapshot)
+        // Diff-update to reduce ListView TwoWay selection churn vs Clear()+re-add.
+        for (var i = Locations.Count - 1; i >= 0; i--)
         {
-            Locations.Add(location);
+            var existing = Locations[i];
+            if (snapshot.All(s => s.Id != existing.Id))
+            {
+                Locations.RemoveAt(i);
+            }
+        }
+
+        for (var i = 0; i < snapshot.Count; i++)
+        {
+            var desired = snapshot[i];
+            var currentIndex = IndexOfId(desired.Id);
+            if (currentIndex < 0)
+            {
+                Locations.Insert(Math.Min(i, Locations.Count), desired);
+            }
+            else
+            {
+                if (currentIndex != i)
+                {
+                    Locations.Move(currentIndex, Math.Min(i, Locations.Count - 1));
+                }
+
+                // Replace instance so edited fields show up even when id is unchanged.
+                if (!ReferenceEquals(Locations[i], desired))
+                {
+                    Locations[i] = desired;
+                }
+            }
         }
 
         SelectById(selectedId);
-        OnPropertyChanged(nameof(Locations));
+    }
+
+    private int IndexOfId(Guid id)
+    {
+        for (var i = 0; i < Locations.Count; i++)
+        {
+            if (Locations[i].Id == id)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     private void SelectById(Guid? id)
@@ -334,6 +469,40 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
 
         match ??= Locations.FirstOrDefault();
         SelectedLocation = match;
+        // Force ListView to pick the new instance after in-place replace.
+        OnPropertyChanged(nameof(SelectedLocation));
+    }
+
+    private static Task RunOnUiAsync(Action action)
+    {
+        var dq = DispatcherQueue.GetForCurrentThread()
+                 ?? App.MainWindow?.DispatcherQueue;
+
+        if (dq is null || dq.HasThreadAccess)
+        {
+            action();
+            return Task.CompletedTask;
+        }
+
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!dq.TryEnqueue(() =>
+            {
+                try
+                {
+                    action();
+                    tcs.TrySetResult();
+                }
+                catch (Exception ex)
+                {
+                    tcs.TrySetException(ex);
+                }
+            }))
+        {
+            action();
+            return Task.CompletedTask;
+        }
+
+        return tcs.Task;
     }
 
     private void PrefillFromActive()
