@@ -6,9 +6,10 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    FontFamily="{StaticResource SamtUiFont}">
 
-    <ScrollViewer Padding="24">
+    <ScrollViewer Padding="28,24">
         <Grid ColumnSpacing="20" MaxWidth="960">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -16,9 +17,10 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Spacing="12">
-                <TextBlock x:Name="ListHeader" FontSize="20" FontWeight="SemiBold" />
+                <TextBlock x:Name="ListHeader" Style="{StaticResource SamtPageTitle}" FontSize="26" />
                 <ListView
                     x:Name="LocationList"
+                    FontFamily="{StaticResource SamtUiFont}"
                     ItemsSource="{x:Bind ViewModel.Locations, Mode=OneWay}"
                     SelectedItem="{x:Bind ViewModel.SelectedLocation, Mode=TwoWay}"
                     DisplayMemberPath="DisplayName"
@@ -30,11 +32,11 @@
                 </StackPanel>
             </StackPanel>
 
-            <Border Grid.Column="1" Padding="16" CornerRadius="12"
+            <Border Grid.Column="1" Padding="18" CornerRadius="16"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                    BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1">
                 <StackPanel Spacing="12">
-                    <TextBlock x:Name="EditorHeader" FontSize="20" FontWeight="SemiBold" />
+                    <TextBlock x:Name="EditorHeader" Style="{StaticResource SamtPageTitle}" FontSize="22" />
                     <TextBlock x:Name="NameLabel" Opacity="0.75" />
                     <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock x:Name="LatLabel" Opacity="0.75" />

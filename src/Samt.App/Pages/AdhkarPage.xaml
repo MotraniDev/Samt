@@ -7,11 +7,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:Samt_App.ViewModels"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    FontFamily="{StaticResource SamtUiFont}">
 
-    <ScrollViewer Padding="28">
-        <StackPanel Spacing="16" MaxWidth="720">
-            <StackPanel Spacing="4">
+    <ScrollViewer Padding="28,24">
+        <StackPanel Spacing="18" MaxWidth="720">
+            <StackPanel Spacing="6">
                 <TextBlock x:Name="TitleText" Style="{StaticResource SamtPageTitle}" />
                 <TextBlock
                     x:Name="SubtitleText"
@@ -24,30 +25,45 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:AdhkarSection">
                         <Border
-                            Margin="0,0,0,12"
-                            Padding="16"
+                            Margin="0,0,0,14"
+                            Padding="20,18"
                             CornerRadius="16"
                             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderBrush="{StaticResource SamtHairlineBrush}"
                             BorderThickness="1">
-                            <StackPanel Spacing="12">
-                                <TextBlock
-                                    Style="{StaticResource SamtSectionLabel}"
-                                    Foreground="{StaticResource SamtGoldBrush}"
-                                    Text="{x:Bind Title}" />
+                            <StackPanel Spacing="14">
+                                <!-- Section header with gold accent bar -->
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Grid.Column="0"
+                                        CornerRadius="2"
+                                        Background="{StaticResource SamtGoldBrush}" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontFamily="{StaticResource SamtDisplayFont}"
+                                        FontSize="18"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource SamtGoldBrush}"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind Title}" />
+                                </Grid>
                                 <ItemsControl ItemsSource="{x:Bind Items}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="vm:AdhkarItem">
-                                            <StackPanel Spacing="4" Margin="0,0,0,12">
+                                            <StackPanel Spacing="6" Margin="0,0,0,14">
                                                 <TextBlock
-                                                    FontFamily="{StaticResource SamtUiFont}"
-                                                    FontSize="18"
-                                                    TextWrapping="Wrap"
+                                                    Style="{StaticResource SamtNaskhText}"
+                                                    FontSize="22"
+                                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                     Text="{x:Bind ArabicText}" />
                                                 <TextBlock
                                                     Style="{StaticResource SamtBody}"
                                                     FontSize="13"
-                                                    Opacity="0.7"
+                                                    Opacity="0.68"
                                                     TextWrapping="Wrap"
                                                     Text="{x:Bind Translation}" />
                                             </StackPanel>
@@ -63,7 +79,7 @@
             <TextBlock
                 Style="{StaticResource SamtBody}"
                 FontSize="12"
-                Opacity="0.6"
+                Opacity="0.55"
                 TextWrapping="Wrap"
                 Text="{x:Bind ViewModel.Disclaimer, Mode=OneWay}" />
         </StackPanel>

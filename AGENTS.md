@@ -55,7 +55,8 @@ Single-context: root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.
 
 - Prefer **logical** layout language in code comments and future styles: start/end, not left/right when describing RTL.
 - Arabic UI copy from `Strings/ar/Resources.resw`; never hard-code Arabic in Core.
-- Fonts: UI face with Arabic coverage (Segoe UI / Segoe UI Variable); numeric face Consolas or Cascadia Mono via `LatinDigits*` styles.
+- Fonts (bundled OFL under `Assets/Fonts/`): **Cairo** modern UI (`SamtUiFont`), **Amiri** decorative display / prayer names (`SamtDisplayFont`), **Noto Naskh Arabic** adhkar body (`SamtNaskhFont`), **Cascadia Mono** times via `LatinDigits*` styles. Alert overlay uses `Assets/Textures/islamic-tile.png`. Tokens in `Themes/SamtTheme.xaml`.
+- Exit: window close hides to tray; full quit via pane **Exit** button or tray menu **Exit** (`App.RequestExit`).
 - Overlay and tray flyouts must respect Reduce motion (PRD).
 - Signature visual: **next-prayer countdown in quiet gold on deep navy** — keep it dominant; quiet the rest.
 

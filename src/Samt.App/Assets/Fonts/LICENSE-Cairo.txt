@@ -1,0 +1,3 @@
+Cairo — SIL Open Font License 1.1
+https://github.com/Gue3bara/Cairo
+Copyright 2015 The Cairo Project Authors

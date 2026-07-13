@@ -17,6 +17,10 @@
   <data name="ThemeSystem" xml:space="preserve"><value>System</value></data>
   <data name="ThemeLight" xml:space="preserve"><value>Light</value></data>
   <data name="ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="ExitApp" xml:space="preserve"><value>Exit app</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Open SAMT</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Exit</value></data>
+  <data name="CloseToTrayHint" xml:space="preserve"><value>Closing the window hides SAMT to the tray. Use Exit to quit completely.</value></data>
   <data name="Location" xml:space="preserve"><value>Location</value></data>
   <data name="Method" xml:space="preserve"><value>Calculation method</value></data>
   <data name="Date" xml:space="preserve"><value>Date</value></data>

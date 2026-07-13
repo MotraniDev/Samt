@@ -6,9 +6,8 @@
     Title="SAMT">
 
     <!--
-      Floating prayer card. Window is sized to the card and painted navy so the host
-      never shows as a black strip (true HWND alpha is unreliable on WinUI unpackaged).
-      Signature: quiet gold on deep navy; Latin digits for time.
+      Prayer alert card — Islamic geometric texture, Amiri display type, Latin digits.
+      Solid navy host + layered alpha (true per-pixel alpha unreliable unpackaged).
     -->
     <Grid x:Name="RootGrid" Background="#071525">
         <Border
@@ -16,10 +15,10 @@
             VerticalAlignment="Stretch"
             HorizontalAlignment="Stretch"
             Margin="0"
-            Padding="22,16"
+            Padding="0"
             CornerRadius="18"
-            BorderBrush="{StaticResource SamtGoldBrush}"
-            BorderThickness="1"
+            BorderBrush="{StaticResource SamtGoldSoftBrush}"
+            BorderThickness="1.5"
             Opacity="1"
             RenderTransformOrigin="0.5,0.5">
             <Border.Background>
@@ -28,46 +27,105 @@
             <Border.RenderTransform>
                 <CompositeTransform x:Name="CardTransform" TranslateY="0" />
             </Border.RenderTransform>
-            <Grid ColumnSpacing="16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
 
-                <StackPanel Spacing="4" VerticalAlignment="Center">
-                    <TextBlock
-                        x:Name="TitleText"
-                        Text=""
-                        FontFamily="{StaticResource SamtUiFont}"
-                        FontSize="22"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource SamtIvoryBrush}" />
-                    <TextBlock
-                        x:Name="TimeText"
-                        Style="{StaticResource LatinDigitsTextBlock}"
-                        Text=""
-                        FontSize="32"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource SamtGoldSoftBrush}" />
-                    <TextBlock
-                        x:Name="SubtitleText"
-                        Text=""
-                        FontFamily="{StaticResource SamtUiFont}"
-                        FontSize="13"
-                        Opacity="0.78"
-                        Foreground="{StaticResource SamtIvoryBrush}" />
-                </StackPanel>
+            <Grid>
+                <!-- Islamic geometric texture -->
+                <Image
+                    x:Name="TextureImage"
+                    Source="ms-appx:///Assets/Textures/islamic-tile.png"
+                    Stretch="UniformToFill"
+                    Opacity="0.48"
+                    IsHitTestVisible="False" />
 
-                <Button
-                    x:Name="StopButton"
-                    Grid.Column="1"
-                    MinWidth="108"
-                    MinHeight="40"
-                    Padding="16,8"
-                    VerticalAlignment="Center"
-                    Click="StopButton_OnClick"
-                    Content="Stop"
-                    Style="{StaticResource AccentButtonStyle}" />
+                <!-- Soft gradient wash so text stays readable -->
+                <Border>
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#D9071525" Offset="0" />
+                            <GradientStop Color="#A014324F" Offset="0.55" />
+                            <GradientStop Color="#B31F4D3A" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+
+                <!-- Corner ornaments -->
+                <Path
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,10,10,0"
+                    Width="44"
+                    Height="44"
+                    Stretch="Uniform"
+                    Stroke="{StaticResource SamtOrnamentBrush}"
+                    StrokeThickness="1.2"
+                    Data="M 0,0 L 44,0 L 44,12 M 0,0 L 0,44 L 12,44 M 0,0 L 30,30"
+                    IsHitTestVisible="False" />
+                <Path
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"
+                    Margin="10,0,0,10"
+                    Width="44"
+                    Height="44"
+                    Stretch="Uniform"
+                    Stroke="{StaticResource SamtOrnamentBrush}"
+                    StrokeThickness="1.2"
+                    Data="M 44,44 L 0,44 L 0,32 M 44,44 L 44,0 L 32,0 M 44,44 L 14,14"
+                    IsHitTestVisible="False" />
+
+                <Grid x:Name="ContentPanel" Padding="24,18" ColumnSpacing="18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel x:Name="TextStack" Spacing="6" VerticalAlignment="Center">
+                        <TextBlock
+                            x:Name="EyebrowText"
+                            FontFamily="{StaticResource SamtUiFont}"
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            CharacterSpacing="40"
+                            Opacity="0.75"
+                            Foreground="{StaticResource SamtGoldSoftBrush}"
+                            Text="" />
+                        <TextBlock
+                            x:Name="TitleText"
+                            Text=""
+                            FontFamily="{StaticResource SamtDisplayFont}"
+                            FontSize="30"
+                            FontWeight="Bold"
+                            Foreground="{StaticResource SamtIvoryBrush}" />
+                        <TextBlock
+                            x:Name="TimeText"
+                            Style="{StaticResource LatinDigitsTextBlock}"
+                            Text=""
+                            FontSize="34"
+                            FontWeight="SemiBold"
+                            CharacterSpacing="-10"
+                            Foreground="{StaticResource SamtGoldBrightBrush}" />
+                        <TextBlock
+                            x:Name="SubtitleText"
+                            Text=""
+                            FontFamily="{StaticResource SamtNaskhFont}"
+                            FontSize="15"
+                            Opacity="0.9"
+                            Foreground="{StaticResource SamtIvoryMutedBrush}" />
+                    </StackPanel>
+
+                    <Button
+                        x:Name="StopButton"
+                        Grid.Column="1"
+                        MinWidth="112"
+                        MinHeight="44"
+                        Padding="18,10"
+                        VerticalAlignment="Center"
+                        Click="StopButton_OnClick"
+                        Content="Stop"
+                        FontFamily="{StaticResource SamtUiFont}"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Style="{StaticResource AccentButtonStyle}" />
+                </Grid>
             </Grid>
         </Border>
     </Grid>

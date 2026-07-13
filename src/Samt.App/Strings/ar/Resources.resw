@@ -17,6 +17,10 @@
   <data name="ThemeSystem" xml:space="preserve"><value>تلقائي</value></data>
   <data name="ThemeLight" xml:space="preserve"><value>فاتح</value></data>
   <data name="ThemeDark" xml:space="preserve"><value>داكن</value></data>
+  <data name="ExitApp" xml:space="preserve"><value>خروج من التطبيق</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>فتح سَمت</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>خروج</value></data>
+  <data name="CloseToTrayHint" xml:space="preserve"><value>إغلاق النافذة يخفي التطبيق إلى شريط النظام. استخدم «خروج» لإنهاء البرنامج.</value></data>
   <data name="Location" xml:space="preserve"><value>الموقع</value></data>
   <data name="Method" xml:space="preserve"><value>طريقة الحساب</value></data>
   <data name="Date" xml:space="preserve"><value>التاريخ</value></data>

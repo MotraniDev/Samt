@@ -55,6 +55,8 @@ public sealed partial class AlertsPage : Page
         BeforeChannelsLabel.Text = loc.Get("AlertsChannels");
         BeforeToastCheck.Content = loc.Get("ChannelToast");
         BeforeOverlayCheck.Content = loc.Get("ChannelOverlay");
+        BeforeAudioCheck.Content = loc.Get("ChannelAudioCue");
+        BeforeAudioHint.Text = loc.Get("BeforeAudioHint");
         ExceptionsLabel.Text = loc.Get("AlertsExceptions");
         ExceptionsHint.Text = loc.Get("AlertsExceptionsHint");
         BeforeFajrCheck.Content = loc.GetPrayerName(PrayerEvent.Fajr);

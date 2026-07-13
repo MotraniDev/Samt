@@ -13,6 +13,12 @@ internal static class WindowActivation
     private const int SwRestore = 9;
     private const int SwShow = 5;
 
+    /// <summary>Default compact shell: small enough for Today + rail, not smaller than content needs.</summary>
+    public const int DefaultWidth = 440;
+    public const int DefaultHeight = 680;
+    public const int MinWidth = 380;
+    public const int MinHeight = 520;
+
     [DllImport("user32.dll")]
     private static extern bool SetForegroundWindow(IntPtr hWnd);
 
@@ -28,8 +34,14 @@ internal static class WindowActivation
     [DllImport("user32.dll")]
     private static extern bool BringWindowToTop(IntPtr hWnd);
 
-    /// <summary>First-launch layout: size, center on primary work area, then show.</summary>
-    public static void ShowCentered(Window window, int width = 1100, int height = 720)
+    /// <summary>
+    /// Preferred placement: work-area right edge, vertically centered, compact size.
+    /// Used on first launch and when restoring from the tray.
+    /// </summary>
+    public static void ShowDockedRight(
+        Window window,
+        int width = DefaultWidth,
+        int height = DefaultHeight)
     {
         var hwnd = WindowNative.GetWindowHandle(window);
         var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
@@ -37,11 +49,16 @@ internal static class WindowActivation
 
         appWindow.Title = window.Title;
         AppIconHelper.ApplyToAppWindow(appWindow);
+
+        ApplyMinSize(appWindow);
+        width = Math.Max(width, MinWidth);
+        height = Math.Max(height, MinHeight);
         appWindow.Resize(new SizeInt32(width, height));
 
         var display = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
         var work = display.WorkArea;
-        var x = work.X + Math.Max(0, (work.Width - width) / 2);
+        // Far right of the work area; vertically centered.
+        var x = work.X + Math.Max(0, work.Width - width);
         var y = work.Y + Math.Max(0, (work.Height - height) / 2);
         appWindow.Move(new PointInt32(x, y));
 
@@ -50,31 +67,37 @@ internal static class WindowActivation
             presenter.IsResizable = true;
             presenter.IsMaximizable = true;
             presenter.IsMinimizable = true;
+            presenter.PreferredMinimumWidth = MinWidth;
+            presenter.PreferredMinimumHeight = MinHeight;
             presenter.Restore();
+        }
+
+        if (window is MainWindow main)
+        {
+            main.CollapseNavigationPane();
         }
 
         FastShow(window, hwnd, appWindow);
     }
 
+    /// <summary>First-launch layout (legacy center). Prefer <see cref="ShowDockedRight"/>.</summary>
+    public static void ShowCentered(Window window, int width = DefaultWidth, int height = DefaultHeight)
+        => ShowDockedRight(window, width, height);
+
     /// <summary>
-    /// Tray restore: show the existing window without re-centering or re-sizing
-    /// (those WinUI operations are slow and feel like a hang).
+    /// Tray restore: re-apply compact docked placement + collapsed nav so the window
+    /// always opens in the same predictable position.
     /// </summary>
     public static void Restore(Window window)
+        => ShowDockedRight(window);
+
+    private static void ApplyMinSize(AppWindow appWindow)
     {
-        var hwnd = WindowNative.GetWindowHandle(window);
-        var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
-        var appWindow = AppWindow.GetFromWindowId(windowId);
-
-        appWindow.Title = window.Title;
-        AppIconHelper.ApplyToAppWindow(appWindow);
-
         if (appWindow.Presenter is OverlappedPresenter presenter)
         {
-            presenter.Restore();
+            presenter.PreferredMinimumWidth = MinWidth;
+            presenter.PreferredMinimumHeight = MinHeight;
         }
-
-        FastShow(window, hwnd, appWindow);
     }
 
     private static void FastShow(Window window, IntPtr hwnd, AppWindow appWindow)

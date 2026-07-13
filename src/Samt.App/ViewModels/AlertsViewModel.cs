@@ -27,6 +27,7 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
     private string _ishaException = string.Empty;
     private bool _beforeToast = true;
     private bool _beforeOverlay = true;
+    private bool _beforeAudio;
     private bool _startToast = true;
     private bool _startOverlay = true;
     private bool _startAudio = true;
@@ -122,6 +123,12 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
     {
         get => _beforeOverlay;
         set => Set(ref _beforeOverlay, value);
+    }
+
+    public bool BeforeAudio
+    {
+        get => _beforeAudio;
+        set => Set(ref _beforeAudio, value);
     }
 
     public bool StartToast
@@ -246,6 +253,7 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
             GeneralBeforeMinutes = LatinDigits.Number(model.GeneralBeforeMinutes);
             BeforeToast = model.BeforeChannels.HasFlag(NotificationChannel.WindowsToast);
             BeforeOverlay = model.BeforeChannels.HasFlag(NotificationChannel.Overlay);
+            BeforeAudio = model.BeforeChannels.HasFlag(NotificationChannel.Audio);
             StartToast = model.StartChannels.HasFlag(NotificationChannel.WindowsToast);
             StartOverlay = model.StartChannels.HasFlag(NotificationChannel.Overlay);
             StartAudio = model.StartChannels.HasFlag(NotificationChannel.Audio);
@@ -388,6 +396,11 @@ public sealed class AlertsViewModel : INotifyPropertyChanged
             if (BeforeOverlay)
             {
                 beforeChannels |= NotificationChannel.Overlay;
+            }
+
+            if (BeforeAudio)
+            {
+                beforeChannels |= NotificationChannel.Audio;
             }
 
             if (beforeChannels == NotificationChannel.None)

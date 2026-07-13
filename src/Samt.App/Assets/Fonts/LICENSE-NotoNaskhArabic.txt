@@ -1,0 +1,3 @@
+Noto Naskh Arabic — OFL (SIL Open Font License 1.1)
+https://github.com/notofonts/arabic
+Copyright Google Inc. / Noto fonts project

@@ -322,9 +322,16 @@ public sealed record PrayerTimeRow(
     string Name,
     string DisplayTime,
     string RawTime,
-    bool IsNext = false)
+    bool IsNext = false,
+    PrayerEvent Event = PrayerEvent.Fajr,
+    bool IsManuallyAdjusted = false)
 {
     public Microsoft.UI.Xaml.Visibility NextMarkerVisibility =>
         IsNext ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+    public Microsoft.UI.Xaml.Visibility ManualBadgeVisibility =>
+        IsManuallyAdjusted
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
 }
 

@@ -18,34 +18,94 @@ public sealed class TrayIconService : IDisposable
     {
         try
         {
+            // SecondWindow: XAML MenuFlyout is reliable on WinUI unpackaged.
+            // PopupMenu often fails to surface ContextFlyout items.
             _icon = new TaskbarIcon
             {
                 ToolTipText = "SAMT",
-                // Generated icon from app resources when possible.
                 Icon = AppIconHelper.CreateTrayIcon(),
-                ContextMenuMode = ContextMenuMode.PopupMenu
+                ContextMenuMode = ContextMenuMode.SecondWindow,
+                NoLeftClickDelay = true
             };
 
-            // Win32 popup menu items via ContextFlyout alternative — use MenuFlyout through ContextMenuMode.
             var menu = new MenuFlyout();
-            var openItem = new MenuFlyoutItem { Text = "Open / فتح" };
-            openItem.Click += (_, _) => OpenRequested?.Invoke(this, EventArgs.Empty);
-            var exitItem = new MenuFlyoutItem { Text = "Exit / خروج" };
-            exitItem.Click += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
+
+            var openItem = new MenuFlyoutItem
+            {
+                Text = "فتح / Open",
+                Icon = new FontIcon { Glyph = "\uE8A7" }
+            };
+            openItem.Click += (_, _) =>
+            {
+                LaunchLog.Write("Tray menu: Open");
+                OpenRequested?.Invoke(this, EventArgs.Empty);
+            };
+
+            var exitItem = new MenuFlyoutItem
+            {
+                Text = "خروج / Exit",
+                Icon = new FontIcon { Glyph = "\uE7E8" }
+            };
+            exitItem.Click += (_, _) =>
+            {
+                LaunchLog.Write("Tray menu: Exit");
+                ExitRequested?.Invoke(this, EventArgs.Empty);
+            };
+
             menu.Items.Add(openItem);
             menu.Items.Add(new MenuFlyoutSeparator());
             menu.Items.Add(exitItem);
             _icon.ContextFlyout = menu;
 
-            _icon.LeftClickCommand = new RelayCommand(() => OpenRequested?.Invoke(this, EventArgs.Empty));
+            // Left click → open main window
+            _icon.LeftClickCommand = new RelayCommand(() =>
+            {
+                LaunchLog.Write("Tray left-click: Open");
+                OpenRequested?.Invoke(this, EventArgs.Empty);
+            });
+
+            // Double-click → open (some shells)
+            _icon.DoubleClickCommand = new RelayCommand(() =>
+            {
+                LaunchLog.Write("Tray double-click: Open");
+                OpenRequested?.Invoke(this, EventArgs.Empty);
+            });
 
             _icon.ForceCreate();
-            LaunchLog.Write("Tray icon created");
+            LaunchLog.Write("Tray icon created (SecondWindow menu)");
         }
         catch (Exception ex)
         {
             LaunchLog.Write($"Tray init failed (non-fatal): {ex}");
             _icon = null;
+        }
+    }
+
+    public void UpdateMenuLabels(string openLabel, string exitLabel)
+    {
+        if (_icon?.ContextFlyout is not MenuFlyout menu)
+        {
+            return;
+        }
+
+        try
+        {
+            foreach (var item in menu.Items.OfType<MenuFlyoutItem>())
+            {
+                // Match by icon glyph we set at init.
+                if (item.Icon is FontIcon { Glyph: "\uE8A7" })
+                {
+                    item.Text = openLabel;
+                }
+                else if (item.Icon is FontIcon { Glyph: "\uE7E8" })
+                {
+                    item.Text = exitLabel;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Tray menu labels failed: {ex.Message}");
         }
     }
 

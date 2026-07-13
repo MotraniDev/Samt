@@ -14,8 +14,12 @@ namespace Samt_App.Overlay;
 
 public enum OverlayVisualStyle
 {
+    /// <summary>A — compact top pre-alert ribbon.</summary>
     TopRibbon = 0,
-    BottomDock = 1
+    /// <summary>B — large bottom prayer-start dock.</summary>
+    BottomDock = 1,
+    /// <summary>C — slim edge card (side entry).</summary>
+    EdgeDock = 2
 }
 
 /// <summary>
@@ -80,6 +84,10 @@ public sealed partial class OverlayWindow : Window
         TimeText.Text = timeText;
         SubtitleText.Text = subtitle;
         StopButton.Content = stopLabel;
+        // Decorative eyebrow — localized short label above the prayer name.
+        EyebrowText.Text = flowDirection == FlowDirection.RightToLeft
+            ? "حان وقت الصلاة"
+            : "Prayer time";
         RootGrid.FlowDirection = flowDirection;
         _style = style;
         _entryEdge = entryEdge;
@@ -248,12 +256,78 @@ public sealed partial class OverlayWindow : Window
 
     private void ApplyStyleLayout()
     {
-        var color = _style == OverlayVisualStyle.TopRibbon ? Navy : NavyDeep;
+        // A navy mid, B deep navy, C deep navy with tighter chrome
+        var color = _style switch
+        {
+            OverlayVisualStyle.TopRibbon => Navy,
+            OverlayVisualStyle.EdgeDock => NavyDeep,
+            _ => NavyDeep
+        };
         CardBg.Color = color;
         RootGrid.Background = new SolidColorBrush(color);
-        Card.CornerRadius = _style == OverlayVisualStyle.TopRibbon
-            ? new CornerRadius(14)
-            : new CornerRadius(18);
+        Card.CornerRadius = _style switch
+        {
+            OverlayVisualStyle.TopRibbon => new CornerRadius(14),
+            OverlayVisualStyle.EdgeDock => new CornerRadius(16),
+            _ => new CornerRadius(20)
+        };
+
+        ApplyTypography();
+    }
+
+    /// <summary>
+    /// Type scale per alert style so A/B/C read distinctly.
+    /// A compact, B hero countdown, C slim edge.
+    /// </summary>
+    private void ApplyTypography()
+    {
+        switch (_style)
+        {
+            case OverlayVisualStyle.TopRibbon: // A
+                EyebrowText.FontSize = 10;
+                TitleText.FontSize = 22;
+                TimeText.FontSize = 26;
+                SubtitleText.FontSize = 13;
+                TextStack.Spacing = 3;
+                ContentPanel.Padding = new Thickness(18, 12, 18, 12);
+                ContentPanel.ColumnSpacing = 12;
+                StopButton.FontSize = 13;
+                StopButton.MinWidth = 96;
+                StopButton.MinHeight = 36;
+                StopButton.Padding = new Thickness(14, 8, 14, 8);
+                TextureImage.Opacity = 0.36;
+                break;
+
+            case OverlayVisualStyle.EdgeDock: // C
+                EyebrowText.FontSize = 10;
+                TitleText.FontSize = 20;
+                TimeText.FontSize = 24;
+                SubtitleText.FontSize = 12;
+                TextStack.Spacing = 3;
+                ContentPanel.Padding = new Thickness(16, 12, 16, 12);
+                ContentPanel.ColumnSpacing = 10;
+                StopButton.FontSize = 12;
+                StopButton.MinWidth = 84;
+                StopButton.MinHeight = 34;
+                StopButton.Padding = new Thickness(12, 6, 12, 6);
+                TextureImage.Opacity = 0.40;
+                break;
+
+            default: // B BottomDock — largest, prayer start
+                EyebrowText.FontSize = 12;
+                TitleText.FontSize = 34;
+                TimeText.FontSize = 38;
+                SubtitleText.FontSize = 16;
+                TextStack.Spacing = 6;
+                ContentPanel.Padding = new Thickness(26, 20, 26, 20);
+                ContentPanel.ColumnSpacing = 18;
+                StopButton.FontSize = 15;
+                StopButton.MinWidth = 120;
+                StopButton.MinHeight = 46;
+                StopButton.Padding = new Thickness(20, 10, 20, 10);
+                TextureImage.Opacity = 0.48;
+                break;
+        }
     }
 
     private RectInt32 ComputeWorkAreaRect()
@@ -282,34 +356,48 @@ public sealed partial class OverlayWindow : Window
 
             int widthDip;
             int heightDip;
-            if (_style == OverlayVisualStyle.TopRibbon)
+            switch (_style)
             {
-                widthDip = 440;
-                heightDip = 120;
-            }
-            else
-            {
-                widthDip = Math.Min(680, Math.Max(380, (int)(work.Width / scale) - 64));
-                heightDip = 132;
+                case OverlayVisualStyle.TopRibbon: // A compact
+                    widthDip = 420;
+                    heightDip = 112;
+                    break;
+                case OverlayVisualStyle.EdgeDock: // C slim
+                    widthDip = 340;
+                    heightDip = 120;
+                    break;
+                default: // B hero
+                    widthDip = Math.Min(720, Math.Max(420, (int)(work.Width / scale) - 64));
+                    heightDip = 168;
+                    break;
             }
 
             var width = Math.Max(280, (int)Math.Round(widthDip * scale));
             var height = Math.Max(100, (int)Math.Round(heightDip * scale));
             width = Math.Min(width, work.Width - 16);
-            height = Math.Min(height, Math.Max(120, work.Height / 4));
+            height = Math.Min(height, Math.Max(100, work.Height / 4));
 
-            var x = work.X + Math.Max(0, (work.Width - width) / 2);
-            var y = _style == OverlayVisualStyle.TopRibbon
-                ? work.Y + (int)Math.Round(24 * scale)
-                : work.Y + work.Height - height - (int)Math.Round(36 * scale);
-
-            if (_entryEdge is OverlayEdge.Left or OverlayEdge.Right)
+            var margin = (int)Math.Round(16 * scale);
+            int x;
+            int y;
+            if (_style == OverlayVisualStyle.EdgeDock || _entryEdge is OverlayEdge.Left or OverlayEdge.Right)
             {
-                var margin = (int)Math.Round(16 * scale);
-                x = _entryEdge == OverlayEdge.Left
-                    ? work.X + margin
-                    : work.X + work.Width - width - margin;
+                // Side placement (C edge style, or A/B sliding from left/right).
+                var onRight = _entryEdge == OverlayEdge.Right;
+                x = onRight
+                    ? work.X + work.Width - width - margin
+                    : work.X + margin;
                 y = work.Y + Math.Max(0, (work.Height - height) / 2);
+            }
+            else if (_style == OverlayVisualStyle.TopRibbon)
+            {
+                x = work.X + Math.Max(0, (work.Width - width) / 2);
+                y = work.Y + (int)Math.Round(24 * scale);
+            }
+            else
+            {
+                x = work.X + Math.Max(0, (work.Width - width) / 2);
+                y = work.Y + work.Height - height - (int)Math.Round(36 * scale);
             }
 
             return new RectInt32(x, y, width, height);

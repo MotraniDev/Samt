@@ -112,7 +112,18 @@ public partial class App : Application
             _tray = new TrayIconService();
             _tray.Initialize();
             _tray.OpenRequested += (_, _) => ShowMainWindow();
-            _tray.ExitRequested += (_, _) => RequestExit();
+            _tray.ExitRequested += (_, _) => RequestExitCore("tray");
+            // Localized tray labels when language is already known.
+            try
+            {
+                _tray.UpdateMenuLabels(
+                    Localization.Get("TrayOpen"),
+                    Localization.Get("TrayExit"));
+            }
+            catch
+            {
+                // keys may be missing on first run — defaults already set
+            }
 
             _toasts = new ToastNotificationService();
             _toasts.Initialize(_tray);
@@ -124,7 +135,11 @@ public partial class App : Application
             MainWindow = _window;
             ApplyThemeFromSettings();
             WireCloseToTray(_window);
-            WindowActivation.ShowCentered(_window);
+            WindowActivation.ShowDockedRight(_window);
+            if (_window is MainWindow mainAtLaunch)
+            {
+                mainAtLaunch.CollapseNavigationPane();
+            }
 
             if (_startMinimized)
             {
@@ -167,8 +182,31 @@ public partial class App : Application
             return;
         }
 
-        // Fast path: restore previous size/position without re-centering (avoids multi-second hang).
-        WindowActivation.Restore(MainWindow);
+        // Dock right + vertical center, compact size, nav collapsed (same as first launch).
+        WindowActivation.ShowDockedRight(MainWindow);
+        if (MainWindow is Samt_App.MainWindow main)
+        {
+            main.CollapseNavigationPane();
+        }
+    }
+
+    public static void RefreshTrayMenuLabels()
+    {
+        if (Current is not App { _tray: { } tray })
+        {
+            return;
+        }
+
+        try
+        {
+            tray.UpdateMenuLabels(
+                Localization.Get("TrayOpen"),
+                Localization.Get("TrayExit"));
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"RefreshTrayMenuLabels: {ex.Message}");
+        }
     }
 
     private void HideMainWindowToTray()
@@ -239,12 +277,13 @@ public partial class App : Application
 
             OverlayVisualStyle? style = variantTag?.ToUpperInvariant() switch
             {
+                "A" => OverlayVisualStyle.TopRibbon,
                 "B" => OverlayVisualStyle.BottomDock,
-                "A" or "C" => OverlayVisualStyle.TopRibbon,
+                "C" => OverlayVisualStyle.EdgeDock,
                 _ => prayerStart ? OverlayVisualStyle.BottomDock : OverlayVisualStyle.TopRibbon
             };
 
-            // Variant C uses start-edge motion unless the edge box already chose something else.
+            // Variant C defaults to side entry unless the edge box already chose something else.
             if (string.Equals(variantTag, "C", StringComparison.OrdinalIgnoreCase)
                 && (edgeTag is null || edgeTag is "Top"))
             {
@@ -264,18 +303,83 @@ public partial class App : Application
         }
     }
 
-    private void RequestExit()
+    /// <summary>Full quit from tray menu, Exit button, or other UI — not close-to-tray.</summary>
+    public static void RequestExit()
     {
+        if (Current is App app)
+        {
+            app.RequestExitCore("ui");
+        }
+        else
+        {
+            Environment.Exit(0);
+        }
+    }
+
+    private void RequestExitCore(string source)
+    {
+        if (_exitRequested || IsExitRequested)
+        {
+            return;
+        }
+
         _exitRequested = true;
         IsExitRequested = true;
-        LaunchLog.Write("Exit requested from tray");
+        LaunchLog.Write($"Exit requested from {source}");
 
-        _notificationHost?.Dispose();
-        _overlay?.Dispose();
-        _audio?.Dispose();
-        _toasts?.Unregister();
-        _tray?.Dispose();
-        _singleInstance?.Dispose();
+        try
+        {
+            _notificationHost?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Exit dispose host: {ex.Message}");
+        }
+
+        try
+        {
+            _overlay?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Exit dispose overlay: {ex.Message}");
+        }
+
+        try
+        {
+            _audio?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Exit dispose audio: {ex.Message}");
+        }
+
+        try
+        {
+            _toasts?.Unregister();
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Exit dispose toasts: {ex.Message}");
+        }
+
+        try
+        {
+            _tray?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Exit dispose tray: {ex.Message}");
+        }
+
+        try
+        {
+            _singleInstance?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Exit dispose single-instance: {ex.Message}");
+        }
 
         try
         {

@@ -36,7 +36,8 @@ public static class SettingsJson
             DefaultOverlay = CreateDefaultOverlay(),
             AdhanSoundId = BuiltInSoundIds.AdhanAlaqsa,
             PreAlertSoundId = BuiltInSoundIds.Takbir,
-            UserSounds = []
+            UserSounds = [],
+            MinuteAdjustments = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
         };
     }
 
@@ -126,8 +127,41 @@ public static class SettingsJson
             PreAlertSoundId = string.IsNullOrWhiteSpace(settings.PreAlertSoundId)
                 ? BuiltInSoundIds.Takbir
                 : settings.PreAlertSoundId.Trim(),
-            UserSounds = NormalizeUserSounds(settings.UserSounds)
+            UserSounds = NormalizeUserSounds(settings.UserSounds),
+            MinuteAdjustments = NormalizeMinuteAdjustments(settings.MinuteAdjustments)
         };
+    }
+
+    private static IReadOnlyDictionary<string, int> NormalizeMinuteAdjustments(
+        IReadOnlyDictionary<string, int>? source)
+    {
+        if (source is null || source.Count == 0)
+        {
+            return new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, minutes) in source)
+        {
+            if (string.IsNullOrWhiteSpace(key) || minutes == 0)
+            {
+                continue;
+            }
+
+            // Clamp extreme offsets (±3 hours) to avoid accidental huge shifts.
+            var clamped = Math.Clamp(minutes, -180, 180);
+            if (clamped == 0)
+            {
+                continue;
+            }
+
+            if (Enum.TryParse<PrayerEvent>(key.Trim(), ignoreCase: true, out var prayer))
+            {
+                result[prayer.ToString()] = clamped;
+            }
+        }
+
+        return result;
     }
 
     private static AudioProfile NormalizeAudio(AudioProfile? audio)

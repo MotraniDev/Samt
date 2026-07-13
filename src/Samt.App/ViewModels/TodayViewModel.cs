@@ -237,6 +237,67 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    /// <summary>
+    /// Set a manual clock time for a prayer; stores a persistent minute offset from the
+    /// unadjusted calculation so notifications and the timeline stay consistent.
+    /// </summary>
+    public async Task SetManualTimeAsync(PrayerEvent prayer, TimeSpan localTimeOfDay)
+    {
+        if (_schedule is null)
+        {
+            return;
+        }
+
+        var location = _appState.RequireActiveLocation();
+        var baseProfile = CalculationMethods
+            .GetById(_appState.Settings.ActiveCalculationProfileId)
+            .WithAsr(_appState.Settings.AsrMadhab);
+        var baseSchedule = _engine.Calculate(_schedule.Date, location, baseProfile);
+        if (!baseSchedule.Times.TryGetValue(prayer, out var baseTime))
+        {
+            return;
+        }
+
+        var desired = new DateTimeOffset(
+            _schedule.Date.ToDateTime(TimeOnly.FromTimeSpan(localTimeOfDay)),
+            baseTime.Offset);
+
+        // Prefer same civil day; if user set a time far past midnight edge, still clamp minutes.
+        var deltaMinutes = (int)Math.Round((desired - baseTime).TotalMinutes);
+        deltaMinutes = Math.Clamp(deltaMinutes, -180, 180);
+
+        var map = _appState.Settings.MinuteAdjustments.ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value,
+            StringComparer.OrdinalIgnoreCase);
+
+        if (deltaMinutes == 0)
+        {
+            map.Remove(prayer.ToString());
+        }
+        else
+        {
+            map[prayer.ToString()] = deltaMinutes;
+        }
+
+        await _appState.UpdateAsync(s => s.With(minuteAdjustments: map));
+    }
+
+    public async Task ClearManualTimeAsync(PrayerEvent prayer)
+    {
+        if (!_appState.Settings.HasManualAdjustment(prayer))
+        {
+            return;
+        }
+
+        var map = _appState.Settings.MinuteAdjustments.ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value,
+            StringComparer.OrdinalIgnoreCase);
+        map.Remove(prayer.ToString());
+        await _appState.UpdateAsync(s => s.With(minuteAdjustments: map));
+    }
+
     private void RebuildRows(bool force)
     {
         if (_schedule is null)
@@ -294,7 +355,9 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
                 FormatPrayerName(key),
                 LatinDigits.Time(time),
                 LatinDigits.Time(time, "HH:mm:ss"),
-                IsNext: nextKey == key));
+                IsNext: nextKey == key,
+                Event: key,
+                IsManuallyAdjusted: _appState.Settings.HasManualAdjustment(key)));
         }
     }
 

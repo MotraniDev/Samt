@@ -7,9 +7,10 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:Samt_App.ViewModels"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    FontFamily="{StaticResource SamtUiFont}">
 
-    <Grid Padding="24" RowSpacing="16">
+    <Grid Padding="28,24" RowSpacing="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -19,12 +20,12 @@
         </Grid.RowDefinitions>
 
         <StackPanel Spacing="4">
-            <TextBlock x:Name="TitleText" FontSize="24" FontWeight="SemiBold" Foreground="{StaticResource SamtGoldBrush}" />
-            <TextBlock x:Name="PhaseText" FontSize="12" Opacity="0.65" Text="{x:Bind ViewModel.PhaseBanner, Mode=OneWay}" />
+            <TextBlock x:Name="TitleText" Style="{StaticResource SamtPageTitle}" FontSize="26" />
+            <TextBlock x:Name="PhaseText" Style="{StaticResource SamtBody}" FontSize="12" Opacity="0.65" Text="{x:Bind ViewModel.PhaseBanner, Mode=OneWay}" />
         </StackPanel>
 
         <Border Grid.Row="1" Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{StaticResource SamtGoldBrush}" BorderThickness="1" CornerRadius="12">
+                BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1" CornerRadius="16">
             <Grid ColumnSpacing="16" RowSpacing="12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

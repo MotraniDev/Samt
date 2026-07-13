@@ -41,6 +41,20 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    /// <summary>Collapse the navigation pane (compact rail) — used on launch / tray show.</summary>
+    public void CollapseNavigationPane()
+    {
+        try
+        {
+            NavView.IsPaneOpen = false;
+            UpdateChromeForPaneState();
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"CollapseNavigationPane: {ex.Message}");
+        }
+    }
+
     private void NavView_OnLoaded(object sender, RoutedEventArgs e)
     {
         _navReady = true;
@@ -51,6 +65,54 @@ public sealed partial class MainWindow : Window
         }
 
         ApplyChromeLabels();
+        UpdateChromeForPaneState();
+    }
+
+    private void NavView_OnPaneOpened(NavigationView sender, object args)
+        => UpdateChromeForPaneState();
+
+    private void NavView_OnPaneClosed(NavigationView sender, object args)
+        => UpdateChromeForPaneState();
+
+    private void NavView_OnDisplayModeChanged(NavigationView sender, NavigationViewDisplayModeChangedEventArgs args)
+        => UpdateChromeForPaneState();
+
+    private void UpdateChromeForPaneState()
+    {
+        // Expanded footer only when the pane is open in Left mode; compact icons when collapsed.
+        var expanded = NavView.IsPaneOpen
+                       && NavView.DisplayMode is NavigationViewDisplayMode.Expanded
+                           or NavigationViewDisplayMode.Compact;
+
+        // LeftCompact with closed pane: show compact chrome over content start edge.
+        // When pane is fully open, use the footer stack only.
+        var showCompact = !NavView.IsPaneOpen
+                          || NavView.DisplayMode == NavigationViewDisplayMode.Minimal;
+
+        PaneFooterExpanded.Visibility = expanded && NavView.IsPaneOpen
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        // When pane is open but narrow (still shows footer area), keep expanded footer.
+        if (NavView.IsPaneOpen && NavView.DisplayMode != NavigationViewDisplayMode.Minimal)
+        {
+            PaneFooterExpanded.Visibility = Visibility.Visible;
+            showCompact = false;
+        }
+
+        CompactChrome.Visibility = showCompact ? Visibility.Visible : Visibility.Collapsed;
+
+        // Dock compact chrome to the pane edge (start = left in LTR, right in RTL).
+        if (Content is FrameworkElement root)
+        {
+            var rtl = root.FlowDirection == FlowDirection.RightToLeft;
+            CompactChrome.HorizontalAlignment = rtl
+                ? HorizontalAlignment.Right
+                : HorizontalAlignment.Left;
+            CompactChrome.Margin = rtl
+                ? new Thickness(0, 0, 4, 10)
+                : new Thickness(4, 0, 0, 10);
+        }
     }
 
     private void NavView_OnSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
@@ -111,7 +173,64 @@ public sealed partial class MainWindow : Window
         ThemeSystemItem.Content = loc.Get("ThemeSystem");
         ThemeLightItem.Content = loc.Get("ThemeLight");
         ThemeDarkItem.Content = loc.Get("ThemeDark");
+        ExitAppButtonLabel.Text = loc.Get("ExitApp");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(ExitAppButton, loc.Get("ExitApp"));
+        ToolTipService.SetToolTip(CompactLangButton, loc.Get("Language"));
+        ToolTipService.SetToolTip(CompactThemeButton, loc.Get("Theme"));
+        ToolTipService.SetToolTip(CompactExitButton, loc.Get("ExitApp"));
         Title = loc.Get("AppDisplayName") + " — " + loc.Get("AppTagline");
+
+        UpdateChromeForPaneState();
+
+        // Keep tray menu labels in sync with UI language.
+        if (Application.Current is App)
+        {
+            try
+            {
+                App.RefreshTrayMenuLabels();
+            }
+            catch
+            {
+                // non-fatal
+            }
+        }
+    }
+
+    private void ExitAppButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        App.RequestExit();
+    }
+
+    private async void CompactLangButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        var next = App.Localization.CurrentLanguage.StartsWith("ar", StringComparison.OrdinalIgnoreCase)
+            ? "en-US"
+            : "ar";
+        App.Localization.SetLanguage(next);
+        await App.State.UpdateAsync(s => s.With(language: next.StartsWith("ar", StringComparison.OrdinalIgnoreCase) ? "ar" : "en-US"));
+        SyncLanguageBox();
+        ApplyChromeLabels();
+    }
+
+    private async void CompactThemeButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        var choice = App.Theme.Current switch
+        {
+            AppThemeChoice.Light => AppThemeChoice.Dark,
+            AppThemeChoice.Dark => AppThemeChoice.System,
+            _ => AppThemeChoice.Light
+        };
+
+        var themeKey = choice switch
+        {
+            AppThemeChoice.Light => "light",
+            AppThemeChoice.Dark => "dark",
+            _ => "system"
+        };
+
+        App.Theme.Apply(this, choice);
+        await App.State.UpdateAsync(s => s.With(theme: themeKey));
+        SyncThemeBox();
     }
 
     private void SyncLanguageBox()

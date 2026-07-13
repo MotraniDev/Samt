@@ -6,18 +6,20 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    FontFamily="{StaticResource SamtUiFont}">
 
-    <ScrollViewer Padding="24">
+    <ScrollViewer Padding="28,24">
         <StackPanel MaxWidth="720" Spacing="16">
             <TextBlock x:Name="TitleText" Style="{StaticResource SamtPageTitle}" />
             <TextBlock x:Name="PriorityNote" Text="{x:Bind ViewModel.PriorityNote, Mode=OneWay}"
+                       Style="{StaticResource SamtBody}"
                        TextWrapping="Wrap" Opacity="0.8" />
 
             <!-- Prayer start -->
-            <Border Padding="16" CornerRadius="12"
+            <Border Padding="18" CornerRadius="16"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                    BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1">
                 <StackPanel Spacing="10">
                     <TextBlock x:Name="StartSection" Style="{StaticResource SamtSectionLabel}" />
                     <CheckBox x:Name="StartEnabledCheck"
@@ -42,7 +44,7 @@
             <!-- Pre-alert -->
             <Border Padding="16" CornerRadius="12"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                    BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1">
                 <StackPanel Spacing="10">
                     <TextBlock x:Name="BeforeSection" Style="{StaticResource SamtSectionLabel}" />
                     <CheckBox x:Name="BeforeEnabledCheck"
@@ -58,7 +60,9 @@
                     <StackPanel Orientation="Horizontal" Spacing="12">
                         <CheckBox x:Name="BeforeToastCheck" IsChecked="{x:Bind ViewModel.BeforeToast, Mode=TwoWay}" />
                         <CheckBox x:Name="BeforeOverlayCheck" IsChecked="{x:Bind ViewModel.BeforeOverlay, Mode=TwoWay}" />
+                        <CheckBox x:Name="BeforeAudioCheck" IsChecked="{x:Bind ViewModel.BeforeAudio, Mode=TwoWay}" />
                     </StackPanel>
+                    <TextBlock x:Name="BeforeAudioHint" FontSize="12" Opacity="0.65" TextWrapping="Wrap" />
                     <TextBlock x:Name="ExceptionsLabel" Opacity="0.75" Margin="0,8,0,0" />
                     <TextBlock x:Name="ExceptionsHint" FontSize="12" Opacity="0.65" TextWrapping="Wrap" />
 

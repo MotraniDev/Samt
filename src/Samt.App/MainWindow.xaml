@@ -10,17 +10,22 @@
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <NavigationView
             x:Name="NavView"
+            FontFamily="{StaticResource SamtUiFont}"
             IsBackButtonVisible="Collapsed"
             IsSettingsVisible="False"
             PaneDisplayMode="Left"
             OpenPaneLength="220"
-            IsPaneOpen="True"
+            CompactPaneLength="52"
+            IsPaneOpen="False"
+            PaneOpened="NavView_OnPaneOpened"
+            PaneClosed="NavView_OnPaneClosed"
+            DisplayModeChanged="NavView_OnDisplayModeChanged"
             SelectionChanged="NavView_OnSelectionChanged"
             Loaded="NavView_OnLoaded">
             <NavigationView.MenuItems>
                 <NavigationViewItem x:Name="NavToday" Tag="today" IsSelected="True">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE80F;" />
+                        <FontIcon Glyph="&#xE80F;" Foreground="{StaticResource SamtGoldBrush}" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem x:Name="NavLocations" Tag="locations">
@@ -51,22 +56,100 @@
             </NavigationView.MenuItems>
 
             <NavigationView.PaneFooter>
-                <StackPanel Padding="12" Spacing="8">
+                <!-- Expanded footer (full pane) -->
+                <StackPanel x:Name="PaneFooterExpanded" Padding="12,8,12,14" Spacing="8">
+                    <StackPanel Spacing="0" Margin="0,0,0,2">
+                        <TextBlock
+                            FontFamily="{StaticResource SamtDisplayFont}"
+                            FontSize="20"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource SamtGoldBrush}"
+                            HorizontalAlignment="Center"
+                            Text="سَمت" />
+                        <TextBlock
+                            FontFamily="{StaticResource SamtUiFont}"
+                            FontSize="10"
+                            CharacterSpacing="80"
+                            Opacity="0.55"
+                            HorizontalAlignment="Center"
+                            Text="SAMT" />
+                    </StackPanel>
                     <ComboBox x:Name="LanguageBox" HorizontalAlignment="Stretch"
+                              FontFamily="{StaticResource SamtUiFont}"
                               SelectionChanged="LanguageBox_OnSelectionChanged">
                         <ComboBoxItem Content="العربية" Tag="ar" />
                         <ComboBoxItem Content="English" Tag="en-US" />
                     </ComboBox>
                     <ComboBox x:Name="ThemeBox" HorizontalAlignment="Stretch"
+                              FontFamily="{StaticResource SamtUiFont}"
                               SelectionChanged="ThemeBox_OnSelectionChanged">
                         <ComboBoxItem x:Name="ThemeSystemItem" Tag="System" />
                         <ComboBoxItem x:Name="ThemeLightItem" Tag="Light" />
                         <ComboBoxItem x:Name="ThemeDarkItem" Tag="Dark" />
                     </ComboBox>
+                    <!-- Window close only hides to tray — explicit exit is required. -->
+                    <Button
+                        x:Name="ExitAppButton"
+                        HorizontalAlignment="Stretch"
+                        Click="ExitAppButton_OnClick"
+                        FontFamily="{StaticResource SamtUiFont}"
+                        FontWeight="SemiBold">
+                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                            <FontIcon Glyph="&#xE7E8;" FontSize="14" />
+                            <TextBlock x:Name="ExitAppButtonLabel" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </NavigationView.PaneFooter>
 
             <Frame x:Name="ContentFrame" />
         </NavigationView>
+
+        <!-- Compact chrome when nav pane is collapsed (icons only, docked start edge) -->
+        <Border
+            x:Name="CompactChrome"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Bottom"
+            Margin="4,0,0,10"
+            Width="48"
+            Visibility="Collapsed"
+            Background="Transparent">
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                <TextBlock
+                    FontFamily="{StaticResource SamtDisplayFont}"
+                    FontSize="14"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource SamtGoldBrush}"
+                    HorizontalAlignment="Center"
+                    Text="س" />
+                <Button
+                    x:Name="CompactLangButton"
+                    Width="40"
+                    Height="36"
+                    Padding="0"
+                    Click="CompactLangButton_OnClick"
+                    ToolTipService.ToolTip="Language">
+                    <FontIcon Glyph="&#xE774;" FontSize="14" />
+                </Button>
+                <Button
+                    x:Name="CompactThemeButton"
+                    Width="40"
+                    Height="36"
+                    Padding="0"
+                    Click="CompactThemeButton_OnClick"
+                    ToolTipService.ToolTip="Theme">
+                    <FontIcon Glyph="&#xE793;" FontSize="14" />
+                </Button>
+                <Button
+                    x:Name="CompactExitButton"
+                    Width="40"
+                    Height="36"
+                    Padding="0"
+                    Click="ExitAppButton_OnClick"
+                    ToolTipService.ToolTip="Exit">
+                    <FontIcon Glyph="&#xE7E8;" FontSize="14" />
+                </Button>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

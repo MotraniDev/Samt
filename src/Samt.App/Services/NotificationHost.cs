@@ -380,16 +380,16 @@ public sealed class NotificationHost : IDisposable
             _toasts.Show(item, prayerName, title);
         }
 
-        // Pre-alert plays a short library cue with toast/overlay (not the full adhan).
+        // Pre-alert plays the library cue only when Audio channel is enabled (user choice).
         // Prayer-start plays adhan only when the Audio channel is enabled.
-        var wantsCue = item.Kind == PlannedNotificationKind.BeforePrayer
-                       && (wantsToast || wantsOverlay)
-                       && !string.Equals(
-                           _state.Settings.PreAlertSoundId,
-                           BuiltInSoundIds.Silent,
-                           StringComparison.OrdinalIgnoreCase);
+        var wantsPreAlertCue = item.Kind == PlannedNotificationKind.BeforePrayer
+                               && wantsAudio
+                               && !string.Equals(
+                                   _state.Settings.PreAlertSoundId,
+                                   BuiltInSoundIds.Silent,
+                                   StringComparison.OrdinalIgnoreCase);
 
-        var audio = ResolveAudio(item, wantsAudio: wantsAudio || wantsCue);
+        var audio = ResolveAudio(item, wantsAudio: wantsAudio || wantsPreAlertCue);
 
         // Overlay service owns audio when both are requested (stop button stops adhan).
         if (wantsOverlay)

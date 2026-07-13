@@ -98,6 +98,13 @@ public sealed class AppSettings
     /// <summary>User-added sounds (copied under LocalAppData\SAMT\sounds).</summary>
     public IReadOnlyList<UserSoundEntry> UserSounds { get; init; } = [];
 
+    /// <summary>
+    /// Signed minute offsets applied after calculation (manual adhan time tweaks).
+    /// Keys are <see cref="PrayerEvent"/> names; only non-zero values are persisted.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> MinuteAdjustments { get; init; }
+        = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
     public LocationProfile? GetActiveLocation()
     {
         if (Locations.Count == 0)
@@ -118,7 +125,45 @@ public sealed class AppSettings
     }
 
     public CalculationProfile GetActiveCalculationProfile()
-        => CalculationMethods.GetById(ActiveCalculationProfileId).WithAsr(AsrMadhab);
+    {
+        var baseProfile = CalculationMethods.GetById(ActiveCalculationProfileId).WithAsr(AsrMadhab);
+        var adjustments = ToPrayerAdjustments(MinuteAdjustments);
+        return adjustments.Count == 0
+            ? baseProfile
+            : baseProfile.WithAdjustments(adjustments);
+    }
+
+    /// <summary>True when the user has a non-zero manual offset for this prayer.</summary>
+    public bool HasManualAdjustment(PrayerEvent prayer)
+        => MinuteAdjustments.TryGetValue(prayer.ToString(), out var m) && m != 0;
+
+    public int GetMinuteAdjustment(PrayerEvent prayer)
+        => MinuteAdjustments.TryGetValue(prayer.ToString(), out var m) ? m : 0;
+
+    public static IReadOnlyDictionary<PrayerEvent, int> ToPrayerAdjustments(
+        IReadOnlyDictionary<string, int>? source)
+    {
+        if (source is null || source.Count == 0)
+        {
+            return new Dictionary<PrayerEvent, int>();
+        }
+
+        var result = new Dictionary<PrayerEvent, int>();
+        foreach (var (key, minutes) in source)
+        {
+            if (minutes == 0)
+            {
+                continue;
+            }
+
+            if (Enum.TryParse<PrayerEvent>(key, ignoreCase: true, out var prayer))
+            {
+                result[prayer] = minutes;
+            }
+        }
+
+        return result;
+    }
 
     public AppSettings With(
         string? language = null,
@@ -136,7 +181,8 @@ public sealed class AppSettings
         OverlayProfile? defaultOverlay = null,
         string? adhanSoundId = null,
         string? preAlertSoundId = null,
-        IReadOnlyList<UserSoundEntry>? userSounds = null)
+        IReadOnlyList<UserSoundEntry>? userSounds = null,
+        IReadOnlyDictionary<string, int>? minuteAdjustments = null)
         => new()
         {
             SchemaVersion = CurrentSchemaVersion,
@@ -154,6 +200,7 @@ public sealed class AppSettings
             DefaultOverlay = defaultOverlay ?? DefaultOverlay,
             AdhanSoundId = adhanSoundId ?? AdhanSoundId,
             PreAlertSoundId = preAlertSoundId ?? PreAlertSoundId,
-            UserSounds = userSounds ?? UserSounds
+            UserSounds = userSounds ?? UserSounds,
+            MinuteAdjustments = minuteAdjustments ?? MinuteAdjustments
         };
 }

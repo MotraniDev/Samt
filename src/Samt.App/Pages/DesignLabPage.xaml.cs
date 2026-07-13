@@ -195,52 +195,82 @@ public sealed partial class DesignLabPage : Page
 
     private void ApplyVariantVisuals()
     {
+        // Reset light/dark text colors (C used to flip to ivory card).
+        ToastEyebrow.Foreground = (Brush)Application.Current.Resources["SamtGoldSoftBrush"];
+        ToastTitle.Foreground = (Brush)Application.Current.Resources["SamtIvoryBrush"];
+        ToastTime.Foreground = (Brush)Application.Current.Resources["SamtGoldBrightBrush"];
+        ToastSubtitle.Foreground = (Brush)Application.Current.Resources["SamtIvoryBrush"];
+
         switch (_variant)
         {
-            case "B":
+            case "B": // Bottom dock — largest type
                 ToastCard.VerticalAlignment = VerticalAlignment.Bottom;
                 ToastCard.HorizontalAlignment = HorizontalAlignment.Stretch;
                 ToastCard.Margin = new Thickness(32, 0, 32, 48);
-                ToastCard.CornerRadius = new CornerRadius(24);
+                ToastCard.CornerRadius = new CornerRadius(20);
+                ToastCard.MaxWidth = 720;
                 ToastTitle.Text = "المغرب";
                 ToastTime.Text = "18:28";
                 ToastSubtitle.Text = "دخل وقت الصلاة";
                 StopBtn.Content = "إيقاف الأذان";
                 ToastBgBrush.Color = Color.FromArgb(255, 0x07, 0x15, 0x25);
+                ApplyTypeScale(eyebrow: 12, title: 34, time: 38, subtitle: 16, stop: 15, stackGap: 6, padX: 26, padY: 20);
                 break;
-            case "C":
+            case "C": // Edge — slim compact type
                 ToastCard.VerticalAlignment = VerticalAlignment.Center;
                 ToastCard.HorizontalAlignment = FlowDirection == FlowDirection.RightToLeft
                     ? HorizontalAlignment.Right
                     : HorizontalAlignment.Left;
-                ToastCard.Margin = new Thickness(0);
-                ToastCard.CornerRadius = new CornerRadius(0, 16, 16, 0);
+                ToastCard.Margin = new Thickness(16, 0, 16, 0);
+                ToastCard.CornerRadius = new CornerRadius(16);
+                ToastCard.MaxWidth = 340;
                 ToastTitle.Text = "العشاء";
                 ToastTime.Text = "20:05";
                 ToastSubtitle.Text = "اضغط Esc للإيقاف";
                 StopBtn.Content = "Esc";
-                ToastBgBrush.Color = Color.FromArgb(255, 0xF4, 0xEF, 0xE4);
-                ToastTitle.Foreground = (Brush)Application.Current.Resources["SamtNavyBrush"];
-                ToastTime.Foreground = (Brush)Application.Current.Resources["SamtGreenBrush"];
-                ToastSubtitle.Foreground = (Brush)Application.Current.Resources["SamtNavyBrush"];
+                ToastBgBrush.Color = Color.FromArgb(255, 0x07, 0x15, 0x25);
+                ApplyTypeScale(eyebrow: 10, title: 20, time: 24, subtitle: 12, stop: 12, stackGap: 3, padX: 16, padY: 12);
                 break;
-            default:
+            default: // A Top — compact ribbon
                 ToastCard.VerticalAlignment = VerticalAlignment.Top;
                 ToastCard.HorizontalAlignment = HorizontalAlignment.Center;
                 ToastCard.Margin = new Thickness(24, 40, 24, 0);
                 ToastCard.CornerRadius = new CornerRadius(14);
+                ToastCard.MaxWidth = 420;
                 ToastTitle.Text = "الفجر";
                 ToastTime.Text = "05:12";
                 ToastSubtitle.Text = "دخل وقت الصلاة";
                 StopBtn.Content = "إيقاف";
                 ToastBgBrush.Color = Color.FromArgb(255, 0x0B, 0x1F, 0x33);
-                ToastTitle.Foreground = (Brush)Application.Current.Resources["SamtIvoryBrush"];
-                ToastTime.Foreground = (Brush)Application.Current.Resources["SamtGoldSoftBrush"];
-                ToastSubtitle.Foreground = (Brush)Application.Current.Resources["SamtIvoryBrush"];
+                ApplyTypeScale(eyebrow: 10, title: 22, time: 26, subtitle: 13, stop: 13, stackGap: 3, padX: 18, padY: 12);
                 break;
         }
 
         ApplyOpacity();
+    }
+
+    private void ApplyTypeScale(
+        double eyebrow,
+        double title,
+        double time,
+        double subtitle,
+        double stop,
+        double stackGap,
+        double padX,
+        double padY)
+    {
+        ToastEyebrow.FontSize = eyebrow;
+        ToastTitle.FontSize = title;
+        ToastTime.FontSize = time;
+        ToastSubtitle.FontSize = subtitle;
+        StopBtn.FontSize = stop;
+        ToastTextStack.Spacing = stackGap;
+        ToastContentPanel.Padding = new Thickness(padX, padY, padX, padY);
+        StopBtn.MinWidth = stop >= 15 ? 120 : stop >= 13 ? 96 : 84;
+        StopBtn.MinHeight = stop >= 15 ? 46 : stop >= 13 ? 36 : 34;
+        var px = stop >= 15 ? 20 : 14;
+        var py = stop >= 15 ? 10 : 8;
+        StopBtn.Padding = new Thickness(px, py, px, py);
     }
 
     private void ApplyOpacity()

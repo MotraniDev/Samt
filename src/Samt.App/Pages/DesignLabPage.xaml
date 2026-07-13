@@ -25,51 +25,78 @@
                 VerticalAlignment="Top"
                 HorizontalAlignment="Center"
                 Margin="24,40,24,0"
-                Padding="20,16"
-                CornerRadius="14"
-                BorderBrush="{StaticResource SamtGoldBrush}"
-                BorderThickness="1"
-                MaxWidth="440"
-                MinWidth="280"
-                Opacity="0.92"
+                Padding="0"
+                CornerRadius="16"
+                BorderBrush="{StaticResource SamtGoldSoftBrush}"
+                BorderThickness="1.5"
+                MaxWidth="480"
+                MinWidth="300"
+                Opacity="0.94"
                 RenderTransformOrigin="0.5,0.5">
                 <Border.Background>
-                    <SolidColorBrush x:Name="ToastBgBrush" Color="#0B1F33" Opacity="0.92" />
+                    <SolidColorBrush x:Name="ToastBgBrush" Color="#071525" Opacity="0.96" />
                 </Border.Background>
                 <Border.RenderTransform>
                     <CompositeTransform x:Name="ToastTransform" TranslateY="-80" />
                 </Border.RenderTransform>
-                <Grid ColumnSpacing="16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Spacing="4">
-                        <TextBlock
-                            x:Name="ToastTitle"
-                            Text="الفجر"
-                            Foreground="{StaticResource SamtIvoryBrush}"
-                            FontSize="20"
-                            FontWeight="SemiBold" />
-                        <TextBlock
-                            x:Name="ToastTime"
-                            Style="{StaticResource LatinDigitsTextBlock}"
-                            Text="05:12"
-                            Foreground="{StaticResource SamtGoldSoftBrush}"
-                            FontSize="28" />
-                        <TextBlock
-                            x:Name="ToastSubtitle"
-                            Text="دخل وقت الصلاة"
-                            Foreground="{StaticResource SamtIvoryBrush}"
-                            Opacity="0.75"
-                            FontSize="13" />
-                    </StackPanel>
-                    <Button
-                        x:Name="StopBtn"
-                        Grid.Column="1"
-                        Content="إيقاف"
-                        VerticalAlignment="Center"
-                        Click="StopBtn_OnClick" />
+                <Grid>
+                    <Image
+                        Source="ms-appx:///Assets/Textures/islamic-tile.png"
+                        Stretch="UniformToFill"
+                        Opacity="0.42"
+                        IsHitTestVisible="False" />
+                    <Border>
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#CC071525" Offset="0" />
+                                <GradientStop Color="#9914324F" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <Grid x:Name="ToastContentPanel" Padding="22,16" ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel x:Name="ToastTextStack" Spacing="4">
+                            <TextBlock
+                                x:Name="ToastEyebrow"
+                                FontFamily="{StaticResource SamtUiFont}"
+                                Text="حان وقت الصلاة"
+                                Foreground="{StaticResource SamtGoldSoftBrush}"
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                Opacity="0.8" />
+                            <TextBlock
+                                x:Name="ToastTitle"
+                                Text="الفجر"
+                                FontFamily="{StaticResource SamtDisplayFont}"
+                                Foreground="{StaticResource SamtIvoryBrush}"
+                                FontSize="26"
+                                FontWeight="Bold" />
+                            <TextBlock
+                                x:Name="ToastTime"
+                                Style="{StaticResource LatinDigitsTextBlock}"
+                                Text="05:12"
+                                Foreground="{StaticResource SamtGoldBrightBrush}"
+                                FontSize="30" />
+                            <TextBlock
+                                x:Name="ToastSubtitle"
+                                Text="دخل وقت الصلاة"
+                                FontFamily="{StaticResource SamtNaskhFont}"
+                                Foreground="{StaticResource SamtIvoryBrush}"
+                                Opacity="0.85"
+                                FontSize="14" />
+                        </StackPanel>
+                        <Button
+                            x:Name="StopBtn"
+                            Grid.Column="1"
+                            Content="إيقاف"
+                            FontFamily="{StaticResource SamtUiFont}"
+                            FontSize="14"
+                            VerticalAlignment="Center"
+                            Click="StopBtn_OnClick" />
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

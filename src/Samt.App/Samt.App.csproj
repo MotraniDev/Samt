@@ -37,6 +37,9 @@
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
     <Content Include="Assets\Audio\library\**\*" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Audio\README.md" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Arabic / UI typefaces (OFL) + islamic textures -->
+    <Content Include="Assets\Fonts\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Textures\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

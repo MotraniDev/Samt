@@ -96,6 +96,42 @@ public class SettingsStoreTests
         Assert.Equal(OverlayEdge.Bottom, settings.DefaultOverlay.EntryEdge);
         Assert.InRange(settings.DefaultOverlay.Opacity, 0.3, 1.0);
         Assert.True(settings.DefaultOverlay.AnimationDuration.TotalMilliseconds > 0);
+        Assert.Empty(settings.MinuteAdjustments);
+    }
+
+    [Fact]
+    public async Task SaveAndLoad_RoundTripsMinuteAdjustments()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "samt-tests-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new JsonSettingsStore(dir);
+            var settings = SettingsJson.CreateDefault().With(
+                minuteAdjustments: new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+                {
+                    [PrayerEvent.Fajr.ToString()] = 2,
+                    [PrayerEvent.Maghrib.ToString()] = -1
+                });
+
+            await store.SaveAsync(settings);
+            var loaded = await store.LoadAsync();
+
+            Assert.True(loaded.HasManualAdjustment(PrayerEvent.Fajr));
+            Assert.Equal(2, loaded.GetMinuteAdjustment(PrayerEvent.Fajr));
+            Assert.Equal(-1, loaded.GetMinuteAdjustment(PrayerEvent.Maghrib));
+            Assert.False(loaded.HasManualAdjustment(PrayerEvent.Dhuhr));
+
+            var profile = loaded.GetActiveCalculationProfile();
+            Assert.Equal(2, profile.GetAdjustment(PrayerEvent.Fajr));
+            Assert.Equal(-1, profile.GetAdjustment(PrayerEvent.Maghrib));
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+        }
     }
 
     [Fact]
