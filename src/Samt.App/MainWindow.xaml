@@ -6,17 +6,15 @@
     xmlns:local="using:Samt_App"
     Title="سَمت / SAMT">
 
-    <Window.SystemBackdrop>
-        <MicaBackdrop />
-    </Window.SystemBackdrop>
-
-    <Grid>
+    <!-- Avoid custom title-bar / mica edge cases until shell is stable on unpackaged runs. -->
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <NavigationView
             x:Name="NavView"
             IsBackButtonVisible="Collapsed"
             IsSettingsVisible="False"
             PaneDisplayMode="Left"
             OpenPaneLength="220"
+            IsPaneOpen="True"
             SelectionChanged="NavView_OnSelectionChanged"
             Loaded="NavView_OnLoaded">
             <NavigationView.MenuItems>
@@ -33,6 +31,11 @@
                 <NavigationViewItem x:Name="NavDiagnostics" Tag="diagnostics">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE9D9;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="NavDesignLab" Tag="designlab">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE790;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>

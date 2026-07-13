@@ -38,20 +38,30 @@
                     <TextBlock x:Name="NameLabel" Opacity="0.75" />
                     <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock x:Name="LatLabel" Opacity="0.75" />
-                    <TextBox Text="{x:Bind ViewModel.Latitude, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             FontFamily="Consolas" />
+                    <TextBox
+                        Style="{StaticResource LatinDigitsTextBox}"
+                        Text="{x:Bind ViewModel.Latitude, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        PlaceholderText="31.5569" />
                     <TextBlock x:Name="LonLabel" Opacity="0.75" />
-                    <TextBox Text="{x:Bind ViewModel.Longitude, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             FontFamily="Consolas" />
+                    <TextBox
+                        Style="{StaticResource LatinDigitsTextBox}"
+                        Text="{x:Bind ViewModel.Longitude, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        PlaceholderText="-2.4181" />
                     <TextBlock x:Name="TzLabel" Opacity="0.75" />
-                    <ComboBox HorizontalAlignment="Stretch"
-                              ItemsSource="{x:Bind ViewModel.TimeZoneIds}"
-                              SelectedItem="{x:Bind ViewModel.TimeZoneId, Mode=TwoWay}" />
+                    <ComboBox
+                        Language="en-US"
+                        HorizontalAlignment="Stretch"
+                        ItemsSource="{x:Bind ViewModel.TimeZoneIds}"
+                        SelectedItem="{x:Bind ViewModel.TimeZoneId, Mode=TwoWay}" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button x:Name="SaveButton" Click="SaveButton_OnClick" Style="{StaticResource AccentButtonStyle}" />
                         <Button x:Name="GpsButton" Click="GpsButton_OnClick" />
                     </StackPanel>
-                    <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" TextWrapping="Wrap" Opacity="0.85" />
+                    <TextBlock
+                        Language="en-US"
+                        Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+                        TextWrapping="Wrap"
+                        Opacity="0.85" />
                     <TextBlock x:Name="PrivacyNote" FontSize="12" Opacity="0.65" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>

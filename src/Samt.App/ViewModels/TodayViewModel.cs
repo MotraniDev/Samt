@@ -19,7 +19,9 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
     private PrayerSchedule? _schedule;
     private NextPrayerInfo? _next;
+    private PrayerEvent? _markedNext;
     private bool _disposed;
+    private bool _timerStarted;
 
     public TodayViewModel(IPrayerEngine engine, LocalizationService localization, AppState appState)
     {
@@ -29,7 +31,6 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
         _timer.Tick += OnTick;
         _appState.SettingsChanged += OnSettingsChanged;
         Refresh();
-        _timer.Start();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -64,7 +65,7 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
     public string TimeZoneText => _appState.RequireActiveLocation().TimeZoneId;
 
     public string NextPrayerName =>
-        _next is null ? _localization.Get("DayComplete") : _localization.Get($"Prayer.{_next.Event}");
+        _next is null ? _localization.Get("DayComplete") : _localization.GetPrayerName(_next.Event);
 
     public string NextPrayerTime =>
         _next is null ? "—" : LatinDigits.Time(_next.Time);
@@ -85,12 +86,24 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
 
     public string Disclaimer => _localization.Get("Disclaimer");
 
+    /// <summary>Start the 1s countdown timer after the page is in the visual tree.</summary>
+    public void StartTimer()
+    {
+        if (_timerStarted || _disposed)
+        {
+            return;
+        }
+
+        _timerStarted = true;
+        _timer.Start();
+    }
+
     public void RefreshLabels()
     {
         OnPropertyChanged(nameof(NextPrayerName));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Disclaimer));
-        RebuildRows();
+        RebuildRows(force: true);
     }
 
     public void Refresh()
@@ -102,23 +115,13 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
         var date = DateOnly.FromDateTime(localNow.DateTime);
 
         _schedule = _engine.Calculate(date, location, profile);
-        _next = PrayerTimeline.GetNext(_schedule, localNow);
+        UpdateNext(localNow, location, profile, forceRows: true);
 
-        if (_next is null)
-        {
-            var tomorrow = _engine.Calculate(date.AddDays(1), location, profile);
-            _next = PrayerTimeline.GetNext(tomorrow, localNow);
-        }
-
-        RebuildRows();
         OnPropertyChanged(nameof(LocationName));
         OnPropertyChanged(nameof(MethodName));
         OnPropertyChanged(nameof(DateText));
         OnPropertyChanged(nameof(CoordinatesText));
         OnPropertyChanged(nameof(TimeZoneText));
-        OnPropertyChanged(nameof(NextPrayerName));
-        OnPropertyChanged(nameof(NextPrayerTime));
-        OnPropertyChanged(nameof(CountdownText));
         OnPropertyChanged(nameof(StatusText));
     }
 
@@ -135,13 +138,60 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
         _appState.SettingsChanged -= OnSettingsChanged;
     }
 
-    private void RebuildRows()
+    private void UpdateNext(
+        DateTimeOffset localNow,
+        LocationProfile location,
+        CalculationProfile profile,
+        bool forceRows)
     {
-        Rows.Clear();
         if (_schedule is null)
         {
             return;
         }
+
+        var previous = _next?.Event;
+        _next = PrayerTimeline.GetNext(_schedule, localNow);
+        if (_next is null)
+        {
+            var tomorrow = _engine.Calculate(_schedule.Date.AddDays(1), location, profile);
+            _next = PrayerTimeline.GetNext(tomorrow, localNow);
+        }
+
+        OnPropertyChanged(nameof(NextPrayerName));
+        OnPropertyChanged(nameof(NextPrayerTime));
+        OnPropertyChanged(nameof(CountdownText));
+        OnPropertyChanged(nameof(DateText));
+
+        var current = _next?.Event;
+        if (forceRows || previous != current || _markedNext != current)
+        {
+            RebuildRows(force: true);
+        }
+    }
+
+    private void RebuildRows(bool force)
+    {
+        if (_schedule is null)
+        {
+            Rows.Clear();
+            _markedNext = null;
+            return;
+        }
+
+        // Avoid full collection rebuild every second (layout thrash / possible stack pressure).
+        var nextKey = _next is not null
+                      && _schedule.Times.TryGetValue(_next.Event, out var nt)
+                      && nt == _next.Time
+            ? _next.Event
+            : (PrayerEvent?)null;
+
+        if (!force && nextKey == _markedNext && Rows.Count > 0)
+        {
+            return;
+        }
+
+        _markedNext = nextKey;
+        Rows.Clear();
 
         foreach (var key in new[]
                  {
@@ -159,44 +209,41 @@ public sealed class TodayViewModel : INotifyPropertyChanged, IDisposable
             }
 
             Rows.Add(new PrayerTimeRow(
-                _localization.Get($"Prayer.{key}"),
+                _localization.GetPrayerName(key),
                 LatinDigits.Time(time),
-                LatinDigits.Time(time, "HH:mm:ss")));
+                LatinDigits.Time(time, "HH:mm:ss"),
+                IsNext: nextKey == key));
         }
     }
 
     private void OnTick(object? sender, object e)
     {
-        if (_schedule is null)
+        try
         {
-            Refresh();
-            return;
+            if (_schedule is null)
+            {
+                Refresh();
+                return;
+            }
+
+            var location = _appState.RequireActiveLocation();
+            var profile = _appState.RequireCalculationProfile();
+            var tz = KnownLocations.ResolveTimeZone(location.TimeZoneId);
+            var localNow = TimeZoneInfo.ConvertTime(_appState.Now, tz);
+
+            if (DateOnly.FromDateTime(localNow.DateTime) != _schedule.Date)
+            {
+                Refresh();
+                return;
+            }
+
+            // Countdown only — do not rebuild the list every second.
+            UpdateNext(localNow, location, profile, forceRows: false);
         }
-
-        var location = _appState.RequireActiveLocation();
-        var tz = KnownLocations.ResolveTimeZone(location.TimeZoneId);
-        var localNow = TimeZoneInfo.ConvertTime(_appState.Now, tz);
-
-        if (DateOnly.FromDateTime(localNow.DateTime) != _schedule.Date)
+        catch
         {
-            Refresh();
-            return;
+            // Never let timer exceptions tear down the process.
         }
-
-        _next = PrayerTimeline.GetNext(_schedule, localNow);
-        if (_next is null)
-        {
-            var tomorrow = _engine.Calculate(
-                _schedule.Date.AddDays(1),
-                location,
-                _appState.RequireCalculationProfile());
-            _next = PrayerTimeline.GetNext(tomorrow, localNow);
-        }
-
-        OnPropertyChanged(nameof(NextPrayerName));
-        OnPropertyChanged(nameof(NextPrayerTime));
-        OnPropertyChanged(nameof(CountdownText));
-        OnPropertyChanged(nameof(DateText));
     }
 
     private void OnSettingsChanged(object? sender, EventArgs e) => Refresh();

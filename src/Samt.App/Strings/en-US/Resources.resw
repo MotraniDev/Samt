@@ -9,6 +9,7 @@
   <data name="NavToday" xml:space="preserve"><value>Today</value></data>
   <data name="NavLocations" xml:space="preserve"><value>Locations</value></data>
   <data name="NavDiagnostics" xml:space="preserve"><value>Diagnostics</value></data>
+  <data name="NavDesignLab" xml:space="preserve"><value>Design lab</value></data>
   <data name="Language" xml:space="preserve"><value>Language</value></data>
   <data name="Theme" xml:space="preserve"><value>Theme</value></data>
   <data name="ThemeSystem" xml:space="preserve"><value>System</value></data>

@@ -12,7 +12,11 @@ public sealed partial class TodayPage : Page
         ViewModel = new TodayViewModel(new PrayerEngine(), App.Localization, App.State);
         InitializeComponent();
         App.Localization.LanguageChanged += OnLanguageChanged;
-        Loaded += (_, _) => ApplyLabels();
+        Loaded += (_, _) =>
+        {
+            ApplyLabels();
+            ViewModel.StartTimer();
+        };
     }
 
     public TodayViewModel ViewModel { get; }
@@ -37,7 +41,9 @@ public sealed partial class TodayPage : Page
         FlowDirection = App.Localization.FlowDirection;
         TitleText.Text = App.Localization.Get("NavToday");
         NextLabel.Text = App.Localization.Get("NextPrayer");
+        TimesHeader.Text = App.Localization.Get("Results");
         ViewModel.RefreshLabels();
         Bindings.Update();
     }
 }
+

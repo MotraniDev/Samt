@@ -3,17 +3,90 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- SAMT brand tokens (PRD: deep navy / quiet gold / ivory; light: warm ivory / dark green / gold) -->
+    <!--
+      frontend-design tokens — prayer companion, not generic SaaS.
+      Dark: deep navy field, quiet gold accent, ivory type.
+      Light: warm ivory field, forest green type, gold accent.
+      Signature: next-prayer countdown in gold on navy.
+    -->
     <Color x:Key="SamtNavyColor">#0B1F33</Color>
+    <Color x:Key="SamtNavyDeepColor">#071525</Color>
     <Color x:Key="SamtGoldColor">#C4A35A</Color>
+    <Color x:Key="SamtGoldSoftColor">#E0C989</Color>
     <Color x:Key="SamtIvoryColor">#F4EFE4</Color>
+    <Color x:Key="SamtIvoryMutedColor">#E8E0D0</Color>
     <Color x:Key="SamtGreenColor">#1F4D3A</Color>
+    <Color x:Key="SamtGreenSoftColor">#2A6B50</Color>
 
     <SolidColorBrush x:Key="SamtNavyBrush" Color="{StaticResource SamtNavyColor}" />
+    <SolidColorBrush x:Key="SamtNavyDeepBrush" Color="{StaticResource SamtNavyDeepColor}" />
     <SolidColorBrush x:Key="SamtGoldBrush" Color="{StaticResource SamtGoldColor}" />
+    <SolidColorBrush x:Key="SamtGoldSoftBrush" Color="{StaticResource SamtGoldSoftColor}" />
     <SolidColorBrush x:Key="SamtIvoryBrush" Color="{StaticResource SamtIvoryColor}" />
     <SolidColorBrush x:Key="SamtGreenBrush" Color="{StaticResource SamtGreenColor}" />
-
     <SolidColorBrush x:Key="SamtAccentBrush" Color="{StaticResource SamtGoldColor}" />
     <SolidColorBrush x:Key="SamtCardBrush" Color="#14C4A35A" />
+    <SolidColorBrush x:Key="SamtHeroScrimBrush" Color="#990B1F33" />
+
+    <LinearGradientBrush x:Key="SamtHeroGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#0B1F33" Offset="0" />
+        <GradientStop Color="#14324F" Offset="0.55" />
+        <GradientStop Color="#1F4D3A" Offset="1" />
+    </LinearGradientBrush>
+
+    <!-- UI type (Arabic-capable system face). Numbers use LatinDigits styles. -->
+    <!-- Single-family values only — multi-fallback CSS lists can misbehave in WinUI. -->
+    <FontFamily x:Key="SamtUiFont">Segoe UI</FontFamily>
+    <FontFamily x:Key="SamtNumericFont">Consolas</FontFamily>
+
+    <Style x:Key="SamtPageTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SamtUiFont}" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource SamtGoldBrush}" />
+    </Style>
+
+    <Style x:Key="SamtSectionLabel" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SamtUiFont}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="CharacterSpacing" Value="40" />
+        <Setter Property="Opacity" Value="0.72" />
+    </Style>
+
+    <Style x:Key="SamtBody" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SamtUiFont}" />
+        <Setter Property="FontSize" Value="15" />
+    </Style>
+
+    <!--
+      Rule: always Latin digits 0-9.
+      Language=en-US prevents WinUI digit substitution under Arabic UI.
+    -->
+    <Style x:Key="LatinDigitsTextBlock" TargetType="TextBlock">
+        <Setter Property="Language" Value="en-US" />
+        <Setter Property="FontFamily" Value="{StaticResource SamtNumericFont}" />
+    </Style>
+
+    <Style x:Key="LatinDigitsTextBox" TargetType="TextBox">
+        <Setter Property="Language" Value="en-US" />
+        <Setter Property="FontFamily" Value="{StaticResource SamtNumericFont}" />
+    </Style>
+
+    <Style x:Key="LatinDigitsCalendar" TargetType="CalendarDatePicker">
+        <Setter Property="Language" Value="en-US" />
+    </Style>
+
+    <Style x:Key="SamtCountdownText" TargetType="TextBlock" BasedOn="{StaticResource LatinDigitsTextBlock}">
+        <Setter Property="FontSize" Value="48" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource SamtGoldSoftBrush}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="SamtPrayerRowTime" TargetType="TextBlock" BasedOn="{StaticResource LatinDigitsTextBlock}">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource SamtGoldBrush}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
 </ResourceDictionary>

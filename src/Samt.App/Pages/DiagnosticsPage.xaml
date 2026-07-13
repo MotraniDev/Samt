@@ -54,23 +54,32 @@
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="2" Spacing="4">
                     <TextBlock x:Name="DateLabel" Opacity="0.75" />
-                    <CalendarDatePicker HorizontalAlignment="Stretch"
-                                        Date="{x:Bind ViewModel.SelectedDate, Mode=TwoWay}" />
+                    <CalendarDatePicker
+                        Style="{StaticResource LatinDigitsCalendar}"
+                        HorizontalAlignment="Stretch"
+                        Date="{x:Bind ViewModel.SelectedDate, Mode=TwoWay}" />
                 </StackPanel>
                 <Button x:Name="RecalculateButton" Grid.Row="1" Grid.Column="3" VerticalAlignment="Bottom"
                         Click="RecalculateButton_OnClick" />
 
                 <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2">
                     <TextBlock x:Name="LatLabel" Opacity="0.75" />
-                    <TextBlock Text="{x:Bind ViewModel.LatitudeText, Mode=OneWay}" FontFamily="Consolas" />
+                    <TextBlock
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        Text="{x:Bind ViewModel.LatitudeText, Mode=OneWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
                     <TextBlock x:Name="LonLabel" Opacity="0.75" />
-                    <TextBlock Text="{x:Bind ViewModel.LongitudeText, Mode=OneWay}" FontFamily="Consolas" />
+                    <TextBlock
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        Text="{x:Bind ViewModel.LongitudeText, Mode=OneWay}" />
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Spacing="2">
                     <TextBlock x:Name="TzLabel" Opacity="0.75" />
-                    <TextBlock Text="{x:Bind ViewModel.TimeZoneText, Mode=OneWay}" FontFamily="Consolas" TextWrapping="Wrap" />
+                    <TextBlock
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        Text="{x:Bind ViewModel.TimeZoneText, Mode=OneWay}"
+                        TextWrapping="Wrap" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -99,11 +108,20 @@
                                     <ColumnDefinition Width="100" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="{x:Bind Name}" FontSize="16" />
-                                <TextBlock Grid.Column="1" HorizontalAlignment="Center" FontFamily="Consolas"
-                                           FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource SamtGoldBrush}"
-                                           Text="{x:Bind DisplayTime}" />
-                                <TextBlock Grid.Column="2" HorizontalAlignment="Center" FontFamily="Consolas"
-                                           Opacity="0.55" Text="{x:Bind RawTime}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Style="{StaticResource LatinDigitsTextBlock}"
+                                    HorizontalAlignment="Center"
+                                    FontSize="18"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource SamtGoldBrush}"
+                                    Text="{x:Bind DisplayTime}" />
+                                <TextBlock
+                                    Grid.Column="2"
+                                    Style="{StaticResource LatinDigitsTextBlock}"
+                                    HorizontalAlignment="Center"
+                                    Opacity="0.55"
+                                    Text="{x:Bind RawTime}" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>

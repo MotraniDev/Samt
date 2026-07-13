@@ -9,6 +9,7 @@
   <data name="NavToday" xml:space="preserve"><value>اليوم</value></data>
   <data name="NavLocations" xml:space="preserve"><value>المواقع</value></data>
   <data name="NavDiagnostics" xml:space="preserve"><value>التشخيص</value></data>
+  <data name="NavDesignLab" xml:space="preserve"><value>مختبر التصميم</value></data>
   <data name="Language" xml:space="preserve"><value>اللغة</value></data>
   <data name="Theme" xml:space="preserve"><value>المظهر</value></data>
   <data name="ThemeSystem" xml:space="preserve"><value>تلقائي</value></data>

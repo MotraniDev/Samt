@@ -141,7 +141,7 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
                 : "—";
 
             Rows.Add(new PrayerTimeRow(
-                _localization.Get($"Prayer.{key}"),
+                _localization.GetPrayerName(key),
                 LatinDigits.Time(time),
                 raw));
         }
@@ -149,7 +149,7 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         if (schedule.Jumuah is { } jumuah)
         {
             Rows.Add(new PrayerTimeRow(
-                _localization.Get("Prayer.Jumuah"),
+                _localization.GetPrayerName(PrayerEvent.Jumuah),
                 LatinDigits.Time(jumuah),
                 LatinDigits.Time(jumuah, "HH:mm:ss")));
         }
@@ -177,4 +177,13 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-public sealed record PrayerTimeRow(string Name, string DisplayTime, string RawTime);
+public sealed record PrayerTimeRow(
+    string Name,
+    string DisplayTime,
+    string RawTime,
+    bool IsNext = false)
+{
+    public Microsoft.UI.Xaml.Visibility NextMarkerVisibility =>
+        IsNext ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+}
+

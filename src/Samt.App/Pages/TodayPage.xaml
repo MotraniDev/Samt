@@ -9,52 +9,118 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <ScrollViewer Padding="24">
-        <StackPanel Spacing="16" MaxWidth="720" HorizontalAlignment="Stretch">
-            <StackPanel Spacing="4">
-                <TextBlock x:Name="TitleText" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource SamtGoldBrush}" />
-                <TextBlock x:Name="DateText" Opacity="0.8" Text="{x:Bind ViewModel.DateText, Mode=OneWay}" FontFamily="Consolas" />
-                <TextBlock x:Name="LocationText" Text="{x:Bind ViewModel.LocationName, Mode=OneWay}" FontSize="16" />
-                <TextBlock Opacity="0.7" FontFamily="Consolas" Text="{x:Bind ViewModel.CoordinatesText, Mode=OneWay}" />
-            </StackPanel>
+    <!-- frontend-design: signature = gold countdown on navy hero; quiet list below -->
+    <ScrollViewer Padding="28">
+        <StackPanel Spacing="20" MaxWidth="680" HorizontalAlignment="Stretch">
 
-            <Border Padding="20" CornerRadius="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{StaticResource SamtGoldBrush}" BorderThickness="1">
-                <StackPanel Spacing="8" HorizontalAlignment="Center">
-                    <TextBlock x:Name="NextLabel" Opacity="0.75" HorizontalAlignment="Center" />
-                    <TextBlock FontSize="32" FontWeight="Bold" HorizontalAlignment="Center"
-                               Text="{x:Bind ViewModel.NextPrayerName, Mode=OneWay}" />
-                    <TextBlock FontSize="40" FontFamily="Consolas" FontWeight="SemiBold"
-                               Foreground="{StaticResource SamtGoldBrush}" HorizontalAlignment="Center"
-                               Text="{x:Bind ViewModel.CountdownText, Mode=OneWay}" />
-                    <TextBlock FontFamily="Consolas" HorizontalAlignment="Center" Opacity="0.85"
-                               Text="{x:Bind ViewModel.NextPrayerTime, Mode=OneWay}" />
+            <!-- Header -->
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="2">
+                    <TextBlock x:Name="TitleText" Style="{StaticResource SamtPageTitle}" />
+                    <TextBlock
+                        x:Name="LocationText"
+                        Style="{StaticResource SamtBody}"
+                        FontSize="16"
+                        Text="{x:Bind ViewModel.LocationName, Mode=OneWay}" />
+                    <TextBlock
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        FontSize="12"
+                        Opacity="0.65"
+                        Text="{x:Bind ViewModel.DateText, Mode=OneWay}" />
+                </StackPanel>
+                <Border
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Padding="10,6"
+                    CornerRadius="999"
+                    Background="{StaticResource SamtCardBrush}"
+                    BorderBrush="{StaticResource SamtGoldBrush}"
+                    BorderThickness="1">
+                    <TextBlock
+                        Style="{StaticResource SamtSectionLabel}"
+                        Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" />
+                </Border>
+            </Grid>
+
+            <!-- Signature hero -->
+            <Border CornerRadius="20" Padding="28,32" Background="{StaticResource SamtHeroGradient}">
+                <StackPanel Spacing="10" HorizontalAlignment="Center">
+                    <TextBlock
+                        x:Name="NextLabel"
+                        Style="{StaticResource SamtSectionLabel}"
+                        Foreground="{StaticResource SamtIvoryBrush}"
+                        HorizontalAlignment="Center" />
+                    <TextBlock
+                        FontFamily="{StaticResource SamtUiFont}"
+                        FontSize="34"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource SamtIvoryBrush}"
+                        HorizontalAlignment="Center"
+                        Text="{x:Bind ViewModel.NextPrayerName, Mode=OneWay}" />
+                    <TextBlock
+                        Style="{StaticResource SamtCountdownText}"
+                        Text="{x:Bind ViewModel.CountdownText, Mode=OneWay}" />
+                    <TextBlock
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        FontSize="16"
+                        Foreground="{StaticResource SamtGoldSoftBrush}"
+                        Opacity="0.9"
+                        HorizontalAlignment="Center"
+                        Text="{x:Bind ViewModel.NextPrayerTime, Mode=OneWay}" />
                 </StackPanel>
             </Border>
 
-            <TextBlock x:Name="StatusText" Opacity="0.75" Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" />
+            <!-- Prayer timeline list -->
+            <StackPanel Spacing="8">
+                <TextBlock x:Name="TimesHeader" Style="{StaticResource SamtSectionLabel}" />
+                <Border
+                    CornerRadius="16"
+                    Padding="4,8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PrayerTimeRow">
+                                <Grid Padding="16,12" ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="4" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="96" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Grid.Column="0"
+                                        CornerRadius="2"
+                                        Background="{StaticResource SamtGoldBrush}"
+                                        Visibility="{x:Bind NextMarkerVisibility}" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Style="{StaticResource SamtBody}"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind Name}" />
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        Style="{StaticResource SamtPrayerRowTime}"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind DisplayTime}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+            </StackPanel>
 
-            <Border Padding="12" CornerRadius="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-                <ListView ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}" SelectionMode="None">
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="vm:PrayerTimeRow">
-                            <Grid Padding="4,10" ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="100" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="{x:Bind Name}" FontSize="16" />
-                                <TextBlock Grid.Column="1" Text="{x:Bind DisplayTime}" FontFamily="Consolas"
-                                           FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"
-                                           Foreground="{StaticResource SamtGoldBrush}" />
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </Border>
-
-            <TextBlock x:Name="DisclaimerText" FontSize="12" Opacity="0.7" TextWrapping="Wrap"
-                       Text="{x:Bind ViewModel.Disclaimer, Mode=OneWay}" />
+            <TextBlock
+                x:Name="DisclaimerText"
+                Style="{StaticResource SamtBody}"
+                FontSize="12"
+                Opacity="0.6"
+                TextWrapping="Wrap"
+                Text="{x:Bind ViewModel.Disclaimer, Mode=OneWay}" />
         </StackPanel>
     </ScrollViewer>
 </Page>

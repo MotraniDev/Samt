@@ -81,7 +81,7 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
     public string StatusMessage
     {
         get => _statusMessage;
-        private set { _statusMessage = value; OnPropertyChanged(); }
+        private set { _statusMessage = LatinDigits.EnsureLatin(value); OnPropertyChanged(); }
     }
 
     public bool IsBusy

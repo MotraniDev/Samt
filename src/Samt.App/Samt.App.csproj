@@ -15,6 +15,13 @@
     <EnableMsixTooling>true</EnableMsixTooling>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!--
+      Unpackaged debug launch (scripts/run.ps1 → Samt.App.exe) needs either a
+      machine-registered runtime COM path or self-contained WASDK.
+      Without this, startup dies with REGDB_E_CLASSNOTREG in DeploymentManager AutoInitialize.
+    -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
 
   <ItemGroup>
