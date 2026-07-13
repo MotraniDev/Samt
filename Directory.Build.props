@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Company>SAMT</Company>
+    <Product>سَمت / SAMT</Product>
+    <Authors>SAMT</Authors>
+    <Copyright>Personal use</Copyright>
+  </PropertyGroup>
+</Project>
