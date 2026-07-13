@@ -9,9 +9,8 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <!--
-      PROTOTYPE (skill: prototype) — throwaway overlay visual variants.
-      Question: What should the prayer overlay look like before Phase 4?
-      Switch A / B / C below. Absorb the winner; delete this page later.
+      PROTOTYPE — toast/overlay look + motion + opacity.
+      Play animation; tune opacity; pick A/B/C.
     -->
     <Grid>
         <Grid.RowDefinitions>
@@ -19,90 +18,145 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid x:Name="Stage" Background="#22000000">
-            <!-- Variant A: top ribbon toast-like -->
+        <!-- Stage -->
+        <Grid x:Name="Stage" Background="#33000000">
             <Border
-                x:Name="VariantA"
-                Visibility="Visible"
+                x:Name="ToastCard"
                 VerticalAlignment="Top"
-                Margin="24,24,24,0"
+                HorizontalAlignment="Center"
+                Margin="24,40,24,0"
                 Padding="20,16"
                 CornerRadius="14"
-                Background="{StaticResource SamtHeroGradient}"
                 BorderBrush="{StaticResource SamtGoldBrush}"
                 BorderThickness="1"
-                MaxWidth="420"
-                HorizontalAlignment="Center">
+                MaxWidth="440"
+                MinWidth="280"
+                Opacity="0.92"
+                RenderTransformOrigin="0.5,0.5">
+                <Border.Background>
+                    <SolidColorBrush x:Name="ToastBgBrush" Color="#0B1F33" Opacity="0.92" />
+                </Border.Background>
+                <Border.RenderTransform>
+                    <CompositeTransform x:Name="ToastTransform" TranslateY="-80" />
+                </Border.RenderTransform>
                 <Grid ColumnSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Spacing="4">
-                        <TextBlock Text="الفجر" Foreground="{StaticResource SamtIvoryBrush}" FontSize="20" FontWeight="SemiBold" />
-                        <TextBlock Style="{StaticResource LatinDigitsTextBlock}" Text="05:12" Foreground="{StaticResource SamtGoldSoftBrush}" FontSize="28" />
+                        <TextBlock
+                            x:Name="ToastTitle"
+                            Text="الفجر"
+                            Foreground="{StaticResource SamtIvoryBrush}"
+                            FontSize="20"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="ToastTime"
+                            Style="{StaticResource LatinDigitsTextBlock}"
+                            Text="05:12"
+                            Foreground="{StaticResource SamtGoldSoftBrush}"
+                            FontSize="28" />
+                        <TextBlock
+                            x:Name="ToastSubtitle"
+                            Text="دخل وقت الصلاة"
+                            Foreground="{StaticResource SamtIvoryBrush}"
+                            Opacity="0.75"
+                            FontSize="13" />
                     </StackPanel>
-                    <Button Grid.Column="1" Content="إيقاف" VerticalAlignment="Center" />
+                    <Button
+                        x:Name="StopBtn"
+                        Grid.Column="1"
+                        Content="إيقاف"
+                        VerticalAlignment="Center"
+                        Click="StopBtn_OnClick" />
                 </Grid>
-            </Border>
-
-            <!-- Variant B: bottom dock card -->
-            <Border
-                x:Name="VariantB"
-                Visibility="Collapsed"
-                VerticalAlignment="Bottom"
-                Margin="32,0,32,48"
-                Padding="24,20"
-                CornerRadius="24"
-                Background="{StaticResource SamtNavyDeepBrush}"
-                BorderBrush="{StaticResource SamtGoldBrush}"
-                BorderThickness="1.5"
-                MaxWidth="480"
-                HorizontalAlignment="Stretch">
-                <StackPanel Spacing="12" HorizontalAlignment="Center">
-                    <TextBlock Text="دخل وقت المغرب" Foreground="{StaticResource SamtIvoryBrush}" FontSize="22" HorizontalAlignment="Center" />
-                    <TextBlock Style="{StaticResource LatinDigitsTextBlock}" Text="18:28" Foreground="{StaticResource SamtGoldBrush}" FontSize="40" HorizontalAlignment="Center" />
-                    <Button Content="إيقاف الأذان" HorizontalAlignment="Center" Style="{StaticResource AccentButtonStyle}" />
-                </StackPanel>
-            </Border>
-
-            <!-- Variant C: edge callout (start side) -->
-            <Border
-                x:Name="VariantC"
-                Visibility="Collapsed"
-                VerticalAlignment="Center"
-                HorizontalAlignment="Left"
-                Margin="0,0,0,0"
-                Padding="20,28"
-                Width="280"
-                Background="{StaticResource SamtIvoryBrush}"
-                BorderBrush="{StaticResource SamtGreenBrush}"
-                BorderThickness="0,0,0,0"
-                CornerRadius="0,16,16,0">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="SAMT" Foreground="{StaticResource SamtGoldBrush}" FontWeight="Bold" />
-                    <TextBlock Text="العشاء" Foreground="{StaticResource SamtNavyBrush}" FontSize="26" FontWeight="SemiBold" />
-                    <TextBlock Style="{StaticResource LatinDigitsTextBlock}" Text="20:05" Foreground="{StaticResource SamtGreenBrush}" FontSize="32" />
-                    <TextBlock Text="اضغط Esc للإيقاف" Foreground="{StaticResource SamtNavyBrush}" Opacity="0.7" FontSize="12" />
-                </StackPanel>
             </Border>
         </Grid>
 
-        <!-- Floating prototype switcher -->
+        <!-- Controls -->
         <Border
             Grid.Row="1"
-            Margin="16"
-            Padding="12,10"
-            CornerRadius="999"
-            HorizontalAlignment="Center"
-            Background="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}"
+            Margin="12"
+            Padding="16"
+            CornerRadius="16"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
             BorderBrush="{StaticResource SamtGoldBrush}"
             BorderThickness="1">
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock x:Name="LabLabel" VerticalAlignment="Center" Opacity="0.8" Margin="4,0,8,0" />
-                <Button x:Name="BtnA" Content="A" Click="VariantButton_OnClick" Tag="A" />
-                <Button x:Name="BtnB" Content="B" Click="VariantButton_OnClick" Tag="B" />
-                <Button x:Name="BtnC" Content="C" Click="VariantButton_OnClick" Tag="C" />
+            <StackPanel Spacing="12">
+                <TextBlock x:Name="LabLabel" FontWeight="SemiBold" />
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock VerticalAlignment="Center" Text="Style" Opacity="0.75" Width="80" />
+                    <Button x:Name="BtnA" Content="A Top" Click="VariantButton_OnClick" Tag="A" />
+                    <Button x:Name="BtnB" Content="B Bottom" Click="VariantButton_OnClick" Tag="B" />
+                    <Button x:Name="BtnC" Content="C Edge" Click="VariantButton_OnClick" Tag="C" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock VerticalAlignment="Center" Text="Motion" Opacity="0.75" Width="80" />
+                    <ComboBox x:Name="EdgeBox" MinWidth="140" SelectionChanged="EdgeBox_OnSelectionChanged">
+                        <ComboBoxItem Content="From top" Tag="Top" IsSelected="True" />
+                        <ComboBoxItem Content="From bottom" Tag="Bottom" />
+                        <ComboBoxItem Content="From start" Tag="Start" />
+                        <ComboBoxItem Content="From end" Tag="End" />
+                    </ComboBox>
+                    <Button x:Name="PlayBtn" Content="Play" Click="PlayBtn_OnClick" Style="{StaticResource AccentButtonStyle}" />
+                    <Button x:Name="FireToastBtn" Content="Fire tray toast" Click="FireToastBtn_OnClick" />
+                </StackPanel>
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="56" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock VerticalAlignment="Center" Text="Opacity" Opacity="0.75" />
+                    <Slider
+                        x:Name="OpacitySlider"
+                        Grid.Column="1"
+                        Minimum="30"
+                        Maximum="100"
+                        Value="92"
+                        StepFrequency="1"
+                        ValueChanged="OpacitySlider_OnValueChanged" />
+                    <TextBlock
+                        x:Name="OpacityValueText"
+                        Grid.Column="2"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        Text="92%" />
+                </Grid>
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="56" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock VerticalAlignment="Center" Text="Duration" Opacity="0.75" />
+                    <Slider
+                        x:Name="DurationSlider"
+                        Grid.Column="1"
+                        Minimum="150"
+                        Maximum="900"
+                        Value="320"
+                        StepFrequency="10"
+                        ValueChanged="DurationSlider_OnValueChanged" />
+                    <TextBlock
+                        x:Name="DurationValueText"
+                        Grid.Column="2"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource LatinDigitsTextBlock}"
+                        Text="320ms" />
+                </Grid>
+
+                <TextBlock
+                    x:Name="HintText"
+                    FontSize="12"
+                    Opacity="0.65"
+                    TextWrapping="Wrap"
+                    Text="Play runs entrance motion. Opacity applies to the card. Fire tray toast tests the balloon fallback." />
             </StackPanel>
         </Border>
     </Grid>

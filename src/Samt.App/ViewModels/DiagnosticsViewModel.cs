@@ -17,6 +17,7 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
     private CalculationProfile _method;
     private AsrMadhab _asrMadhab;
     private DateTimeOffset _selectedDate = DateTimeOffset.Now;
+    private bool _suppressPersist;
 
     public DiagnosticsViewModel(IPrayerEngine engine, LocalizationService localization, AppState appState)
     {
@@ -29,7 +30,13 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         Locations = appState.Settings.Locations.ToList();
         Methods = CalculationMethods.AllPresets.ToList();
         Recalculate();
-        _appState.SettingsChanged += (_, _) => ReloadFromSettings();
+        _appState.SettingsChanged += (_, _) =>
+        {
+            if (!_suppressPersist)
+            {
+                ReloadFromSettings();
+            }
+        };
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -55,7 +62,7 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(LongitudeText));
             OnPropertyChanged(nameof(TimeZoneText));
             Recalculate();
-            _ = _appState.UpdateAsync(s => s.With(activeLocationId: value.Id));
+            PersistQuietly(s => s.With(activeLocationId: value.Id, replaceActiveLocationId: true));
         }
     }
 
@@ -72,7 +79,7 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
             _method = value;
             OnPropertyChanged();
             Recalculate();
-            _ = _appState.UpdateAsync(s => s.With(activeCalculationProfileId: value.Id));
+            PersistQuietly(s => s.With(activeCalculationProfileId: value.Id));
         }
     }
 
@@ -89,7 +96,7 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
             _asrMadhab = value;
             OnPropertyChanged();
             Recalculate();
-            _ = _appState.UpdateAsync(s => s.With(asrMadhab: value));
+            PersistQuietly(s => s.With(asrMadhab: value));
         }
     }
 
@@ -171,6 +178,28 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LongitudeText));
         OnPropertyChanged(nameof(TimeZoneText));
         Recalculate();
+    }
+
+    private void PersistQuietly(Func<AppSettings, AppSettings> mutate)
+    {
+        _suppressPersist = true;
+        _ = PersistQuietlyAsync(mutate);
+    }
+
+    private async Task PersistQuietlyAsync(Func<AppSettings, AppSettings> mutate)
+    {
+        try
+        {
+            await _appState.UpdateAsync(mutate).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            Helpers.LaunchLog.Write($"Diagnostics persist failed: {ex.Message}");
+        }
+        finally
+        {
+            _suppressPersist = false;
+        }
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

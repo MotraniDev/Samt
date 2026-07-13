@@ -51,7 +51,16 @@ public sealed partial class LocationsPage : Page
         => await ViewModel.DeleteSelectedAsync();
 
     private async void SaveButton_OnClick(object sender, RoutedEventArgs e)
-        => await ViewModel.SaveManualAsync();
+    {
+        try
+        {
+            await ViewModel.SaveManualAsync();
+        }
+        catch (Exception ex)
+        {
+            Helpers.LaunchLog.Write($"Save button failed: {ex}");
+        }
+    }
 
     private async void GpsButton_OnClick(object sender, RoutedEventArgs e)
         => await ViewModel.DetectGpsAsync();

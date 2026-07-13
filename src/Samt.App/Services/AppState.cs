@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Samt.Core.Domain;
 using Samt.Core.Storage;
 using Samt.Core.Time;
+using Samt_App.Helpers;
 
 namespace Samt_App.Services;
 
@@ -43,9 +44,18 @@ public sealed class AppState : INotifyPropertyChanged
 
     public async Task UpdateAsync(Func<AppSettings, AppSettings> mutate, CancellationToken cancellationToken = default)
     {
-        _settings = SettingsJson.Normalize(mutate(_settings));
-        await _store.SaveAsync(_settings, cancellationToken).ConfigureAwait(true);
-        RaiseAll();
+        try
+        {
+            _settings = SettingsJson.Normalize(mutate(_settings));
+            await _store.SaveAsync(_settings, cancellationToken).ConfigureAwait(true);
+            RaiseAll();
+        }
+        catch (Exception ex)
+        {
+            // Never let settings I/O take down the process.
+            LaunchLog.Write($"AppState.UpdateAsync failed: {ex}");
+            throw;
+        }
     }
 
     public LocationProfile? TryGetActiveLocation()

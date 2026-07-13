@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml;
+using Samt.Core.Domain;
 using Samt.Core.Formatting;
+using Samt.Core.Notifications;
 using Samt.Core.Storage;
 using Samt_App.Helpers;
 using Samt_App.Services;
@@ -134,6 +136,32 @@ public partial class App : Application
         }
 
         WindowActivation.ShowCentered(MainWindow);
+    }
+
+    /// <summary>Design-lab / debug: show a sample prayer notification.</summary>
+    public static void ShowSamplePrayerToast(string title, string body)
+    {
+        try
+        {
+            // Prefer tray balloon (works unpackaged); toast service may not be registered.
+            var app = Current as App;
+            app?._tray?.ShowBalloon(title, body);
+            app?._toasts?.Show(
+                new PlannedNotification
+                {
+                    Id = "sample-" + Guid.NewGuid().ToString("N")[..8],
+                    FireAt = DateTimeOffset.Now,
+                    Kind = PlannedNotificationKind.PrayerStart,
+                    Prayer = PrayerEvent.Fajr,
+                    Channels = NotificationChannel.WindowsToast
+                },
+                title,
+                title);
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"ShowSamplePrayerToast failed: {ex.Message}");
+        }
     }
 
     private void RequestExit()

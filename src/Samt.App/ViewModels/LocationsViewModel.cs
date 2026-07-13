@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Samt.Core.Domain;
 using Samt.Core.Formatting;
 using Samt.Core.Locations;
+using Samt_App.Helpers;
 using Samt_App.Services;
 
 namespace Samt_App.ViewModels;
@@ -21,13 +22,15 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
     private string _timeZoneId = KnownLocations.AlgeriaTimeZoneId;
     private string _statusMessage = string.Empty;
     private bool _isBusy;
+    private bool _suppressReload;
+    private bool _isUpdatingSelection;
 
     public LocationsViewModel(AppState appState, LocalizationService localization)
     {
         _appState = appState;
         _localization = localization;
         ReloadList();
-        _appState.SettingsChanged += (_, _) => ReloadList();
+        _appState.SettingsChanged += OnSettingsChanged;
         PrefillFromActive();
     }
 
@@ -42,14 +45,27 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         get => _selected;
         set
         {
-            _selected = value;
-            OnPropertyChanged();
-            if (value is not null)
+            if (_isUpdatingSelection)
             {
-                Name = value.DisplayName;
-                Latitude = LatinDigits.Number(value.Latitude, "0.######");
-                Longitude = LatinDigits.Number(value.Longitude, "0.######");
-                TimeZoneId = value.TimeZoneId;
+                return;
+            }
+
+            _isUpdatingSelection = true;
+            try
+            {
+                _selected = value;
+                OnPropertyChanged();
+                if (value is not null)
+                {
+                    Name = value.DisplayName;
+                    Latitude = LatinDigits.Number(value.Latitude, "0.######");
+                    Longitude = LatinDigits.Number(value.Longitude, "0.######");
+                    TimeZoneId = value.TimeZoneId;
+                }
+            }
+            finally
+            {
+                _isUpdatingSelection = false;
             }
         }
     }
@@ -75,13 +91,13 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
     public string TimeZoneId
     {
         get => _timeZoneId;
-        set { _timeZoneId = value; OnPropertyChanged(); }
+        set { _timeZoneId = value ?? KnownLocations.AlgeriaTimeZoneId; OnPropertyChanged(); }
     }
 
     public string StatusMessage
     {
         get => _statusMessage;
-        private set { _statusMessage = LatinDigits.EnsureLatin(value); OnPropertyChanged(); }
+        private set { _statusMessage = LatinDigits.EnsureLatin(value ?? string.Empty); OnPropertyChanged(); }
     }
 
     public bool IsBusy
@@ -98,95 +114,114 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
             return;
         }
 
-        await _appState.UpdateAsync(s => s.With(activeLocationId: _selected.Id));
+        await SafeUpdateAsync(s => s.With(activeLocationId: _selected.Id, replaceActiveLocationId: true));
         StatusMessage = _localization.Get("LocationActivated");
     }
 
     public async Task SaveManualAsync()
     {
-        if (!TryParseCoordinates(out var lat, out var lon, out var error))
+        try
         {
-            StatusMessage = error;
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(Name))
-        {
-            StatusMessage = _localization.Get("NameRequired");
-            return;
-        }
-
-        if (!IsValidTimeZone(TimeZoneId))
-        {
-            StatusMessage = _localization.Get("InvalidTimeZone");
-            return;
-        }
-
-        var list = _appState.Settings.Locations.ToList();
-        LocationProfile profile;
-
-        if (_selected is not null && list.Any(l => l.Id == _selected.Id))
-        {
-            profile = new LocationProfile
+            if (!TryParseCoordinates(out var lat, out var lon, out var error))
             {
-                Id = _selected.Id,
-                DisplayName = Name.Trim(),
-                Latitude = lat,
-                Longitude = lon,
-                TimeZoneId = TimeZoneId,
-                Source = LocationSource.Manual,
-                FridayTimeMode = _selected.FridayTimeMode,
-                FixedFridayLocalTime = _selected.FixedFridayLocalTime,
-                SuppressDhuhrNotificationsOnFriday = _selected.SuppressDhuhrNotificationsOnFriday,
-                AltitudeMeters = _selected.AltitudeMeters
-            };
-            var index = list.FindIndex(l => l.Id == profile.Id);
-            list[index] = profile;
-        }
-        else
-        {
-            profile = new LocationProfile
+                StatusMessage = error;
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Name))
             {
-                Id = Guid.NewGuid(),
-                DisplayName = Name.Trim(),
-                Latitude = lat,
-                Longitude = lon,
-                TimeZoneId = TimeZoneId,
-                Source = LocationSource.Manual
-            };
-            list.Add(profile);
+                StatusMessage = _localization.Get("NameRequired");
+                return;
+            }
+
+            if (!IsValidTimeZone(TimeZoneId))
+            {
+                StatusMessage = _localization.Get("InvalidTimeZone");
+                return;
+            }
+
+            var list = _appState.Settings.Locations.ToList();
+            LocationProfile profile;
+
+            if (_selected is not null && list.Any(l => l.Id == _selected.Id))
+            {
+                profile = new LocationProfile
+                {
+                    Id = _selected.Id,
+                    DisplayName = Name.Trim(),
+                    Latitude = lat,
+                    Longitude = lon,
+                    TimeZoneId = TimeZoneId,
+                    Source = LocationSource.Manual,
+                    FridayTimeMode = _selected.FridayTimeMode,
+                    FixedFridayLocalTime = _selected.FixedFridayLocalTime,
+                    SuppressDhuhrNotificationsOnFriday = _selected.SuppressDhuhrNotificationsOnFriday,
+                    AltitudeMeters = _selected.AltitudeMeters
+                };
+                var index = list.FindIndex(l => l.Id == profile.Id);
+                list[index] = profile;
+            }
+            else
+            {
+                profile = new LocationProfile
+                {
+                    Id = Guid.NewGuid(),
+                    DisplayName = Name.Trim(),
+                    Latitude = lat,
+                    Longitude = lon,
+                    TimeZoneId = TimeZoneId,
+                    Source = LocationSource.Manual
+                };
+                list.Add(profile);
+            }
+
+            await SafeUpdateAsync(s => s.With(
+                locations: list,
+                activeLocationId: profile.Id,
+                replaceActiveLocationId: true));
+
+            // ReloadList already ran from SettingsChanged under suppress-safe path.
+            SelectById(profile.Id);
+            StatusMessage = _localization.Get("LocationSaved");
+            LaunchLog.Write($"Location saved: {profile.DisplayName}");
         }
-
-        await _appState.UpdateAsync(s => s.With(
-            locations: list,
-            activeLocationId: profile.Id));
-
-        SelectedLocation = profile;
-        StatusMessage = _localization.Get("LocationSaved");
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"SaveManualAsync failed: {ex}");
+            StatusMessage = "Save failed: " + ex.Message;
+        }
     }
 
     public async Task DeleteSelectedAsync()
     {
-        if (_selected is null)
+        try
         {
-            return;
-        }
+            if (_selected is null)
+            {
+                return;
+            }
 
-        var list = _appState.Settings.Locations.Where(l => l.Id != _selected.Id).ToList();
-        if (list.Count == 0)
+            var list = _appState.Settings.Locations.Where(l => l.Id != _selected.Id).ToList();
+            if (list.Count == 0)
+            {
+                StatusMessage = _localization.Get("CannotDeleteLastLocation");
+                return;
+            }
+
+            var newActive = list[0].Id;
+            await SafeUpdateAsync(s => s.With(
+                locations: list,
+                activeLocationId: newActive,
+                replaceActiveLocationId: true));
+
+            SelectById(newActive);
+            StatusMessage = _localization.Get("LocationDeleted");
+        }
+        catch (Exception ex)
         {
-            StatusMessage = _localization.Get("CannotDeleteLastLocation");
-            return;
+            LaunchLog.Write($"DeleteSelectedAsync failed: {ex}");
+            StatusMessage = "Delete failed: " + ex.Message;
         }
-
-        var newActive = list[0].Id;
-        await _appState.UpdateAsync(s => s.With(
-            locations: list,
-            activeLocationId: newActive,
-            replaceActiveLocationId: true));
-
-        SelectedLocation = list[0];
-        StatusMessage = _localization.Get("LocationDeleted");
     }
 
     public void NewManual()
@@ -219,17 +254,21 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
                 result.Longitude.Value,
                 _localization.Get("GpsLocationName"));
 
-            var list = _appState.Settings.Locations.ToList();
-            // Replace previous GPS entry if any
-            list = list.Where(l => l.Source != LocationSource.Gps).ToList();
+            var list = _appState.Settings.Locations.Where(l => l.Source != LocationSource.Gps).ToList();
             list.Insert(0, profile);
 
-            await _appState.UpdateAsync(s => s.With(
+            await SafeUpdateAsync(s => s.With(
                 locations: list,
-                activeLocationId: profile.Id));
+                activeLocationId: profile.Id,
+                replaceActiveLocationId: true));
 
-            SelectedLocation = profile;
+            SelectById(profile.Id);
             StatusMessage = _localization.Get("LocationFromGps");
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"DetectGpsAsync failed: {ex}");
+            StatusMessage = "GPS failed: " + ex.Message;
         }
         finally
         {
@@ -237,17 +276,64 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         }
     }
 
+    private async Task SafeUpdateAsync(Func<AppSettings, AppSettings> mutate)
+    {
+        _suppressReload = true;
+        try
+        {
+            await _appState.UpdateAsync(mutate).ConfigureAwait(true);
+        }
+        finally
+        {
+            _suppressReload = false;
+            // One controlled reload after save completes.
+            ReloadList();
+        }
+    }
+
+    private void OnSettingsChanged(object? sender, EventArgs e)
+    {
+        if (_suppressReload)
+        {
+            return;
+        }
+
+        try
+        {
+            ReloadList();
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Locations ReloadList failed: {ex}");
+        }
+    }
+
     private void ReloadList()
     {
+        var snapshot = _appState.Settings.Locations.ToList();
+        var selectedId = _selected?.Id ?? _appState.Settings.ActiveLocationId;
+
+        // Replace items without ObservableCollection.Clear during binding churn when possible.
         Locations.Clear();
-        foreach (var location in _appState.Settings.Locations)
+        foreach (var location in snapshot)
         {
             Locations.Add(location);
         }
 
-        var activeId = _appState.Settings.ActiveLocationId;
-        SelectedLocation = Locations.FirstOrDefault(l => l.Id == activeId) ?? Locations.FirstOrDefault();
+        SelectById(selectedId);
         OnPropertyChanged(nameof(Locations));
+    }
+
+    private void SelectById(Guid? id)
+    {
+        LocationProfile? match = null;
+        if (id is { } guid)
+        {
+            match = Locations.FirstOrDefault(l => l.Id == guid);
+        }
+
+        match ??= Locations.FirstOrDefault();
+        SelectedLocation = match;
     }
 
     private void PrefillFromActive()
@@ -255,7 +341,7 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
         var active = _appState.TryGetActiveLocation();
         if (active is not null)
         {
-            SelectedLocation = active;
+            SelectById(active.Id);
         }
     }
 
@@ -287,6 +373,11 @@ public sealed class LocationsViewModel : INotifyPropertyChanged
 
     private static bool IsValidTimeZone(string id)
     {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return false;
+        }
+
         try
         {
             _ = KnownLocations.ResolveTimeZone(id);

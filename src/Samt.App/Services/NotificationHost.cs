@@ -61,7 +61,29 @@ public sealed class NotificationHost : IDisposable
         _state.SettingsChanged -= OnSettingsChanged;
     }
 
-    private void OnSettingsChanged(object? sender, EventArgs e) => RebuildPlan();
+    private void OnSettingsChanged(object? sender, EventArgs e)
+    {
+        // Defer off the save call stack to avoid UI reentrancy crashes.
+        try
+        {
+            if (Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread() is { } dq)
+            {
+                dq.TryEnqueue(() =>
+                {
+                    try { RebuildPlan(); }
+                    catch (Exception ex) { LaunchLog.Write($"Deferred RebuildPlan failed: {ex.Message}"); }
+                });
+            }
+            else
+            {
+                RebuildPlan();
+            }
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"OnSettingsChanged failed: {ex.Message}");
+        }
+    }
 
     private void OnTick(object? sender, object e)
     {
