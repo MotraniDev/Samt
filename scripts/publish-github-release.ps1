@@ -101,8 +101,11 @@ Write-SamtOk $manifestPath
 Write-SamtInfo "SHA-256: $hash"
 Write-SamtInfo "Download URL: $downloadUrl"
 
-$existing = & gh release view $tag --repo $repoSlug 2>$null
-if ($LASTEXITCODE -eq 0 -and $existing) {
+$ErrorActionPreference = 'Continue'
+& gh release view $tag --repo $repoSlug 1>$null 2>$null
+$releaseExists = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = 'Stop'
+if ($releaseExists) {
     throw "Release $tag already exists. Delete it or choose a new -Version."
 }
 
