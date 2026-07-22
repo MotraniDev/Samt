@@ -362,6 +362,18 @@ public sealed partial class LocalizationService
         ["PlaceSearchFailed"] = "Recherche impossible. Vérifiez le réseau ou saisissez les coordonnées.",
         ["PlaceSearchAttribution"] = "Recherche de lieux via des données ouvertes (OpenStreetMap Nominatim).",
         ["ApplyPlaceResult"] = "Utiliser ce lieu",
+        ["UpdateChecking"] = "Recherche de mises à jour…",
+        ["UpdateStatusIdle"] = "Appuyez pour vérifier une nouvelle version sur GitHub.",
+        ["UpdateCurrentVersionFormat"] = "Version actuelle : {0}",
+        ["UpdateCheckFailed"] = "Impossible de vérifier les mises à jour.",
+        ["UpdateCheckFailedDetail"] = "Impossible de vérifier les mises à jour ({0}).",
+        ["UpdateCheckNoRelease"] = "Aucune version publiée sur GitHub pour l'instant. Réessayez après la première release avec samt-release.json.",
+        ["UpdateUpToDate"] = "Vous avez la dernière version ({0}).",
+        ["UpdateAvailableFormat"] = "Nouvelle version {0} disponible (actuelle {1}).",
+        ["UpdateHashMismatch"] = "Échec de la vérification d'intégrité (SHA-256).",
+        ["UpdateDownloadPrompt"] = "Télécharger et lancer l'installateur ?",
+        ["UpdateDownloading"] = "Téléchargement de la mise à jour…",
+        ["UpdateInstallStarted"] = "Installateur lancé. Terminez l'installation dans sa fenêtre.",
     };
 
 
@@ -723,6 +735,18 @@ public sealed partial class LocalizationService
         ["PlaceSearchFailed"] = "No se pudo buscar. Compruebe la red o introduzca las coordenadas.",
         ["PlaceSearchAttribution"] = "Búsqueda de lugares con datos abiertos (OpenStreetMap Nominatim).",
         ["ApplyPlaceResult"] = "Usar este lugar",
+        ["UpdateChecking"] = "Buscando actualizaciones…",
+        ["UpdateStatusIdle"] = "Pulsa para comprobar una versión nueva en GitHub.",
+        ["UpdateCurrentVersionFormat"] = "Versión actual: {0}",
+        ["UpdateCheckFailed"] = "No se pudieron comprobar las actualizaciones.",
+        ["UpdateCheckFailedDetail"] = "No se pudieron comprobar las actualizaciones ({0}).",
+        ["UpdateCheckNoRelease"] = "Aún no hay una versión publicada en GitHub. Vuelve a intentarlo tras publicar una release con samt-release.json.",
+        ["UpdateUpToDate"] = "Tienes la última versión ({0}).",
+        ["UpdateAvailableFormat"] = "Hay una versión nueva {0} (actual {1}).",
+        ["UpdateHashMismatch"] = "Falló la comprobación de integridad (SHA-256).",
+        ["UpdateDownloadPrompt"] = "¿Descargar y ejecutar el instalador?",
+        ["UpdateDownloading"] = "Descargando actualización…",
+        ["UpdateInstallStarted"] = "Instalador iniciado. Completa la instalación en su ventana.",
     };
 
 }

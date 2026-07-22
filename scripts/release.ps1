@@ -90,6 +90,7 @@ $publishArgs = @(
     '-c', $configuration,
     '-r', $rid,
     "-p:Platform=$Platform",
+    "-p:Version=$Version",
     "-p:PublishDir=$outDir\",
     "-p:SelfContained=$($selfContained.ToString().ToLowerInvariant())",
     '-p:PublishSingleFile=false',

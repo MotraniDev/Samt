@@ -32,9 +32,14 @@ public sealed class UpdateService
             using var response = await Http.GetAsync(ManifestUrl, ct).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
-                return UpdateCheckResult.Fail(
-                    App.Localization.Get("UpdateCheckFailed"),
-                    $"HTTP {(int)response.StatusCode}");
+                var code = (int)response.StatusCode;
+                var message = response.StatusCode == System.Net.HttpStatusCode.NotFound
+                    ? App.Localization.Get("UpdateCheckNoRelease")
+                    : string.Format(
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        App.Localization.Get("UpdateCheckFailedDetail"),
+                        LatinDigits.EnsureLatin($"HTTP {code}"));
+                return UpdateCheckResult.Fail(message, $"HTTP {code}");
             }
 
             await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
@@ -82,7 +87,14 @@ public sealed class UpdateService
         }
         catch (Exception ex)
         {
-            return UpdateCheckResult.Fail(App.Localization.Get("UpdateCheckFailed"), ex.Message);
+            var detail = Truncate(ex.Message, 160);
+            var message = string.IsNullOrWhiteSpace(detail)
+                ? App.Localization.Get("UpdateCheckFailed")
+                : string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    App.Localization.Get("UpdateCheckFailedDetail"),
+                    LatinDigits.EnsureLatin(detail));
+            return UpdateCheckResult.Fail(message, detail);
         }
     }
 
@@ -191,6 +203,17 @@ public sealed class UpdateService
 
     private static string FormatVersion(Version v)
         => LatinDigits.EnsureLatin($"{v.Major}.{v.Minor}.{v.Build}");
+
+    private static string Truncate(string? value, int max)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "";
+        }
+
+        var t = value.Trim().Replace('\r', ' ').Replace('\n', ' ');
+        return t.Length <= max ? t : t[..max] + "…";
+    }
 
     private static async Task<string> ComputeSha256HexAsync(string path, CancellationToken ct)
     {

@@ -32,6 +32,20 @@ artifacts\installer\SAMT-Setup-<version>-x64.exe
 - Start Menu shortcut; optional Desktop + Start with Windows
 - Uninstall from Windows **Apps & features** or Start Menu
 
+### Publish to GitHub Releases (in-app updates)
+
+Builds the installer, writes `samt-release.json` (version + download URL + SHA-256), and creates a GitHub Release so Settings → **Check for updates** can find it:
+
+```powershell
+.\scripts\publish-github-release.ps1 -Version 2026.7.22 -SkipTests
+```
+
+Requires [GitHub CLI](https://cli.github.com/) authenticated with `repo` scope. Manifest URL used by the app:
+
+```text
+https://github.com/MotraniDev/Samt/releases/latest/download/samt-release.json
+```
+
 ## Install (from release zip)
 
 1. Run `.\scripts\release.ps1 -Platform x64` from a clone (or unpack a pre-built zip).

@@ -94,8 +94,17 @@
                     <ToggleSwitch x:Name="AutoUpdateToggle" Toggled="AutoUpdateToggle_OnToggled" />
                     <Button x:Name="CheckUpdatesButton" HorizontalAlignment="Stretch"
                             Click="CheckUpdatesButton_OnClick" />
-                    <TextBlock x:Name="UpdateStatusText" Opacity="0.7" FontSize="12" TextWrapping="Wrap"
-                               Style="{StaticResource LatinDigitsTextBlock}" />
+                    <StackPanel x:Name="UpdateBusyPanel" Orientation="Horizontal" Spacing="10"
+                                Visibility="Collapsed">
+                        <ProgressRing x:Name="UpdateBusyRing" Width="22" Height="22"
+                                      IsActive="False" VerticalAlignment="Center" />
+                        <TextBlock x:Name="UpdateBusyText" FontSize="12" Opacity="0.9"
+                                   VerticalAlignment="Center" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <TextBlock x:Name="UpdateVersionText" Opacity="0.65" FontSize="12" TextWrapping="Wrap"
+                               Style="{StaticResource LatinDigitsTextBlock}" Language="en-US" />
+                    <TextBlock x:Name="UpdateStatusText" Opacity="0.85" FontSize="12" TextWrapping="Wrap"
+                               Style="{StaticResource LatinDigitsTextBlock}" Language="en-US" />
                 </StackPanel>
             </Border>
 

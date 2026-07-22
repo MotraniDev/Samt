@@ -132,6 +132,7 @@ public sealed partial class SettingsPage : Page
         AdhkarAfterPrayerHint.Text = loc.Get("AdhkarAfterPrayerHint");
         AdhkarAfterDelayUnit.Text = loc.Get("AdhkarMinutesUnit");
         CheckUpdatesButton.Content = loc.Get("CheckForUpdates");
+        RefreshUpdateVersionText();
         GitHubButtonLabel.Text = loc.Get("OpenGitHub");
         PublisherText.Text = $"{loc.Get("PublisherLabel")}: MotraniSoft";
         VersionText.Text = $"{loc.Get("VersionLabel")}: {GetAppVersion()}";
@@ -185,12 +186,63 @@ public sealed partial class SettingsPage : Page
             DeliveryToastCheck.IsChecked = delivery.HasFlag(CalendarReminderDelivery.WindowsNotification);
             DeliverySoundCheck.IsChecked = delivery.HasFlag(CalendarReminderDelivery.Sound);
             DeliverySilentWindowCheck.IsChecked = delivery.HasFlag(CalendarReminderDelivery.SilentWindow);
-            UpdateStatusText.Text = string.Empty;
+            RefreshUpdateVersionText();
+            if (string.IsNullOrWhiteSpace(UpdateStatusText.Text))
+            {
+                UpdateStatusText.Text = App.Localization.Get("UpdateStatusIdle");
+                UpdateStatusText.Opacity = 0.65;
+                UpdateStatusText.ClearValue(TextBlock.ForegroundProperty);
+            }
+
             RefreshGoogleLinkStatusUi();
         }
         finally
         {
             _suppress = false;
+        }
+    }
+
+    private void RefreshUpdateVersionText()
+    {
+        var current = UpdateService.GetCurrentVersion();
+        UpdateVersionText.Text = LatinDigits.EnsureLatin(
+            string.Format(
+                CultureInfo.InvariantCulture,
+                App.Localization.Get("UpdateCurrentVersionFormat"),
+                $"{current.Major}.{current.Minor}.{Math.Max(current.Build, 0)}"));
+    }
+
+    private void SetUpdateBusy(bool busy, string? phase = null)
+    {
+        UpdateBusyPanel.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
+        UpdateBusyRing.IsActive = busy;
+        CheckUpdatesButton.IsEnabled = !busy;
+        AutoUpdateToggle.IsEnabled = !busy;
+        if (!busy)
+        {
+            UpdateBusyText.Text = "";
+            return;
+        }
+
+        UpdateBusyText.Text = phase switch
+        {
+            "download" => App.Localization.Get("UpdateDownloading"),
+            _ => App.Localization.Get("UpdateChecking")
+        };
+    }
+
+    private void ApplyUpdateStatus(string message, bool success)
+    {
+        UpdateStatusText.Text = LatinDigits.EnsureLatin(message);
+        UpdateStatusText.Opacity = 0.95;
+        if (success)
+        {
+            UpdateStatusText.ClearValue(TextBlock.ForegroundProperty);
+        }
+        else if (Application.Current.Resources.TryGetValue("SystemFillColorCriticalBrush", out var brushObj)
+                 && brushObj is Microsoft.UI.Xaml.Media.Brush brush)
+        {
+            UpdateStatusText.Foreground = brush;
         }
     }
 
@@ -761,12 +813,12 @@ public sealed partial class SettingsPage : Page
     private async void CheckUpdatesButton_OnClick(object sender, RoutedEventArgs e)
     {
         var loc = App.Localization;
-        UpdateStatusText.Text = "…";
-        CheckUpdatesButton.IsEnabled = false;
+        SetUpdateBusy(true, "check");
+        ApplyUpdateStatus(loc.Get("UpdateChecking"), success: true);
         try
         {
             var result = await App.Updates.CheckAsync(force: true);
-            UpdateStatusText.Text = result.UserMessage;
+            ApplyUpdateStatus(result.UserMessage, result.Success);
             if (!result.Success || !result.UpdateAvailable || result.Manifest is null)
             {
                 return;
@@ -787,19 +839,32 @@ public sealed partial class SettingsPage : Page
                 return;
             }
 
-            UpdateStatusText.Text = loc.Get("UpdateDownloading");
+            SetUpdateBusy(true, "download");
+            ApplyUpdateStatus(loc.Get("UpdateDownloading"), success: true);
             var install = await App.Updates.DownloadAndLaunchAsync(result.Manifest);
-            UpdateStatusText.Text = install.Success
-                ? loc.Get("UpdateDownloading")
-                : (install.Error ?? loc.Get("UpdateCheckFailed"));
+            if (install.Success)
+            {
+                ApplyUpdateStatus(loc.Get("UpdateInstallStarted"), success: true);
+            }
+            else
+            {
+                ApplyUpdateStatus(
+                    install.Error ?? loc.Get("UpdateCheckFailed"),
+                    success: false);
+            }
         }
         catch (Exception ex)
         {
-            UpdateStatusText.Text = ex.Message;
+            ApplyUpdateStatus(
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    loc.Get("UpdateCheckFailedDetail"),
+                    LatinDigits.EnsureLatin(ex.Message)),
+                success: false);
         }
         finally
         {
-            CheckUpdatesButton.IsEnabled = true;
+            SetUpdateBusy(false);
         }
     }
 
