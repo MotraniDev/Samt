@@ -47,6 +47,8 @@ public static class SettingsJson
             CalendarPrimaryMode = CalendarPrimaryMode.Hijri,
             CalendarReminderDelivery = CalendarReminderDelivery.WindowsNotification,
             UserCalendarReminders = [],
+            GoogleCalendarLink = new GoogleCalendarLinkState(),
+            CalendarSyncTombstones = [],
             Locations =
             [
                 kennadsa,
@@ -162,6 +164,8 @@ public static class SettingsJson
                 : CalendarPrimaryMode.Hijri,
             CalendarReminderDelivery = NormalizeCalendarReminderDelivery(settings.CalendarReminderDelivery),
             UserCalendarReminders = NormalizeUserCalendarReminders(settings.UserCalendarReminders),
+            GoogleCalendarLink = NormalizeGoogleCalendarLink(settings.GoogleCalendarLink),
+            CalendarSyncTombstones = NormalizeCalendarSyncTombstones(settings.CalendarSyncTombstones),
             Locations = locations,
             NotificationRules = settings.NotificationRules is { Count: > 0 }
                 ? UpgradeLegacyDefaultRules(settings.NotificationRules)
@@ -276,7 +280,63 @@ public static class SettingsJson
                 Time = NormalizeClockTime(item.Time, "09:00"),
                 RepeatCount = count,
                 IntervalMinutes = interval,
-                Enabled = item.Enabled
+                Enabled = item.Enabled,
+                GoogleEventId = string.IsNullOrWhiteSpace(item.GoogleEventId)
+                    ? null
+                    : item.GoogleEventId.Trim(),
+                LocalUpdatedUtc = item.LocalUpdatedUtc == default
+                    ? DateTimeOffset.UnixEpoch
+                    : item.LocalUpdatedUtc,
+                LastSyncedUtc = item.LastSyncedUtc
+            });
+        }
+
+        return result;
+    }
+
+    private static GoogleCalendarLinkState NormalizeGoogleCalendarLink(GoogleCalendarLinkState? state)
+    {
+        state ??= new GoogleCalendarLinkState();
+        return new GoogleCalendarLinkState
+        {
+            IsLinked = state.IsLinked,
+            AccountEmail = string.IsNullOrWhiteSpace(state.AccountEmail) ? null : state.AccountEmail.Trim(),
+            CalendarId = string.IsNullOrWhiteSpace(state.CalendarId) ? null : state.CalendarId.Trim(),
+            LastSyncUtc = state.LastSyncUtc,
+            LastSyncSucceeded = state.LastSyncSucceeded,
+            LastSyncMessage = state.LastSyncMessage?.Trim() ?? "",
+            LastSkippedCount = Math.Max(0, state.LastSkippedCount)
+        };
+    }
+
+    private static IReadOnlyList<CalendarSyncTombstone> NormalizeCalendarSyncTombstones(
+        IReadOnlyList<CalendarSyncTombstone>? items)
+    {
+        if (items is null || items.Count == 0)
+        {
+            return [];
+        }
+
+        var result = new List<CalendarSyncTombstone>();
+        foreach (var item in items)
+        {
+            if (item is null)
+            {
+                continue;
+            }
+
+            var eventId = string.IsNullOrWhiteSpace(item.GoogleEventId) ? null : item.GoogleEventId.Trim();
+            var reminderId = item.ReminderId is { } id && id != Guid.Empty ? id : (Guid?)null;
+            if (reminderId is null && eventId is null)
+            {
+                continue;
+            }
+
+            result.Add(new CalendarSyncTombstone
+            {
+                ReminderId = reminderId,
+                GoogleEventId = eventId,
+                DeletedUtc = item.DeletedUtc == default ? DateTimeOffset.UnixEpoch : item.DeletedUtc
             });
         }
 

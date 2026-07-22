@@ -32,4 +32,45 @@ public class AdhkarCatalogTests
         Assert.True(session.CompletedItemCount >= 1);
         Assert.InRange(session.ItemProgress, 0.01, 1.0);
     }
+
+    [Fact]
+    public void QuranicSurahs_AreFlagged_AyatAndHadith_AreNot()
+    {
+        var morning = AdhkarCatalog.Get(AdhkarCollectionKind.Morning);
+        Assert.Contains(morning.Items, i => i.Id == "m02" && i.IsQuranicSurah);
+        Assert.Contains(morning.Items, i => i.Id == "m03" && i.IsQuranicSurah);
+        Assert.Contains(morning.Items, i => i.Id == "m04" && i.IsQuranicSurah);
+        Assert.Contains(morning.Items, i => i.Id == "m01" && i.IsAyatAlKursi && !i.IsQuranicSurah);
+        Assert.Contains(morning.Items, i => i.Id == "m05" && !i.IsQuranicSurah && !i.IsAyatAlKursi);
+
+        var hadithBasmala = morning.Items.First(i =>
+            i.ArabicText.StartsWith("بِسْمِ اللَّهِ الَّذِي", StringComparison.Ordinal));
+        Assert.False(hadithBasmala.IsQuranicSurah);
+        Assert.False(hadithBasmala.IsAyatAlKursi);
+    }
+
+    [Fact]
+    public void BodyArabic_StripsVocalizedBasmala_OnlyForSurahs()
+    {
+        var ikhlas = AdhkarCatalog.Get(AdhkarCollectionKind.Morning).Items.First(i => i.Id == "m02");
+        var body = AdhkarBasmala.BodyArabic(ikhlas);
+        Assert.StartsWith("قُلْ هُوَ اللَّهُ", body, StringComparison.Ordinal);
+        Assert.DoesNotContain(AdhkarBasmala.VocalizedPrefix, body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AyatAlKursi_ShowsIstiadhahThenBasmala_BodyIsAyahOnly()
+    {
+        var kursi = AdhkarCatalog.Get(AdhkarCollectionKind.Morning).Items.First(i => i.Id == "m01");
+        Assert.True(AdhkarBasmala.ShowsIstiadhah(kursi));
+        Assert.True(AdhkarBasmala.ShowsBasmala(kursi));
+
+        var body = AdhkarBasmala.BodyArabic(kursi);
+        Assert.StartsWith("اللَّهُ لَا إِلَٰهَ", body, StringComparison.Ordinal);
+        Assert.DoesNotContain(AdhkarBasmala.IstiadhahVocalizedPrefix, body, StringComparison.Ordinal);
+
+        var evening = AdhkarCatalog.Get(AdhkarCollectionKind.Evening).Items.First(i => i.Id == "e01");
+        Assert.True(evening.IsAyatAlKursi);
+        Assert.Equal(evening.ArabicText, AdhkarBasmala.BodyArabic(evening));
+    }
 }

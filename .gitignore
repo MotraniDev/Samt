@@ -45,6 +45,8 @@ Desktop.ini
 *.log
 .env
 .env.*
+client_secret*.json
+**/google-oauth-client.json
 
 ## Build / release artifacts
 artifacts/

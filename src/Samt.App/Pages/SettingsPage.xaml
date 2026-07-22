@@ -189,6 +189,32 @@
                     <CheckBox x:Name="DeliverySoundCheck" Checked="CalendarDelivery_OnChanged" Unchecked="CalendarDelivery_OnChanged" />
                     <CheckBox x:Name="DeliverySilentWindowCheck" Checked="CalendarDelivery_OnChanged" Unchecked="CalendarDelivery_OnChanged" />
                     <TextBlock x:Name="CalendarDeliveryHint" FontSize="12" Opacity="0.6" TextWrapping="Wrap" />
+
+                    <Border Margin="0,8,0,0" Padding="12" CornerRadius="12"
+                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                            BorderBrush="{StaticResource SamtHairlineBrush}" BorderThickness="1">
+                        <StackPanel Spacing="10">
+                            <TextBlock x:Name="GoogleLinkHeader" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock x:Name="GoogleLinkHint" FontSize="12" Opacity="0.7" TextWrapping="Wrap" />
+                            <TextBlock x:Name="GoogleLinkStatusText" FontSize="12" Opacity="0.85" TextWrapping="Wrap"
+                                       Style="{StaticResource LatinDigitsTextBlock}" Language="en-US" />
+                            <StackPanel x:Name="GoogleBusyPanel" Orientation="Horizontal" Spacing="10"
+                                        Visibility="Collapsed">
+                                <ProgressRing x:Name="GoogleBusyRing" Width="22" Height="22"
+                                              IsActive="False" VerticalAlignment="Center" />
+                                <TextBlock x:Name="GoogleBusyText" FontSize="12" Opacity="0.9"
+                                           VerticalAlignment="Center" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="GoogleConnectButton" Click="GoogleConnectButton_OnClick" MinWidth="120" />
+                                <Button x:Name="GoogleSyncNowButton" Click="GoogleSyncNowButton_OnClick" MinWidth="100" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="GoogleDisconnectButton" Click="GoogleDisconnectButton_OnClick" MinWidth="120" />
+                                <Button x:Name="GoogleDisconnectDeleteButton" Click="GoogleDisconnectDeleteButton_OnClick" MinWidth="160" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 

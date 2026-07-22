@@ -30,6 +30,14 @@ public sealed partial class SettingsPage : Page
     {
         InitializeComponent();
         App.Localization.LanguageChanged += (_, _) => ApplyLanguageUi();
+        if (App.GoogleCalendar is not null)
+        {
+            App.GoogleCalendar.StatusChanged += (_, _) =>
+            {
+                DispatcherQueue.TryEnqueue(RefreshGoogleLinkStatusUi);
+            };
+        }
+
         Loaded += (_, _) =>
         {
             ApplyLanguageUi();
@@ -79,6 +87,13 @@ public sealed partial class SettingsPage : Page
         DeliverySoundCheck.Content = loc.Get("CalendarDeliverySound");
         DeliverySilentWindowCheck.Content = loc.Get("CalendarDeliverySilentWindow");
         CalendarDeliveryHint.Text = loc.Get("CalendarDeliveryHint");
+        GoogleLinkHeader.Text = loc.Get("GoogleCalendarLinkHeader");
+        GoogleLinkHint.Text = loc.Get("GoogleCalendarLinkHint");
+        GoogleConnectButton.Content = loc.Get("GoogleCalendarConnect");
+        GoogleSyncNowButton.Content = loc.Get("GoogleCalendarSyncNow");
+        GoogleDisconnectButton.Content = loc.Get("GoogleCalendarDisconnect");
+        GoogleDisconnectDeleteButton.Content = loc.Get("GoogleCalendarDisconnectDelete");
+        RefreshGoogleLinkStatusUi();
         AdhkarSectionHeader.Text = loc.Get("SettingsAdhkarSection");
         AdhkarSectionHint.Text = loc.Get("AdhkarSettingsHint");
         AboutSectionHeader.Text = loc.Get("SettingsAboutSection");
@@ -171,11 +186,191 @@ public sealed partial class SettingsPage : Page
             DeliverySoundCheck.IsChecked = delivery.HasFlag(CalendarReminderDelivery.Sound);
             DeliverySilentWindowCheck.IsChecked = delivery.HasFlag(CalendarReminderDelivery.SilentWindow);
             UpdateStatusText.Text = string.Empty;
+            RefreshGoogleLinkStatusUi();
         }
         finally
         {
             _suppress = false;
         }
+    }
+
+    private void RefreshGoogleLinkStatusUi()
+    {
+        var loc = App.Localization;
+        var link = App.State.Settings.GoogleCalendarLink;
+        var linked = link.IsLinked;
+        var busy = App.GoogleCalendar?.IsBusy == true;
+        var phase = App.GoogleCalendar?.BusyPhase ?? "";
+
+        GoogleBusyPanel.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
+        GoogleBusyRing.IsActive = busy;
+        if (busy)
+        {
+            GoogleBusyText.Text = phase switch
+            {
+                "connect" => loc.Get("GoogleCalendarBusyConnect"),
+                "disconnect" => loc.Get("GoogleCalendarBusyDisconnect"),
+                _ => loc.Get("GoogleCalendarBusySync")
+            };
+        }
+        else
+        {
+            GoogleBusyText.Text = "";
+        }
+
+        GoogleConnectButton.IsEnabled = !busy && !linked && App.GoogleCalendar is not null;
+        GoogleSyncNowButton.IsEnabled = !busy && linked && App.GoogleCalendar is not null;
+        GoogleDisconnectButton.IsEnabled = !busy && linked && App.GoogleCalendar is not null;
+        GoogleDisconnectDeleteButton.IsEnabled = !busy && linked && App.GoogleCalendar is not null;
+
+        if (!linked)
+        {
+            var configured = GoogleOAuthClientConfig.TryLoad(out _, out _, out _);
+            if (!configured)
+            {
+                GoogleLinkStatusText.Text = loc.Get("GoogleCalendarStatusNeedClient");
+                return;
+            }
+
+            var fail = link.LastSyncMessage?.Trim() ?? "";
+            if (string.Equals(fail, "insufficient-scopes", StringComparison.OrdinalIgnoreCase))
+            {
+                GoogleLinkStatusText.Text = loc.Get("GoogleCalendarStatusInsufficientScopes");
+                return;
+            }
+
+            if (fail.StartsWith("connect-failed:", StringComparison.OrdinalIgnoreCase))
+            {
+                var failDetail = fail["connect-failed:".Length..].Trim();
+                GoogleLinkStatusText.Text = string.IsNullOrWhiteSpace(failDetail)
+                    ? loc.Get("GoogleCalendarStatusConnectFailed")
+                    : string.Format(
+                        CultureInfo.InvariantCulture,
+                        loc.Get("GoogleCalendarStatusConnectFailedDetail"),
+                        LatinDigits.EnsureLatin(failDetail));
+                return;
+            }
+
+            GoogleLinkStatusText.Text = busy
+                ? loc.Get("GoogleCalendarBusyConnect")
+                : loc.Get("GoogleCalendarStatusNotLinked");
+            return;
+        }
+
+        var email = string.IsNullOrWhiteSpace(link.AccountEmail)
+            ? loc.Get("GoogleCalendarAccountUnknown")
+            : link.AccountEmail;
+        var when = link.LastSyncUtc is { } t
+            ? LatinDigits.EnsureLatin(t.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture))
+            : "—";
+        var outcome = busy
+            ? loc.Get("GoogleCalendarLastInProgress")
+            : link.LastSyncSucceeded
+                ? loc.Get("GoogleCalendarLastOk")
+                : loc.Get("GoogleCalendarLastFail");
+        var detail = string.IsNullOrWhiteSpace(link.LastSyncMessage)
+            ? ""
+            : " · " + LatinDigits.EnsureLatin(link.LastSyncMessage);
+        if (!busy && link.LastSkippedCount > 0)
+        {
+            detail += " · " + string.Format(
+                CultureInfo.InvariantCulture,
+                loc.Get("GoogleCalendarSkippedFormat"),
+                LatinDigits.Number(link.LastSkippedCount));
+        }
+
+        GoogleLinkStatusText.Text = string.Format(
+            CultureInfo.InvariantCulture,
+            loc.Get("GoogleCalendarStatusLinkedFormat"),
+            email,
+            when,
+            outcome) + (busy ? "" : detail);
+    }
+
+    private async void GoogleConnectButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (App.GoogleCalendar is null)
+        {
+            return;
+        }
+
+        GoogleConnectButton.IsEnabled = false;
+        try
+        {
+            await App.GoogleCalendar.ConnectAsync();
+        }
+        finally
+        {
+            RefreshGoogleLinkStatusUi();
+        }
+    }
+
+    private async void GoogleSyncNowButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (App.GoogleCalendar is null)
+        {
+            return;
+        }
+
+        GoogleSyncNowButton.IsEnabled = false;
+        try
+        {
+            await App.GoogleCalendar.SyncNowAsync();
+        }
+        finally
+        {
+            RefreshGoogleLinkStatusUi();
+        }
+    }
+
+    private async void GoogleDisconnectButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (App.GoogleCalendar is null)
+        {
+            return;
+        }
+
+        var confirm = new ContentDialog
+        {
+            Title = App.Localization.Get("GoogleCalendarDisconnect"),
+            Content = App.Localization.Get("GoogleCalendarDisconnectConfirm"),
+            PrimaryButtonText = App.Localization.Get("GoogleCalendarDisconnect"),
+            CloseButtonText = App.Localization.Get("CalendarClose"),
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot
+        };
+        if (await confirm.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        await App.GoogleCalendar.DisconnectAsync(deleteCloudCalendar: false);
+        RefreshGoogleLinkStatusUi();
+    }
+
+    private async void GoogleDisconnectDeleteButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (App.GoogleCalendar is null)
+        {
+            return;
+        }
+
+        var confirm = new ContentDialog
+        {
+            Title = App.Localization.Get("GoogleCalendarDisconnectDelete"),
+            Content = App.Localization.Get("GoogleCalendarDisconnectDeleteConfirm"),
+            PrimaryButtonText = App.Localization.Get("GoogleCalendarDisconnectDelete"),
+            CloseButtonText = App.Localization.Get("CalendarClose"),
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot
+        };
+        if (await confirm.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        await App.GoogleCalendar.DisconnectAsync(deleteCloudCalendar: true);
+        RefreshGoogleLinkStatusUi();
     }
 
     private void SyncCalendarCountryBox(string? countryOverride)

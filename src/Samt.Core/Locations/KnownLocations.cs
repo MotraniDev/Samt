@@ -85,4 +85,42 @@ public static class KnownLocations
             throw;
         }
     }
+
+    /// <summary>
+    /// Converts a Windows (or already-IANA) timezone id to an IANA id for Google Calendar APIs.
+    /// </summary>
+    public static string ToIanaTimeZoneId(string timeZoneId, string? region = null)
+    {
+        if (string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            return "Etc/UTC";
+        }
+
+        var id = timeZoneId.Trim();
+        if (id.Contains('/', StringComparison.Ordinal))
+        {
+            return id;
+        }
+
+        if (!string.IsNullOrWhiteSpace(region)
+            && TimeZoneInfo.TryConvertWindowsIdToIanaId(id, region, out var regional)
+            && !string.IsNullOrWhiteSpace(regional))
+        {
+            return regional;
+        }
+
+        if (TimeZoneInfo.TryConvertWindowsIdToIanaId(id, out var iana)
+            && !string.IsNullOrWhiteSpace(iana))
+        {
+            return iana;
+        }
+
+        if (string.Equals(id, AlgeriaTimeZoneId, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(id, "Algeria Standard Time", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Africa/Algiers";
+        }
+
+        return "Etc/UTC";
+    }
 }

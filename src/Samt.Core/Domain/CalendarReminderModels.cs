@@ -48,4 +48,13 @@ public sealed class UserCalendarReminder
     public int IntervalMinutes { get; init; } = 5;
 
     public bool Enabled { get; init; } = true;
+
+    /// <summary>Linked Google event id on the SAMT Google calendar; null if never pushed.</summary>
+    public string? GoogleEventId { get; init; }
+
+    /// <summary>When the user last changed title/note/date/time (or import applied). Used for LWW.</summary>
+    public DateTimeOffset LocalUpdatedUtc { get; init; }
+
+    /// <summary>When local content last matched Google after a successful sync.</summary>
+    public DateTimeOffset? LastSyncedUtc { get; init; }
 }

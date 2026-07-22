@@ -168,6 +168,12 @@ public sealed class AppSettings
     /// <summary>User-authored calendar-day reminders (title, note, time, optional repeats).</summary>
     public IReadOnlyList<UserCalendarReminder> UserCalendarReminders { get; init; } = [];
 
+    /// <summary>Optional Google Calendar link state (no OAuth secrets).</summary>
+    public GoogleCalendarLinkState GoogleCalendarLink { get; init; } = new();
+
+    /// <summary>Delete tombstones for bi-di Google Calendar sync (90-day retention via planner).</summary>
+    public IReadOnlyList<CalendarSyncTombstone> CalendarSyncTombstones { get; init; } = [];
+
     public IReadOnlyList<LocationProfile> Locations { get; init; } = [];
     public IReadOnlyList<NotificationRule> NotificationRules { get; init; } = [];
     public AudioProfile DefaultAudio { get; init; } = new();
@@ -283,6 +289,8 @@ public sealed class AppSettings
         CalendarPrimaryMode? calendarPrimaryMode = null,
         CalendarReminderDelivery? calendarReminderDelivery = null,
         IReadOnlyList<UserCalendarReminder>? userCalendarReminders = null,
+        GoogleCalendarLinkState? googleCalendarLink = null,
+        IReadOnlyList<CalendarSyncTombstone>? calendarSyncTombstones = null,
         IReadOnlyList<NotificationRule>? notificationRules = null,
         AudioProfile? defaultAudio = null,
         OverlayProfile? defaultOverlay = null,
@@ -325,6 +333,8 @@ public sealed class AppSettings
             CalendarPrimaryMode = calendarPrimaryMode ?? CalendarPrimaryMode,
             CalendarReminderDelivery = calendarReminderDelivery ?? CalendarReminderDelivery,
             UserCalendarReminders = userCalendarReminders ?? UserCalendarReminders,
+            GoogleCalendarLink = googleCalendarLink ?? GoogleCalendarLink,
+            CalendarSyncTombstones = calendarSyncTombstones ?? CalendarSyncTombstones,
             Locations = locations ?? Locations,
             NotificationRules = notificationRules ?? NotificationRules,
             DefaultAudio = defaultAudio ?? DefaultAudio,

@@ -280,6 +280,29 @@ public sealed partial class CalendarPage : Page
             });
         }
 
+        // Add / edit form controls (declared before list so rows can load into them)
+        var titleBox = new TextBox { PlaceholderText = loc.Get("CalendarReminderTitle") };
+        var noteBox = new TextBox { PlaceholderText = loc.Get("CalendarReminderNote") };
+        var timeBox = new TextBox
+        {
+            Text = "09:00",
+            PlaceholderText = "09:00",
+            Style = (Style)Application.Current.Resources["LatinDigitsTextBox"]
+        };
+        var repeatBox = new TextBox
+        {
+            Text = "1",
+            PlaceholderText = loc.Get("CalendarReminderRepeatCount"),
+            Style = (Style)Application.Current.Resources["LatinDigitsTextBox"]
+        };
+        var intervalBox = new TextBox
+        {
+            Text = "5",
+            PlaceholderText = loc.Get("CalendarReminderInterval"),
+            Style = (Style)Application.Current.Resources["LatinDigitsTextBox"]
+        };
+        Guid? editingId = null;
+
         // Existing user reminders
         var existing = ViewModel.RemindersForDay(day.CivilDate);
         if (existing.Count > 0)
@@ -305,6 +328,16 @@ public sealed partial class CalendarPage : Page
                     TextWrapping = TextWrapping.Wrap,
                     Style = (Style)Application.Current.Resources["LatinDigitsTextBlock"]
                 };
+                var captured = rem;
+                text.PointerPressed += (_, _) =>
+                {
+                    editingId = captured.Id;
+                    titleBox.Text = captured.Title;
+                    noteBox.Text = captured.Note ?? "";
+                    timeBox.Text = captured.Time;
+                    repeatBox.Text = LatinDigits.Number(captured.RepeatCount);
+                    intervalBox.Text = LatinDigits.Number(captured.IntervalMinutes);
+                };
                 Grid.SetColumn(text, 0);
                 row.Children.Add(text);
                 var del = new Button { Content = "×", Tag = rem.Id, MinWidth = 36 };
@@ -319,33 +352,12 @@ public sealed partial class CalendarPage : Page
             }
         }
 
-        // Add form
         body.Children.Add(new TextBlock
         {
             Text = loc.Get("CalendarAddReminder"),
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Margin = new Thickness(0, 10, 0, 0)
         });
-        var titleBox = new TextBox { PlaceholderText = loc.Get("CalendarReminderTitle") };
-        var noteBox = new TextBox { PlaceholderText = loc.Get("CalendarReminderNote") };
-        var timeBox = new TextBox
-        {
-            Text = "09:00",
-            PlaceholderText = "09:00",
-            Style = (Style)Application.Current.Resources["LatinDigitsTextBox"]
-        };
-        var repeatBox = new TextBox
-        {
-            Text = "1",
-            PlaceholderText = loc.Get("CalendarReminderRepeatCount"),
-            Style = (Style)Application.Current.Resources["LatinDigitsTextBox"]
-        };
-        var intervalBox = new TextBox
-        {
-            Text = "5",
-            PlaceholderText = loc.Get("CalendarReminderInterval"),
-            Style = (Style)Application.Current.Resources["LatinDigitsTextBox"]
-        };
         body.Children.Add(titleBox);
         body.Children.Add(noteBox);
         body.Children.Add(Labeled(loc.Get("SpecialDayReminderTime"), timeBox));
@@ -385,13 +397,26 @@ public sealed partial class CalendarPage : Page
             var time = SettingsJson.NormalizeClockTime(timeBox.Text, "09:00");
             var repeats = ParseInt(repeatBox.Text, 1, 1, 20);
             var interval = ParseInt(intervalBox.Text, 5, 0, 1440);
-            await ViewModel.AddUserReminderAsync(
-                day.CivilDate,
-                titleBox.Text,
-                noteBox.Text ?? "",
-                time,
-                repeats,
-                interval);
+            if (editingId is { } editId)
+            {
+                await ViewModel.UpdateUserReminderAsync(
+                    editId,
+                    titleBox.Text,
+                    noteBox.Text ?? "",
+                    time,
+                    repeats,
+                    interval);
+            }
+            else
+            {
+                await ViewModel.AddUserReminderAsync(
+                    day.CivilDate,
+                    titleBox.Text,
+                    noteBox.Text ?? "",
+                    time,
+                    repeats,
+                    interval);
+            }
         }
 
         RebuildGrid();

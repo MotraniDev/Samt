@@ -133,6 +133,28 @@
                                 TextWrapping="Wrap" />
                         </Grid>
                         <TextBlock
+                            x:Name="IstiadhahText"
+                            Text="أعوذ بالله من الشيطان الرجيم"
+                            FontFamily="{StaticResource SamtDisplayFont}"
+                            FontSize="16"
+                            Foreground="{StaticResource SamtGoldSoftBrush}"
+                            TextAlignment="Center"
+                            HorizontalAlignment="Stretch"
+                            TextWrapping="NoWrap"
+                            TextTrimming="CharacterEllipsis"
+                            Visibility="Collapsed" />
+                        <TextBlock
+                            x:Name="BasmalaText"
+                            Text="بسم الله الرحمن الرحيم"
+                            FontFamily="{StaticResource SamtDisplayFont}"
+                            FontSize="18"
+                            Foreground="{StaticResource SamtGoldBrightBrush}"
+                            TextAlignment="Center"
+                            HorizontalAlignment="Stretch"
+                            TextWrapping="NoWrap"
+                            TextTrimming="CharacterEllipsis"
+                            Visibility="Collapsed" />
+                        <TextBlock
                             x:Name="ArabicText"
                             FontFamily="{StaticResource SamtNaskhFont}"
                             FontSize="26"

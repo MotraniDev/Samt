@@ -66,6 +66,32 @@ Afterwards (or after Skip):
 4. Close the window to hide to the **tray**; use tray **Exit** to stop notifications.
 5. Optional: **Settings → Transparency** for shell window opacity (Adhan overlay stays independent).
 6. **Calendar** (nav): Hijri-month grid with dual Gregorian labels. Special-day highlights are always shown; **toast reminders** default off — enable under **Settings → Calendar & Hijri** (master + Islamic set and/or country set). Hijri day offset lives there too (shared with Today). Diagnostics shows the offset read-only.
+7. Optional **Google Calendar link** (user personal reminders only): see below.
+
+## Google Calendar link (optional)
+
+Bidirectional sync of **user calendar reminders** only with a dedicated Google calendar named **SAMT**. Prayer times and special days are **not** synced. Default off.
+
+### One-time OAuth client (publisher / self-host)
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create a project (or use MotraniSoft’s).
+2. Enable **Google Calendar API**.
+3. Create OAuth consent screen (External or Internal).
+4. Create credentials → **OAuth client ID** → application type **Desktop app**.
+5. Download the JSON (or copy client id + secret).
+
+Place either:
+
+- `%LocalAppData%\SAMT\google-oauth-client.json` with shape:
+  ```json
+  { "client_id": "….apps.googleusercontent.com", "client_secret": "…" }
+  ```
+  (Google’s downloaded `installed` wrapper is also accepted), or
+- Environment variables `SAMT_GOOGLE_CLIENT_ID` and `SAMT_GOOGLE_CLIENT_SECRET`.
+
+Then in the app: **Settings → Calendar & Hijri → Connect Google**. Tokens are stored under `%LocalAppData%\SAMT\google-tokens\` (DPAPI-protected).
+
+Disconnect keeps local reminders; **Disconnect & delete cloud calendar** removes the SAMT calendar on Google.
 
 ## Auto-start
 
@@ -90,5 +116,6 @@ If special-day reminders are enabled and the morning fire was missed while aslee
 
 ## Not included
 
-- Store listing, signed MSIX, cloud sync
+- Store listing, signed MSIX, full-app cloud backup / multi-device settings sync
 - Official prayer authority — always verify locally
+- Google sync of prayer times or special days (user reminders only when linked)

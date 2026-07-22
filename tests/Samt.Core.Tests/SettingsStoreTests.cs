@@ -73,6 +73,71 @@ public class SettingsStoreTests
     }
 
     [Fact]
+    public async Task SaveAndLoad_RoundTripsGoogleCalendarLinkAndReminderIds()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "samt-tests-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new JsonSettingsStore(dir);
+            var reminderId = Guid.NewGuid();
+            var settings = SettingsJson.CreateDefault().With(
+                userCalendarReminders:
+                [
+                    new UserCalendarReminder
+                    {
+                        Id = reminderId,
+                        Title = "Note",
+                        Note = "n",
+                        CivilDate = new DateOnly(2026, 7, 20),
+                        Time = "09:15",
+                        GoogleEventId = "g-event-1",
+                        LocalUpdatedUtc = new DateTimeOffset(2026, 7, 14, 10, 0, 0, TimeSpan.Zero),
+                        LastSyncedUtc = new DateTimeOffset(2026, 7, 14, 10, 0, 0, TimeSpan.Zero)
+                    }
+                ],
+                googleCalendarLink: new GoogleCalendarLinkState
+                {
+                    IsLinked = true,
+                    AccountEmail = "user@example.com",
+                    CalendarId = "cal-1",
+                    LastSyncUtc = new DateTimeOffset(2026, 7, 14, 11, 0, 0, TimeSpan.Zero),
+                    LastSyncSucceeded = true,
+                    LastSyncMessage = "ok",
+                    LastSkippedCount = 2
+                },
+                calendarSyncTombstones:
+                [
+                    new CalendarSyncTombstone
+                    {
+                        ReminderId = Guid.NewGuid(),
+                        GoogleEventId = "g-dead",
+                        DeletedUtc = new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero)
+                    }
+                ]);
+
+            await store.SaveAsync(settings);
+            var loaded = await store.LoadAsync();
+
+            Assert.True(loaded.GoogleCalendarLink.IsLinked);
+            Assert.Equal("user@example.com", loaded.GoogleCalendarLink.AccountEmail);
+            Assert.Equal("cal-1", loaded.GoogleCalendarLink.CalendarId);
+            Assert.Equal(2, loaded.GoogleCalendarLink.LastSkippedCount);
+            Assert.Single(loaded.UserCalendarReminders);
+            Assert.Equal("g-event-1", loaded.UserCalendarReminders[0].GoogleEventId);
+            Assert.Equal("09:15", loaded.UserCalendarReminders[0].Time);
+            Assert.Single(loaded.CalendarSyncTombstones);
+            Assert.Equal("g-dead", loaded.CalendarSyncTombstones[0].GoogleEventId);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void NormalizeClockTime_ParsesAndFallsBack()
     {
         Assert.Equal("06:30", SettingsJson.NormalizeClockTime("6:30", "06:00"));

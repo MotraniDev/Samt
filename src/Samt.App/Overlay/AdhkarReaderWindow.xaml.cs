@@ -176,6 +176,8 @@ public sealed partial class AdhkarReaderWindow : Window
             TranslationText.Text = string.Empty;
             BenefitText.Text = string.Empty;
             ReferenceText.Text = string.Empty;
+            IstiadhahText.Visibility = Visibility.Collapsed;
+            BasmalaText.Visibility = Visibility.Collapsed;
             CountDisplay.Text = string.Empty;
             SetProgressLabel.Text = string.Empty;
             SetProgressBar.Value = 0;
@@ -184,7 +186,9 @@ public sealed partial class AdhkarReaderWindow : Window
         }
 
         var item = collection.Items[_index];
-        ArabicText.Text = item.ArabicText;
+        IstiadhahText.Visibility = AdhkarBasmala.ShowsIstiadhah(item) ? Visibility.Visible : Visibility.Collapsed;
+        BasmalaText.Visibility = AdhkarBasmala.ShowsBasmala(item) ? Visibility.Visible : Visibility.Collapsed;
+        ArabicText.Text = AdhkarBasmala.BodyArabic(item);
         ReferenceText.Text = item.Reference ?? string.Empty;
         BenefitText.Text = item.BenefitText ?? string.Empty;
         TranslationText.Text = item.TranslationKey is null

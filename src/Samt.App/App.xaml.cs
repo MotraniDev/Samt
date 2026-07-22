@@ -20,6 +20,7 @@ public partial class App : Application
     private AdhanAudioService? _audio;
     private OverlayService? _overlay;
     private AdhkarReminderService? _adhkarReminders;
+    private GoogleCalendarLinkService? _googleCalendar;
     private SingleInstanceService? _singleInstance;
     private bool _exitRequested;
     private bool _startMinimized;
@@ -52,6 +53,7 @@ public partial class App : Application
     public static Window? MainWindow { get; private set; }
     public static NotificationHost? Notifications { get; private set; }
     public static AdhkarReminderService? AdhkarReminders { get; private set; }
+    public static GoogleCalendarLinkService? GoogleCalendar { get; private set; }
 
     public static bool IsExitRequested { get; private set; }
 
@@ -163,6 +165,10 @@ public partial class App : Application
                 _adhkarReminders.NotifyPrayerStartCompleted(prayer, overlayWasShown: _overlay.IsSessionActive);
             };
             _adhkarReminders.Start();
+
+            _googleCalendar = new GoogleCalendarLinkService(State);
+            GoogleCalendar = _googleCalendar;
+            _ = _googleCalendar.InitializeAsync();
 
             // First interactive launch: setup wizard (never on --autostart tray start).
             if (!_startMinimized && !State.Settings.SetupWizardCompleted)
@@ -285,6 +291,9 @@ public partial class App : Application
                 {
                     main.CollapseNavigationPane();
                 }
+
+                // Pull Google Calendar on resume from tray when linked.
+                GoogleCalendar?.RequestSync();
 
                 LaunchLog.Write("ShowMainWindow done");
             }
@@ -545,6 +554,20 @@ public partial class App : Application
         catch (Exception ex)
         {
             LaunchLog.Write($"Exit dispose host: {ex.Message}");
+        }
+
+        try
+        {
+            if (_googleCalendar is not null)
+            {
+                _ = _googleCalendar.DisposeAsync().AsTask();
+            }
+
+            GoogleCalendar = null;
+        }
+        catch (Exception ex)
+        {
+            LaunchLog.Write($"Exit dispose google calendar: {ex.Message}");
         }
 
         try

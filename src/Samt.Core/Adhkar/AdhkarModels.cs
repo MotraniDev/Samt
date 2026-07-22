@@ -55,6 +55,17 @@ public sealed class AdhkarItem
 
     /// <summary>Short reference (e.g. آية الكرسي — البقرة 255).</summary>
     public string? Reference { get; init; }
+
+    /// <summary>
+    /// True for full Quranic surahs (e.g. الإخلاص / الفلق / الناس).
+    /// Reader chrome shows the basmala for these.
+    /// </summary>
+    public bool IsQuranicSurah { get; init; }
+
+    /// <summary>
+    /// True for Ayat al-Kursi. Reader shows istiʿādhah then basmala above the ayah body.
+    /// </summary>
+    public bool IsAyatAlKursi { get; init; }
 }
 
 /// <summary>Offline collection of items with library metadata.</summary>

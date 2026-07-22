@@ -11,6 +11,8 @@ using Samt_App.Services;
 
 namespace Samt_App.ViewModels;
 
+// App static accessors live in Samt_App.App
+
 public sealed class CalendarDayVm
 {
     public bool IsPlaceholder { get; init; }
@@ -358,6 +360,7 @@ public sealed class CalendarViewModel : INotifyPropertyChanged
             return;
         }
 
+        var now = DateTimeOffset.UtcNow;
         var list = _appState.Settings.UserCalendarReminders.ToList();
         list.Add(new UserCalendarReminder
         {
@@ -368,16 +371,75 @@ public sealed class CalendarViewModel : INotifyPropertyChanged
             Time = time,
             RepeatCount = Math.Clamp(repeatCount, 1, 20),
             IntervalMinutes = Math.Clamp(intervalMinutes, 0, 1440),
-            Enabled = true
+            Enabled = true,
+            LocalUpdatedUtc = now
         });
         await _appState.UpdateAsync(s => s.With(userCalendarReminders: list));
+        Samt_App.App.GoogleCalendar?.NotifyLocalReminderChanged();
+        Refresh();
+    }
+
+    public async Task UpdateUserReminderAsync(
+        Guid id,
+        string title,
+        string note,
+        string time,
+        int repeatCount,
+        int intervalMinutes,
+        bool enabled = true)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var list = _appState.Settings.UserCalendarReminders.ToList();
+        var idx = list.FindIndex(r => r.Id == id);
+        if (idx < 0)
+        {
+            return;
+        }
+
+        var existing = list[idx];
+        list[idx] = GoogleCalendarSyncPlanner.TouchLocal(
+            new UserCalendarReminder
+            {
+                Id = existing.Id,
+                Title = title.Trim(),
+                Note = note?.Trim() ?? "",
+                CivilDate = existing.CivilDate,
+                Time = time,
+                RepeatCount = Math.Clamp(repeatCount, 1, 20),
+                IntervalMinutes = Math.Clamp(intervalMinutes, 0, 1440),
+                Enabled = enabled,
+                GoogleEventId = existing.GoogleEventId,
+                LocalUpdatedUtc = existing.LocalUpdatedUtc,
+                LastSyncedUtc = existing.LastSyncedUtc
+            },
+            now);
+
+        await _appState.UpdateAsync(s => s.With(userCalendarReminders: list));
+        Samt_App.App.GoogleCalendar?.NotifyLocalReminderChanged();
         Refresh();
     }
 
     public async Task DeleteUserReminderAsync(Guid id)
     {
+        var existing = _appState.Settings.UserCalendarReminders.FirstOrDefault(r => r.Id == id);
         var list = _appState.Settings.UserCalendarReminders.Where(r => r.Id != id).ToList();
-        await _appState.UpdateAsync(s => s.With(userCalendarReminders: list));
+        var stones = existing is null
+            ? _appState.Settings.CalendarSyncTombstones
+            : GoogleCalendarSyncPlanner.TombstoneDelete(
+                _appState.Settings.CalendarSyncTombstones,
+                existing.Id,
+                existing.GoogleEventId,
+                DateTimeOffset.UtcNow);
+
+        await _appState.UpdateAsync(s => s.With(
+            userCalendarReminders: list,
+            calendarSyncTombstones: stones));
+        Samt_App.App.GoogleCalendar?.NotifyLocalReminderChanged();
         Refresh();
     }
 
